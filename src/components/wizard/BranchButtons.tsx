@@ -4,9 +4,10 @@ import { CheckCircle, XCircle } from "lucide-react";
 interface BranchButtonsProps {
   onAccept: () => void;
   onDecline: () => void;
+  onBack?: () => void;
 }
 
-const BranchButtons = ({ onAccept, onDecline }: BranchButtonsProps) => {
+const BranchButtons = ({ onAccept, onDecline, onBack }: BranchButtonsProps) => {
   return (
     <div className="space-y-4">
       <div className="text-center">

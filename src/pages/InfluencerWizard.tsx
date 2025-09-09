@@ -34,16 +34,28 @@ const InfluencerWizard = () => {
 
   const handleNext = () => {
     setCurrentStep(prev => prev + 1);
+    // 次のページへ進むときに最上部にスクロール
+    window.scrollTo(0, 0);
+  };
+
+  const handleBack = () => {
+    setCurrentStep(prev => prev - 1);
+    // 前のページに戻るときも最上部にスクロール
+    window.scrollTo(0, 0);
   };
 
   const handleAccept = () => {
     setIsAccepted(true);
     setCurrentStep(3);
+    // 次のページへ進むときに最上部にスクロール
+    window.scrollTo(0, 0);
   };
 
   const handleDecline = () => {
     setIsAccepted(false);
     setCurrentStep(3);
+    // 次のページへ進むときに最上部にスクロール
+    window.scrollTo(0, 0);
   };
 
   const handleBackToStart = () => {
@@ -82,6 +94,7 @@ const InfluencerWizard = () => {
             <BranchButtons 
               onAccept={handleAccept}
               onDecline={handleDecline}
+              onBack={handleBack}
             />
           </div>
         );
@@ -90,6 +103,7 @@ const InfluencerWizard = () => {
           return (
             <SubmissionForm 
               onNext={handleNext}
+              onBack={handleBack}
               campaignId={campaign.id}
             />
           );
@@ -97,6 +111,7 @@ const InfluencerWizard = () => {
           return (
             <OptInForm 
               onNext={handleNext}
+              onBack={handleBack}
               campaignId={campaign.id}
             />
           );

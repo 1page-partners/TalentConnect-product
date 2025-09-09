@@ -10,10 +10,11 @@ import { Loader2 } from "lucide-react";
 
 interface OptInFormProps {
   onNext: () => void;
+  onBack?: () => void;
   campaignId: string;
 }
 
-const OptInForm = ({ onNext, campaignId }: OptInFormProps) => {
+const OptInForm = ({ onNext, onBack, campaignId }: OptInFormProps) => {
   const [wantsContact, setWantsContact] = useState(false);
   const [email, setEmail] = useState("");
   const [lineId, setLineId] = useState("");
@@ -171,21 +172,35 @@ const OptInForm = ({ onNext, campaignId }: OptInFormProps) => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button 
-          variant="wizard"
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              送信中...
-            </>
-          ) : (
-            "送信する"
-          )}
-        </Button>
+      <div className="space-y-4">
+        {onBack && (
+          <div className="flex justify-start">
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+            >
+              ← 前へ
+            </Button>
+          </div>
+        )}
+        
+        <div className="flex justify-end">
+          <Button 
+            variant="wizard"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                送信中...
+              </>
+            ) : (
+              "送信する"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

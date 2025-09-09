@@ -13,6 +13,7 @@ import { Loader2, Plus, Trash2, Download, AlertTriangle, Check } from "lucide-re
 
 interface SubmissionFormProps {
   onNext: () => void;
+  onBack?: () => void;
   campaignId: string;
 }
 
@@ -24,7 +25,7 @@ interface SocialAccount {
   isLoading?: boolean;
 }
 
-const SubmissionForm = ({ onNext, campaignId }: SubmissionFormProps) => {
+const SubmissionForm = ({ onNext, onBack, campaignId }: SubmissionFormProps) => {
   const [activityName, setActivityName] = useState("");
   const [mainSns, setMainSns] = useState("");
   const [mainAccount, setMainAccount] = useState("");
@@ -527,21 +528,35 @@ const SubmissionForm = ({ onNext, campaignId }: SubmissionFormProps) => {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
-        <Button 
-          variant="wizard"
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              送信中...
-            </>
-          ) : (
-            "応募する"
-          )}
-        </Button>
+      <div className="space-y-4">
+        {onBack && (
+          <div className="flex justify-start">
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+            >
+              ← 前へ
+            </Button>
+          </div>
+        )}
+        
+        <div className="flex justify-end">
+          <Button 
+            variant="wizard"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                送信中...
+              </>
+            ) : (
+              "応募する"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

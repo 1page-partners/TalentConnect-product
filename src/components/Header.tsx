@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface HeaderProps {
   showStepper?: boolean;
@@ -12,7 +13,9 @@ const Header = ({ showStepper = false, currentStep = 1, totalSteps = 4 }: Header
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="text-xl font-bold text-primary">PartnerConnex</div>
+            <Link to="/" className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
+              PartnerConnex
+            </Link>
           </div>
           
           {showStepper && (
