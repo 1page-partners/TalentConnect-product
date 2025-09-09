@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import { SocialIconsList } from "@/components/SocialIcons";
-import { mockCampaigns, generateDistributionUrl } from "@/lib/mock-data";
+import { mockCampaigns, generateDistributionUrl, platformOptions } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Copy, Eye, Calendar, DollarSign, Check, ArrowLeft } from "lucide-react";
+import { Plus, Copy, Eye, Calendar, Check, ArrowLeft, Search, Settings } from "lucide-react";
 
 const CampaignList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [copiedUrls, setCopiedUrls] = useState<Set<string>>(new Set());
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
 
   const copyDistributionUrl = async (slug: string, campaignTitle: string) => {
     const url = `${window.location.origin}${generateDistributionUrl(slug)}`;
@@ -51,6 +56,25 @@ const CampaignList = () => {
     });
   };
 
+  // フィルタリングされた案件
+  const filteredCampaigns = useMemo(() => {
+    return mockCampaigns.filter((campaign) => {
+      const matchesKeyword = 
+        campaign.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        campaign.summary.toLowerCase().includes(searchKeyword.toLowerCase());
+      
+      const matchesPlatform = 
+        selectedPlatform === "all" || 
+        campaign.platforms.includes(selectedPlatform);
+
+      return matchesKeyword && matchesPlatform;
+    });
+  }, [searchKeyword, selectedPlatform]);
+
+  // ステータス別の案件
+  const openCampaigns = filteredCampaigns.filter(campaign => campaign.status === 'open');
+  const closedCampaigns = filteredCampaigns.filter(campaign => campaign.status === 'closed');
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -82,27 +106,77 @@ const CampaignList = () => {
             </Button>
           </div>
 
-          {mockCampaigns.length === 0 ? (
+          {/* 検索・フィルター */}
+          <Card className="shadow-card">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center space-x-2">
+                <Search className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground">案件検索</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">キーワード検索</label>
+                  <Input
+                    placeholder="案件名・概要で検索..."
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">プラットフォーム</label>
+                  <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="プラットフォーム選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">すべて</SelectItem>
+                      {platformOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* タブ切り替えで案件一覧 */}
+          <Tabs defaultValue="open" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="open">
+                募集中案件 ({openCampaigns.length})
+              </TabsTrigger>
+              <TabsTrigger value="closed">
+                募集終了案件 ({closedCampaigns.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="open" className="space-y-4">
+              {openCampaigns.length === 0 ? (
             <Card className="shadow-card">
               <CardContent className="p-12 text-center">
-                <div className="space-y-4">
-                  <div className="text-muted-foreground">
-                    <Plus className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                    <h3 className="text-lg font-medium text-foreground">案件がありません</h3>
-                    <p className="text-sm">最初の案件を作成してみましょう</p>
+                  <div className="space-y-4">
+                    <div className="text-muted-foreground">
+                      <Plus className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <h3 className="text-lg font-medium text-foreground">募集中の案件がありません</h3>
+                      <p className="text-sm">新しい案件を作成してみましょう</p>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/admin/new')}
+                      variant="outline"
+                    >
+                      案件を作成する
+                    </Button>
                   </div>
-                  <Button
-                    onClick={() => navigate('/admin/new')}
-                    variant="outline"
-                  >
-                    案件を作成する
-                  </Button>
-                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid gap-6">
-              {mockCampaigns.map((campaign) => (
+              ) : (
+                <div className="grid gap-6">
+                  {openCampaigns.map((campaign) => (
                 <Card key={campaign.id} className="shadow-card">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -192,9 +266,95 @@ const CampaignList = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="closed" className="space-y-4">
+              {closedCampaigns.length === 0 ? (
+                <Card className="shadow-card">
+                  <CardContent className="p-12 text-center">
+                    <div className="space-y-4">
+                      <div className="text-muted-foreground">
+                        <Settings className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <h3 className="text-lg font-medium text-foreground">募集終了案件がありません</h3>
+                        <p className="text-sm">まだ終了した案件はありません</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-6">
+                  {closedCampaigns.map((campaign) => (
+                    <Card key={campaign.id} className="shadow-card">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <CardTitle className="text-lg font-semibold text-foreground">
+                                {campaign.title}
+                              </CardTitle>
+                              <Badge variant="secondary">募集終了</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              作成日: {formatDate(campaign.createdAt)}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <SocialIconsList platforms={campaign.platforms} />
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {campaign.summary}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-3 border-y">
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Calendar className="w-4 h-4 text-destructive" />
+                            <span className="text-muted-foreground">締切:</span>
+                            <span className="font-medium text-foreground">
+                              {formatDate(campaign.deadline)}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-2 text-sm">
+                            <div className="flex space-x-1">
+                              {campaign.platforms.map((platform) => (
+                                <Badge key={platform} variant="outline" className="text-xs">
+                                  {platform}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2">
+                          <div className="text-sm text-muted-foreground">
+                            {campaign.creators ? `${campaign.creators.length}名のクリエイターが参加` : 'クリエイター情報なし'}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <Link to={`/admin/campaign/${campaign.id}`}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              詳細を見る
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

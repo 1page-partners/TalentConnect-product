@@ -13,6 +13,16 @@ export interface Campaign {
   status: 'open' | 'closed';
   contactEmail: string;
   createdAt: string;
+  creators?: Creator[];
+  managementSheetUrl?: string;
+  reportUrl?: string;
+}
+
+export interface Creator {
+  id: string;
+  name: string;
+  accountUrl: string;
+  deliverableUrl: string;
 }
 
 // Mock campaign data
@@ -38,6 +48,42 @@ export const mockCampaigns: Campaign[] = [
     status: 'open',
     contactEmail: 'partnership@cosmetics-brand-a.com',
     createdAt: '2025-09-01T10:00:00Z'
+  },
+  {
+    id: 'demo-campaign-2',
+    title: '夏のファッションコレクション',
+    slug: 'summer-fashion-2025',
+    summary: '夏の新作ファッションアイテムのスタイリング投稿をお願いします。トレンド感のあるコーディネートをお願いします。',
+    requirements: `以下の成果物をお願いします：
+・投稿1回（フィード投稿）
+・リール投稿1回
+・ストーリーズ投稿3回以上
+・#提供 #ファッション のハッシュタグ必須`,
+    platforms: ['Instagram', 'YouTube'],
+    deadline: '2025-08-15',
+    restrictions: `以下の点にご注意ください：
+・他ブランドとの着回しは控えてください
+・投稿から48時間以内の削除は禁止です`,
+    ndaUrl: 'https://example.com/nda-fashion-summer-2025.pdf',
+    status: 'closed',
+    contactEmail: 'pr@fashion-brand.com',
+    createdAt: '2025-07-01T10:00:00Z',
+    creators: [
+      {
+        id: 'creator-1',
+        name: '田中美咲',
+        accountUrl: 'https://instagram.com/misaki_fashion',
+        deliverableUrl: 'https://instagram.com/p/summer-collection-1'
+      },
+      {
+        id: 'creator-2', 
+        name: 'Yuki Style',
+        accountUrl: 'https://youtube.com/@yukistyle',
+        deliverableUrl: 'https://youtube.com/watch?v=summer-haul-2025'
+      }
+    ],
+    managementSheetUrl: 'https://docs.google.com/spreadsheets/d/summer-fashion-management',
+    reportUrl: 'https://drive.google.com/file/d/summer-fashion-report-2025'
   }
 ];
 
