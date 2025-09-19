@@ -16,6 +16,21 @@ export interface Campaign {
   creators?: Creator[];
   managementSheetUrl?: string;
   reportUrl?: string;
+  // Enhanced fields
+  clientName?: string;
+  isTH?: boolean;
+  imageMaterials?: string[];
+  platformDeliverables?: Record<string, string[]>;
+  ndaTemplate?: 'PlanC' | 'MARKON' | 'custom';
+  isVideoProductionOnly?: boolean;
+  secondaryUsage?: {
+    hasUsage: boolean;
+    duration?: '1month' | '3months' | '6months' | '1year' | 'buyout';
+    purpose?: string;
+  };
+  hasAdvertisementAppearance?: boolean;
+  plannedPostDate?: string;
+  attachments?: string[];
 }
 
 export interface Creator {
@@ -114,7 +129,41 @@ export const platformOptions = [
   { value: 'Instagram', label: 'Instagram' },
   { value: 'TikTok', label: 'TikTok' },
   { value: 'YouTube', label: 'YouTube' },
-  { value: 'X', label: 'X (Twitter)' }
+  { value: 'RED', label: 'RED' },
+  { value: 'その他', label: 'その他' }
+];
+
+// Platform deliverables
+export const platformDeliverables = {
+  Instagram: ['リール', 'フィード', 'ストーリーズ'],
+  TikTok: ['動画'],
+  YouTube: ['動画', 'Shorts'],
+  RED: ['图文(フィード)', '视频(ビデオ)'],
+  その他: []
+};
+
+// NDA template options
+export const ndaTemplateOptions = [
+  { value: 'PlanC', label: 'PlanC' },
+  { value: 'MARKON', label: 'MARKON' },
+  { value: 'custom', label: 'カスタム' }
+];
+
+// Secondary usage duration options
+export const secondaryUsageDurationOptions = [
+  { value: '1month', label: '1ヶ月' },
+  { value: '3months', label: '1クール(3ヶ月)' },
+  { value: '6months', label: '半年' },
+  { value: '1year', label: '1年' },
+  { value: 'buyout', label: '買い切り' }
+];
+
+// Contact method options
+export const contactMethodOptions = [
+  { value: 'instagram', label: 'Instagram DM' },
+  { value: 'tiktok', label: 'TikTok DM' },
+  { value: 'line', label: 'LINE' },
+  { value: 'email', label: 'メール' }
 ];
 
 // Status options

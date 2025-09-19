@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import NDASection from "@/components/wizard/NDASection";
+import NDASectionEnhanced from "@/components/wizard/NDASectionEnhanced";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
 import BranchButtons from "@/components/wizard/BranchButtons";
-import SubmissionForm from "@/components/wizard/SubmissionForm";
+import SubmissionFormEnhanced from "@/components/wizard/SubmissionFormEnhanced";
 import OptInForm from "@/components/wizard/OptInForm";
 import ThanksPane from "@/components/wizard/ThanksPane";
 import { getCampaignByToken } from "@/lib/mock-data";
@@ -82,7 +82,7 @@ const InfluencerWizard = () => {
     switch (currentStep) {
       case 1:
         return (
-          <NDASection 
+          <NDASectionEnhanced 
             onNext={handleNext}
             ndaUrl={campaign.ndaUrl}
           />
@@ -101,7 +101,7 @@ const InfluencerWizard = () => {
       case 3:
         if (isAccepted === true) {
           return (
-            <SubmissionForm 
+            <SubmissionFormEnhanced 
               onNext={handleNext}
               onBack={handleBack}
               campaignId={campaign.id}

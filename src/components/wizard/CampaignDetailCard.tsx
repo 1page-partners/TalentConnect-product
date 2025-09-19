@@ -9,10 +9,6 @@ interface CampaignDetailCardProps {
 }
 
 const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
-  const formatCurrency = (amount: number) => {
-    return `¥${amount.toLocaleString()}`;
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
       year: 'numeric',
@@ -35,6 +31,24 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* クライアント・案件種別 */}
+          {(campaign.clientName || campaign.isTH) && (
+            <div className="flex flex-wrap gap-4">
+              {campaign.clientName && (
+                <div>
+                  <h3 className="font-medium text-foreground mb-1">クライアント</h3>
+                  <Badge variant="outline">{campaign.clientName}</Badge>
+                </div>
+              )}
+              {campaign.isTH && (
+                <div>
+                  <h3 className="font-medium text-foreground mb-1">案件種別</h3>
+                  <Badge variant="secondary">TH案件</Badge>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 概要 */}
           <div>
             <h3 className="font-medium text-foreground mb-2">案件概要</h3>
@@ -43,17 +57,26 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
             </p>
           </div>
 
-          {/* プラットフォーム */}
+          {/* プラットフォーム・成果物 */}
           <div>
             <h3 className="font-medium text-foreground mb-2 flex items-center gap-2">
-              対象SNS
+              対象SNS・成果物
               <SocialIconsList platforms={campaign.platforms} className="flex gap-1" />
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {campaign.platforms.map((platform) => (
-                <Badge key={platform} variant="outline">
-                  {platform}
-                </Badge>
+                <div key={platform} className="flex items-center gap-2">
+                  <Badge variant="outline">{platform}</Badge>
+                  {campaign.platformDeliverables?.[platform] && (
+                    <div className="flex flex-wrap gap-1">
+                      {campaign.platformDeliverables[platform].map((deliverable) => (
+                        <Badge key={deliverable} variant="secondary" className="text-xs">
+                          {deliverable}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -71,15 +94,26 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
             </div>
           </div>
 
-          {/* 締切 */}
+          {/* スケジュール */}
           <div>
             <h3 className="font-medium text-foreground mb-2 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              締切日
+              スケジュール
             </h3>
-            <p className="text-lg font-semibold text-destructive">
-              {formatDate(campaign.deadline)}
-            </p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">締切日:</span>
+                <span className="font-semibold text-destructive">
+                  {formatDate(campaign.deadline)}
+                </span>
+              </div>
+              {campaign.plannedPostDate && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">投稿予定:</span>
+                  <span className="text-sm">{campaign.plannedPostDate}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 注意事項 */}
@@ -93,6 +127,29 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
                 <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">
                   {campaign.restrictions}
                 </pre>
+              </div>
+            </div>
+          )}
+
+          {/* 契約条件 */}
+          {(campaign.isVideoProductionOnly || campaign.secondaryUsage?.hasUsage || campaign.hasAdvertisementAppearance) && (
+            <div>
+              <h3 className="font-medium text-foreground mb-2">契約条件</h3>
+              <div className="space-y-1">
+                {campaign.isVideoProductionOnly && (
+                  <Badge variant="outline">納品動画制作のみ</Badge>
+                )}
+                {campaign.secondaryUsage?.hasUsage && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">二次利用あり</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      ({campaign.secondaryUsage.duration} - {campaign.secondaryUsage.purpose})
+                    </span>
+                  </div>
+                )}
+                {campaign.hasAdvertisementAppearance && (
+                  <Badge variant="outline">広告出演あり</Badge>
+                )}
               </div>
             </div>
           )}

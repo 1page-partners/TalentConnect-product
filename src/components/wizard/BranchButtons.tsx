@@ -24,7 +24,7 @@ const BranchButtons = ({ onAccept, onDecline, onBack }: BranchButtonsProps) => {
           variant="success"
           size="wizard"
           onClick={onAccept}
-          className="h-20 flex flex-col items-center justify-center space-y-2 text-white shadow-lg hover:scale-105 transition-all duration-300"
+          className="h-20 flex flex-col items-center justify-center space-y-2 text-white shadow-lg hover:scale-105 transition-all duration-300 px-4"
         >
           <CheckCircle className="w-6 h-6" />
           <span className="font-semibold">対応可能</span>
@@ -35,7 +35,7 @@ const BranchButtons = ({ onAccept, onDecline, onBack }: BranchButtonsProps) => {
           variant="outline"
           size="wizard"
           onClick={onDecline}
-          className="h-20 flex flex-col items-center justify-center space-y-2 border-2 hover:bg-muted/50 transition-all duration-300"
+          className="h-20 flex flex-col items-center justify-center space-y-2 border-2 hover:bg-muted/50 transition-all duration-300 px-4"
         >
           <XCircle className="w-6 h-6" />
           <span className="font-semibold">対応不可</span>

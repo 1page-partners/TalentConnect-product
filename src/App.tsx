@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import InfluencerWizard from "./pages/InfluencerWizard";
 import NewCampaign from "./pages/admin/NewCampaign";
+import NewCampaignEnhanced from "./pages/admin/NewCampaignEnhanced";
 import CampaignList from "./pages/admin/CampaignList";
 import CampaignDetail from "./pages/admin/CampaignDetail";
 
@@ -21,7 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/i/:token" element={<InfluencerWizard />} />
-          <Route path="/admin/new" element={<NewCampaign />} />
+          <Route path="/admin/new" element={<NewCampaignEnhanced />} />
           <Route path="/admin/list" element={<CampaignList />} />
           <Route path="/admin/campaign/:id" element={<CampaignDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
