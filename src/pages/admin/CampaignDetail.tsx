@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import { SocialIconsList } from "@/components/SocialIcons";
 import { mockCampaigns, getSubmissionsByCampaignId, type InfluencerSubmission } from "@/lib/mock-data";
-import { ArrowLeft, ExternalLink, FileText, BarChart3, Users, Mail, Phone, Eye } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, BarChart3, Users, Mail, Phone, Eye, Download, FileSpreadsheet } from "lucide-react";
 
 const CampaignDetail = () => {
   const { id } = useParams();
@@ -54,6 +54,110 @@ const CampaignDetail = () => {
       case 'rejected': return '却下';
       default: return '審査中';
     }
+  };
+
+  const exportToCSV = () => {
+    if (submissions.length === 0) return;
+
+    const headers = [
+      'インフルエンサー名',
+      '応募日',
+      'メールアドレス',
+      '電話番号',
+      '希望報酬',
+      '連絡手段',
+      'Instagram フォロワー',
+      'Instagram エンゲージメント率',
+      'TikTok フォロワー',
+      'TikTok 総再生数',
+      'YouTube 登録者',
+      'YouTube 総再生数',
+      '備考'
+    ];
+
+    const csvData = submissions.map(submission => [
+      submission.influencerName,
+      formatDate(submission.submittedAt),
+      submission.email,
+      submission.phone,
+      submission.preferredFee || '',
+      submission.contactMethods.join(', '),
+      submission.instagram?.followers.toLocaleString() || '',
+      submission.instagram?.engagementRate ? `${submission.instagram.engagementRate}%` : '',
+      submission.tiktok?.followers.toLocaleString() || '',
+      submission.tiktok?.views.toLocaleString() || '',
+      submission.youtube?.subscribers.toLocaleString() || '',
+      submission.youtube?.views.toLocaleString() || '',
+      submission.notes || ''
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${campaign.title}_応募者一覧_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToGoogleSheets = () => {
+    if (submissions.length === 0) return;
+
+    const headers = [
+      'インフルエンサー名',
+      '応募日',
+      'メールアドレス',
+      '電話番号',
+      '希望報酬',
+      '連絡手段',
+      'Instagram フォロワー',
+      'Instagram エンゲージメント率',
+      'TikTok フォロワー',
+      'TikTok 総再生数',
+      'YouTube 登録者',
+      'YouTube 総再生数',
+      '備考'
+    ];
+
+    const csvData = submissions.map(submission => [
+      submission.influencerName,
+      formatDate(submission.submittedAt),
+      submission.email,
+      submission.phone,
+      submission.preferredFee || '',
+      submission.contactMethods.join(', '),
+      submission.instagram?.followers.toLocaleString() || '',
+      submission.instagram?.engagementRate ? `${submission.instagram.engagementRate}%` : '',
+      submission.tiktok?.followers.toLocaleString() || '',
+      submission.tiktok?.views.toLocaleString() || '',
+      submission.youtube?.subscribers.toLocaleString() || '',
+      submission.youtube?.views.toLocaleString() || '',
+      submission.notes || ''
+    ]);
+
+    const allData = [headers, ...csvData];
+    const csvContent = allData
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    // Google Sheetsで開く用のCSVファイルをダウンロード
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${campaign.title}_GoogleSheets用_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Google Sheetsのインポート画面を開く
+    const googleSheetsUrl = 'https://docs.google.com/spreadsheets/create';
+    window.open(googleSheetsUrl, '_blank');
   };
 
   const renderSubmissionDetail = (submission: InfluencerSubmission) => (
@@ -369,11 +473,36 @@ const CampaignDetail = () => {
           ) : (
             <Card className="shadow-card">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-foreground flex items-center space-x-2">
-                  <Users className="w-5 h-5" />
-                  <span>応募者一覧</span>
-                  <Badge variant="outline">{submissions.length}件</Badge>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>応募者一覧</span>
+                    <Badge variant="outline">{submissions.length}件</Badge>
+                  </CardTitle>
+                  
+                  {submissions.length > 0 && (
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={exportToCSV}
+                        className="flex items-center space-x-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>CSV出力</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={exportToGoogleSheets}
+                        className="flex items-center space-x-2"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                        <span>スプレッドシート</span>
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   この案件に応募したインフルエンサーの詳細情報
                 </p>
