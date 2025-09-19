@@ -14,7 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaign_creators: {
+        Row: {
+          account_url: string
+          campaign_id: string
+          created_at: string
+          deliverable_url: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          account_url: string
+          campaign_id: string
+          created_at?: string
+          deliverable_url?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          account_url?: string
+          campaign_id?: string
+          created_at?: string
+          deliverable_url?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_creators_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          deadline: string
+          id: string
+          management_sheet_url: string | null
+          platforms: string[]
+          report_url: string | null
+          slug: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deadline: string
+          id?: string
+          management_sheet_url?: string | null
+          platforms?: string[]
+          report_url?: string | null
+          slug: string
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string
+          id?: string
+          management_sheet_url?: string | null
+          platforms?: string[]
+          report_url?: string | null
+          slug?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      influencer_submissions: {
+        Row: {
+          campaign_id: string
+          contact_email: string | null
+          contact_methods: string[]
+          created_at: string
+          email: string
+          id: string
+          influencer_name: string
+          instagram_engagement_rate: number | null
+          instagram_followers: number | null
+          notes: string | null
+          phone: string | null
+          portfolio_files: string[] | null
+          preferred_fee: string | null
+          submitted_at: string
+          tiktok_followers: number | null
+          tiktok_views: number | null
+          updated_at: string
+          youtube_subscribers: number | null
+          youtube_views: number | null
+        }
+        Insert: {
+          campaign_id: string
+          contact_email?: string | null
+          contact_methods?: string[]
+          created_at?: string
+          email: string
+          id?: string
+          influencer_name: string
+          instagram_engagement_rate?: number | null
+          instagram_followers?: number | null
+          notes?: string | null
+          phone?: string | null
+          portfolio_files?: string[] | null
+          preferred_fee?: string | null
+          submitted_at?: string
+          tiktok_followers?: number | null
+          tiktok_views?: number | null
+          updated_at?: string
+          youtube_subscribers?: number | null
+          youtube_views?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          contact_email?: string | null
+          contact_methods?: string[]
+          created_at?: string
+          email?: string
+          id?: string
+          influencer_name?: string
+          instagram_engagement_rate?: number | null
+          instagram_followers?: number | null
+          notes?: string | null
+          phone?: string | null
+          portfolio_files?: string[] | null
+          preferred_fee?: string | null
+          submitted_at?: string
+          tiktok_followers?: number | null
+          tiktok_views?: number | null
+          updated_at?: string
+          youtube_subscribers?: number | null
+          youtube_views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_submissions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
