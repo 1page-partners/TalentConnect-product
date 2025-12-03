@@ -14,7 +14,7 @@ const Header = ({ showStepper = false, currentStep = 1, totalSteps = 4 }: Header
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link to="/" className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
-              PartnerConnex
+              TalentConnect
             </Link>
           </div>
           

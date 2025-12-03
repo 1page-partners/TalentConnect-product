@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PartnerConnex Design System - Modern, mobile-first, professional */
+/* TalentConnect Design System - Modern, mobile-first, professional */
 
 @layer base {
   :root {
@@ -18,7 +18,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 225 15% 20%;
 
-    /* Brand Primary - PartnerConnex Blue */
+    /* Brand Primary - TalentConnect Blue */
     --primary: 214 100% 59%; /* #2E7DFF */
     --primary-foreground: 0 0% 100%;
     --primary-hover: 214 95% 54%;

@@ -63,7 +63,7 @@ const ThanksPane = ({ isAccepted, onBackToStart }: ThanksPaneProps) => {
           </div>
 
           <div className="text-xs text-muted-foreground">
-            PartnerConnex をご利用いただきありがとうございました
+            TalentConnect をご利用いただきありがとうございました
           </div>
         </CardContent>
       </Card>

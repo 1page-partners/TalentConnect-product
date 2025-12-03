@@ -60,7 +60,7 @@ function AdminSidebar() {
       <div className="p-4 border-b">
         {!collapsed && (
           <div className="space-y-1">
-            <h1 className="text-lg font-bold text-foreground">PartnerConnex</h1>
+            <h1 className="text-lg font-bold text-foreground">TalentConnect</h1>
             <div className="flex items-center gap-2">
               <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs">
                 {isAdmin ? (

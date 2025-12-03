@@ -1,4 +1,4 @@
-// API stub functions for PartnerConnex
+// API stub functions for TalentConnect
 
 export interface CampaignPayload {
   title: string;

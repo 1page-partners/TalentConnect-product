@@ -1,4 +1,4 @@
-// Mock data for PartnerConnex
+// Mock data for TalentConnect
 
 export interface Campaign {
   id: string;
