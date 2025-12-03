@@ -8,7 +8,9 @@ import {
   List, 
   LogOut, 
   Loader2,
-  Menu
+  Users,
+  Shield,
+  Home
 } from 'lucide-react';
 import {
   Sidebar,
@@ -23,20 +25,24 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Badge } from '@/components/ui/badge';
 
 interface AdminLayoutProps {
   children: ReactNode;
+  requireAdmin?: boolean;
 }
 
 const navItems = [
-  { title: 'ダッシュボード', url: '/admin', icon: LayoutDashboard },
-  { title: '案件一覧', url: '/admin/list', icon: List },
-  { title: '新規案件作成', url: '/admin/new', icon: PlusCircle },
+  { title: 'ホーム', url: '/', icon: Home, adminOnly: false },
+  { title: 'ダッシュボード', url: '/admin', icon: LayoutDashboard, adminOnly: false },
+  { title: '案件一覧', url: '/admin/list', icon: List, adminOnly: false },
+  { title: '新規案件作成', url: '/admin/new', icon: PlusCircle, adminOnly: false },
+  { title: 'メンバー管理', url: '/admin/members', icon: Users, adminOnly: true },
 ];
 
 function AdminSidebar() {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user, role, isAdmin } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
@@ -47,11 +53,24 @@ function AdminSidebar() {
     return location.pathname.startsWith(path);
   };
 
+  const visibleItems = navItems.filter(item => !item.adminOnly || isAdmin);
+
   return (
     <Sidebar className={collapsed ? 'w-14' : 'w-60'} collapsible="icon">
       <div className="p-4 border-b">
         {!collapsed && (
-          <h1 className="text-lg font-bold text-foreground">PartnerConnex</h1>
+          <div className="space-y-1">
+            <h1 className="text-lg font-bold text-foreground">PartnerConnex</h1>
+            <div className="flex items-center gap-2">
+              <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs">
+                {isAdmin ? (
+                  <><Shield className="w-3 h-3 mr-1" />Admin</>
+                ) : (
+                  <>Member</>
+                )}
+              </Badge>
+            </div>
+          </div>
         )}
       </div>
       
@@ -60,7 +79,7 @@ function AdminSidebar() {
           <SidebarGroupLabel>メニュー</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -78,7 +97,12 @@ function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <div className="mt-auto p-4 border-t">
+      <div className="mt-auto p-4 border-t space-y-2">
+        {!collapsed && user && (
+          <div className="text-xs text-muted-foreground truncate">
+            {user.email}
+          </div>
+        )}
         <Button
           variant="ghost"
           size={collapsed ? 'icon' : 'default'}
@@ -93,8 +117,8 @@ function AdminSidebar() {
   );
 }
 
-const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { user, loading } = useAuth();
+const AdminLayout = ({ children, requireAdmin = false }: AdminLayoutProps) => {
+  const { user, loading, isAdmin, role } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,6 +126,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       navigate('/admin/auth');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!loading && user && requireAdmin && !isAdmin) {
+      navigate('/admin');
+    }
+  }, [user, loading, requireAdmin, isAdmin, navigate]);
 
   if (loading) {
     return (
@@ -112,6 +142,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   if (!user) {
+    return null;
+  }
+
+  if (requireAdmin && !isAdmin) {
     return null;
   }
 

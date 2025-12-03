@@ -14,16 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaign_creators: {
+        Row: {
+          account_url: string
+          campaign_id: string
+          created_at: string
+          deliverable_url: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          account_url: string
+          campaign_id: string
+          created_at?: string
+          deliverable_url?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          account_url?: string
+          campaign_id?: string
+          created_at?: string
+          deliverable_url?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_creators_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          deadline: string
+          id: string
+          management_sheet_url: string | null
+          platforms: string[] | null
+          report_url: string | null
+          slug: string
+          status: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deadline: string
+          id?: string
+          management_sheet_url?: string | null
+          platforms?: string[] | null
+          report_url?: string | null
+          slug: string
+          status?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string
+          id?: string
+          management_sheet_url?: string | null
+          platforms?: string[] | null
+          report_url?: string | null
+          slug?: string
+          status?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      influencer_submissions: {
+        Row: {
+          campaign_id: string
+          contact_email: string | null
+          contact_methods: string[] | null
+          created_at: string
+          email: string
+          id: string
+          influencer_name: string
+          instagram_engagement_rate: number | null
+          instagram_followers: number | null
+          notes: string | null
+          phone: string | null
+          portfolio_files: string[] | null
+          preferred_fee: string | null
+          submitted_at: string
+          tiktok_followers: number | null
+          tiktok_views: number | null
+          updated_at: string
+          youtube_subscribers: number | null
+          youtube_views: number | null
+        }
+        Insert: {
+          campaign_id: string
+          contact_email?: string | null
+          contact_methods?: string[] | null
+          created_at?: string
+          email: string
+          id?: string
+          influencer_name: string
+          instagram_engagement_rate?: number | null
+          instagram_followers?: number | null
+          notes?: string | null
+          phone?: string | null
+          portfolio_files?: string[] | null
+          preferred_fee?: string | null
+          submitted_at?: string
+          tiktok_followers?: number | null
+          tiktok_views?: number | null
+          updated_at?: string
+          youtube_subscribers?: number | null
+          youtube_views?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          contact_email?: string | null
+          contact_methods?: string[] | null
+          created_at?: string
+          email?: string
+          id?: string
+          influencer_name?: string
+          instagram_engagement_rate?: number | null
+          instagram_followers?: number | null
+          notes?: string | null
+          phone?: string | null
+          portfolio_files?: string[] | null
+          preferred_fee?: string | null
+          submitted_at?: string
+          tiktok_followers?: number | null
+          tiktok_views?: number | null
+          updated_at?: string
+          youtube_subscribers?: number | null
+          youtube_views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_submissions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +331,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member"],
+    },
   },
 } as const
