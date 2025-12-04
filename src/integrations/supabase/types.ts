@@ -14,9 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          identity_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          identity_id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          identity_id?: string
+          role?: string
+        }
+        Relationships: []
+      }
       campaign_creators: {
         Row: {
-          account_url: string
+          account_url: string | null
           campaign_id: string
           created_at: string
           deliverable_url: string | null
@@ -24,7 +48,7 @@ export type Database = {
           name: string
         }
         Insert: {
-          account_url: string
+          account_url?: string | null
           campaign_id: string
           created_at?: string
           deliverable_url?: string | null
@@ -32,7 +56,7 @@ export type Database = {
           name: string
         }
         Update: {
-          account_url?: string
+          account_url?: string | null
           campaign_id?: string
           created_at?: string
           deliverable_url?: string | null
@@ -51,43 +75,82 @@ export type Database = {
       }
       campaigns: {
         Row: {
+          attachments: string[] | null
+          client_name: string
+          contact_email: string | null
           created_at: string
           deadline: string
+          has_advertisement_appearance: boolean | null
           id: string
+          image_materials: string[] | null
+          is_th: boolean | null
+          is_video_production_only: boolean | null
           management_sheet_url: string | null
+          nda_template: string | null
+          nda_url: string | null
+          planned_post_date: string | null
+          platform_deliverables: Json | null
           platforms: string[] | null
           report_url: string | null
+          requirements: string | null
+          restrictions: string | null
+          secondary_usage: Json | null
           slug: string
-          status: string | null
-          summary: string | null
+          status: string
+          summary: string
           title: string
-          updated_at: string
         }
         Insert: {
+          attachments?: string[] | null
+          client_name: string
+          contact_email?: string | null
           created_at?: string
           deadline: string
+          has_advertisement_appearance?: boolean | null
           id?: string
+          image_materials?: string[] | null
+          is_th?: boolean | null
+          is_video_production_only?: boolean | null
           management_sheet_url?: string | null
+          nda_template?: string | null
+          nda_url?: string | null
+          planned_post_date?: string | null
+          platform_deliverables?: Json | null
           platforms?: string[] | null
           report_url?: string | null
+          requirements?: string | null
+          restrictions?: string | null
+          secondary_usage?: Json | null
           slug: string
-          status?: string | null
-          summary?: string | null
+          status?: string
+          summary: string
           title: string
-          updated_at?: string
         }
         Update: {
+          attachments?: string[] | null
+          client_name?: string
+          contact_email?: string | null
           created_at?: string
           deadline?: string
+          has_advertisement_appearance?: boolean | null
           id?: string
+          image_materials?: string[] | null
+          is_th?: boolean | null
+          is_video_production_only?: boolean | null
           management_sheet_url?: string | null
+          nda_template?: string | null
+          nda_url?: string | null
+          planned_post_date?: string | null
+          platform_deliverables?: Json | null
           platforms?: string[] | null
           report_url?: string | null
+          requirements?: string | null
+          restrictions?: string | null
+          secondary_usage?: Json | null
           slug?: string
-          status?: string | null
-          summary?: string | null
+          status?: string
+          summary?: string
           title?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -96,64 +159,61 @@ export type Database = {
           campaign_id: string
           contact_email: string | null
           contact_methods: string[] | null
-          created_at: string
-          email: string
+          email: string | null
+          follower_insight_screenshot: string | null
           id: string
           influencer_name: string
-          instagram_engagement_rate: number | null
-          instagram_followers: number | null
+          instagram: Json | null
           notes: string | null
+          other_platforms: string | null
           phone: string | null
           portfolio_files: string[] | null
           preferred_fee: string | null
+          red: Json | null
+          status: string
           submitted_at: string
-          tiktok_followers: number | null
-          tiktok_views: number | null
-          updated_at: string
-          youtube_subscribers: number | null
-          youtube_views: number | null
+          tiktok: Json | null
+          youtube: Json | null
         }
         Insert: {
           campaign_id: string
           contact_email?: string | null
           contact_methods?: string[] | null
-          created_at?: string
-          email: string
+          email?: string | null
+          follower_insight_screenshot?: string | null
           id?: string
           influencer_name: string
-          instagram_engagement_rate?: number | null
-          instagram_followers?: number | null
+          instagram?: Json | null
           notes?: string | null
+          other_platforms?: string | null
           phone?: string | null
           portfolio_files?: string[] | null
           preferred_fee?: string | null
+          red?: Json | null
+          status?: string
           submitted_at?: string
-          tiktok_followers?: number | null
-          tiktok_views?: number | null
-          updated_at?: string
-          youtube_subscribers?: number | null
-          youtube_views?: number | null
+          tiktok?: Json | null
+          youtube?: Json | null
         }
         Update: {
           campaign_id?: string
           contact_email?: string | null
           contact_methods?: string[] | null
-          created_at?: string
-          email?: string
+          email?: string | null
+          follower_insight_screenshot?: string | null
           id?: string
           influencer_name?: string
-          instagram_engagement_rate?: number | null
-          instagram_followers?: number | null
+          instagram?: Json | null
           notes?: string | null
+          other_platforms?: string | null
           phone?: string | null
           portfolio_files?: string[] | null
           preferred_fee?: string | null
+          red?: Json | null
+          status?: string
           submitted_at?: string
-          tiktok_followers?: number | null
-          tiktok_views?: number | null
-          updated_at?: string
-          youtube_subscribers?: number | null
-          youtube_views?: number | null
+          tiktok?: Json | null
+          youtube?: Json | null
         }
         Relationships: [
           {
@@ -165,46 +225,15 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_role: {
-        Args: { _user_id: string }
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "member"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -331,8 +360,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "member"],
-    },
+    Enums: {},
   },
 } as const
