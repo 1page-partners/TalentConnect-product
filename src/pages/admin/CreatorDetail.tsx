@@ -361,6 +361,12 @@ const CreatorDetail = () => {
                 </div>
               </div>
             )}
+            {submission.contact_methods?.includes('line') && (submission as any).line_id && (
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">LINE ID</div>
+                <p>{(submission as any).line_id}</p>
+              </div>
+            )}
             {submission.notes && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">備考</div>
