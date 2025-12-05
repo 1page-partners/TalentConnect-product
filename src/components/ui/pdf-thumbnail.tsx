@@ -48,23 +48,17 @@ const PdfThumbnail = ({ url, className, onClick }: PdfThumbnailProps) => {
           </div>
         </div>
       )}
-      {/* PDFをスケールダウンしてサムネイル表示（中央配置） */}
-      <div 
-        className="absolute top-1/2 left-1/2 origin-center"
+      {/* PDFをサムネイルいっぱいに表示 */}
+      <iframe
+        src={pdfUrl}
+        className="absolute inset-0 w-full h-full border-0 bg-white"
+        title="PDF Preview"
+        onLoad={() => setIsLoading(false)}
+        onError={() => setHasError(true)}
         style={{ 
-          width: '800px',
-          height: '1000px',
-          transform: 'translate(-50%, -50%) scale(0.18)',
+          pointerEvents: 'none',
         }}
-      >
-        <iframe
-          src={pdfUrl}
-          className="w-full h-full border-0 bg-white"
-          title="PDF Preview"
-          onLoad={() => setIsLoading(false)}
-          onError={() => setHasError(true)}
-        />
-      </div>
+      />
       {/* PDFアイコンオーバーレイ */}
       <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
         <FileText className="w-3 h-3" />
