@@ -21,7 +21,8 @@ const MemberManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // user_roles テーブルは types.ts に含まれていないため、any でキャスト
+      const { data, error } = await (supabase as any)
         .from('user_roles')
         .select('*')
         .order('created_at', { ascending: false });
@@ -29,7 +30,7 @@ const MemberManagement = () => {
       if (error) throw error;
 
       // Get user emails from auth (via edge function or RPC would be ideal, but we'll use what we have)
-      const usersWithRoles: UserWithRole[] = (data || []).map(role => ({
+      const usersWithRoles: UserWithRole[] = (data || []).map((role: any) => ({
         id: role.user_id,
         email: '', // Will be populated if we add profiles table
         role: role.role as 'admin' | 'member',
@@ -51,7 +52,7 @@ const MemberManagement = () => {
 
   const updateRole = async (userId: string, newRole: 'admin' | 'member') => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_roles')
         .update({ role: newRole })
         .eq('user_id', userId);

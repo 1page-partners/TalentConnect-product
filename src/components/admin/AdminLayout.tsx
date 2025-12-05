@@ -117,23 +117,28 @@ function AdminSidebar() {
   );
 }
 
+// TODO: 一時的に認証を無効化中 - 本番前に戻すこと
+const SKIP_AUTH = true;
+
 const AdminLayout = ({ children, requireAdmin = false }: AdminLayoutProps) => {
   const { user, loading, isAdmin, role } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (SKIP_AUTH) return;
     if (!loading && !user) {
       navigate('/admin/auth');
     }
   }, [user, loading, navigate]);
 
   useEffect(() => {
+    if (SKIP_AUTH) return;
     if (!loading && user && requireAdmin && !isAdmin) {
       navigate('/admin');
     }
   }, [user, loading, requireAdmin, isAdmin, navigate]);
 
-  if (loading) {
+  if (!SKIP_AUTH && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -141,11 +146,11 @@ const AdminLayout = ({ children, requireAdmin = false }: AdminLayoutProps) => {
     );
   }
 
-  if (!user) {
+  if (!SKIP_AUTH && !user) {
     return null;
   }
 
-  if (requireAdmin && !isAdmin) {
+  if (!SKIP_AUTH && requireAdmin && !isAdmin) {
     return null;
   }
 

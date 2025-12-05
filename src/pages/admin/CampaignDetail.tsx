@@ -46,10 +46,24 @@ const CampaignDetail = () => {
     toast({ title: 'URLをコピーしました' });
   };
 
+  // Json型からフォロワー数を取得するヘルパー
+  const getFollowers = (data: any, key: string): number | null => {
+    if (!data || typeof data !== 'object') return null;
+    return data[key] ?? null;
+  };
+
   const exportToCSV = () => {
     if (submissions.length === 0) { toast({ title: 'エクスポートできません', variant: 'destructive' }); return; }
     const headers = ['名前', 'メール', '電話番号', 'Instagram', 'TikTok', 'YouTube', '応募日'];
-    const rows = submissions.map(s => [s.influencer_name, s.email, s.phone || '', s.instagram_followers?.toString() || '', s.tiktok_followers?.toString() || '', s.youtube_subscribers?.toString() || '', formatDate(s.submitted_at)]);
+    const rows = submissions.map(s => [
+      s.influencer_name, 
+      s.email || '', 
+      s.phone || '', 
+      getFollowers(s.instagram, 'followers')?.toString() || '', 
+      getFollowers(s.tiktok, 'followers')?.toString() || '', 
+      getFollowers(s.youtube, 'subscribers')?.toString() || '', 
+      formatDate(s.submitted_at)
+    ]);
     const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -93,7 +107,14 @@ const CampaignDetail = () => {
         </TabsContent>
         <TabsContent value="submissions" className="mt-4">
           <Card><CardHeader><div className="flex items-center justify-between"><CardTitle>応募者一覧</CardTitle><Button variant="outline" size="sm" onClick={exportToCSV}><Download className="h-4 w-4 mr-2" />CSV</Button></div></CardHeader><CardContent>
-            {submissions.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">応募者はまだいません</p></div> : <div className="space-y-4">{submissions.map(s => <Card key={s.id}><CardContent className="p-4"><div className="flex justify-between items-start"><div className="space-y-2"><h3 className="font-semibold">{s.influencer_name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{s.instagram_followers && <Badge variant="outline">IG: {s.instagram_followers.toLocaleString()}</Badge>}{s.tiktok_followers && <Badge variant="outline">TT: {s.tiktok_followers.toLocaleString()}</Badge>}{s.youtube_subscribers && <Badge variant="outline">YT: {s.youtube_subscribers.toLocaleString()}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.submitted_at)}</div></div></CardContent></Card>)}</div>}
+            {submissions.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">応募者はまだいません</p></div> : <div className="space-y-4">{submissions.map(s => {
+              const igFollowers = getFollowers(s.instagram, 'followers');
+              const ttFollowers = getFollowers(s.tiktok, 'followers');
+              const ytSubs = getFollowers(s.youtube, 'subscribers');
+              return (
+                <Card key={s.id}><CardContent className="p-4"><div className="flex justify-between items-start"><div className="space-y-2"><h3 className="font-semibold">{s.influencer_name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}{ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}{ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.submitted_at)}</div></div></CardContent></Card>
+              );
+            })}</div>}
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="creators" className="mt-4">
