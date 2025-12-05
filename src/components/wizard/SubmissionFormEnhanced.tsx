@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { saveSubmissionToNotion, fetchYouTubeSubs, fetchInstagramFollowers, fetchTikTokFollowers, fetchXFollowers } from "@/lib/api-stubs";
+import { submissionApi } from "@/lib/api";
+import { fetchYouTubeSubs, fetchInstagramFollowers, fetchTikTokFollowers, fetchXFollowers } from "@/lib/api-stubs";
 import { platformOptions, contactMethodOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
 import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, Upload, ArrowLeft } from "lucide-react";
@@ -105,25 +106,34 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        activityName: activityName.trim(),
-        mainSns,
-        mainAccount: mainAccount.trim(),
-        socialAccounts: socialAccounts.filter(acc => acc.platform && acc.url),
-        genderRatio,
-        portfolioFiles,
-        phoneNumber: phoneNumber.trim(),
-        contactMethods,
-        contact: {
-          email: contactEmail || undefined,
-          lineId: contactLineId || undefined,
-        },
-        desiredPayment: formatPaymentAmount(desiredPayment),
-        memo: memo.trim() || undefined,
-        campaignId,
+      // SNSアカウント情報をプラットフォームごとに整理
+      const filteredAccounts = socialAccounts.filter(acc => acc.platform && acc.url);
+      const instagramAccount = filteredAccounts.find(acc => acc.platform === 'Instagram');
+      const youtubeAccount = filteredAccounts.find(acc => acc.platform === 'YouTube');
+      const tiktokAccount = filteredAccounts.find(acc => acc.platform === 'TikTok');
+      const redAccount = filteredAccounts.find(acc => acc.platform === 'RED');
+      const otherAccounts = filteredAccounts.filter(acc => 
+        !['Instagram', 'YouTube', 'TikTok', 'RED'].includes(acc.platform)
+      );
+
+      const submission = {
+        campaign_id: campaignId,
+        influencer_name: activityName.trim(),
+        phone: phoneNumber.trim(),
+        contact_email: contactEmail || null,
+        contact_methods: contactMethods,
+        instagram: instagramAccount ? { url: instagramAccount.url, followers: instagramAccount.followers } : null,
+        youtube: youtubeAccount ? { url: youtubeAccount.url, followers: youtubeAccount.followers } : null,
+        tiktok: tiktokAccount ? { url: tiktokAccount.url, followers: tiktokAccount.followers } : null,
+        red: redAccount ? { url: redAccount.url, followers: redAccount.followers } : null,
+        other_platforms: otherAccounts.length > 0 ? JSON.stringify(otherAccounts) : null,
+        portfolio_files: portfolioFiles.length > 0 ? portfolioFiles : null,
+        preferred_fee: desiredPayment ? formatPaymentAmount(desiredPayment) : null,
+        notes: memo.trim() || null,
+        status: 'pending',
       };
 
-      await saveSubmissionToNotion(payload);
+      await submissionApi.create(submission);
       
       toast({
         title: "送信完了",
@@ -132,6 +142,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
 
       onNext();
     } catch (error) {
+      console.error('Submission error:', error);
       toast({
         title: "送信エラー",
         description: "送信に失敗しました。もう一度お試しください。",

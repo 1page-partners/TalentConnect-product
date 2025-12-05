@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { saveOptInToNotion } from "@/lib/api-stubs";
+import { submissionApi } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
 interface OptInFormProps {
@@ -45,16 +45,16 @@ const OptInForm = ({ onNext, onBack, campaignId }: OptInFormProps) => {
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        wantsContact,
-        contact: {
-          email: email || undefined,
-          lineId: lineId || undefined,
-        },
-        campaignId,
+      // 連絡を希望しない場合もレコードを作成（status: declined）
+      const submission = {
+        campaign_id: campaignId,
+        influencer_name: wantsContact ? '連絡希望者' : '辞退者',
+        contact_email: email || null,
+        notes: lineId ? `LINE ID: ${lineId}` : (wantsContact ? '今後の連絡を希望' : '今回は辞退'),
+        status: 'declined',
       };
 
-      await saveOptInToNotion(payload);
+      await submissionApi.create(submission);
       
       toast({
         title: "送信完了",
@@ -63,6 +63,7 @@ const OptInForm = ({ onNext, onBack, campaignId }: OptInFormProps) => {
 
       onNext();
     } catch (error) {
+      console.error('OptIn submission error:', error);
       toast({
         title: "送信エラー",
         description: "送信に失敗しました。もう一度お試しください。",
