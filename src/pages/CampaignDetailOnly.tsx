@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { campaignApi, Campaign } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Calendar, AlertCircle, Image, File, FileText, Play, Maximize2 } from "lucide-react";
+import { Loader2, Calendar, AlertCircle, Image, File, FileText, Play, Maximize2, Eye } from "lucide-react";
 import FilePreviewModal from "@/components/ui/file-preview-modal";
 import PdfThumbnail from "@/components/ui/pdf-thumbnail";
 
@@ -31,6 +31,8 @@ const getFileName = (url: string): string => {
 const CampaignDetailOnly = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isPreview = location.pathname.startsWith('/preview/');
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
@@ -100,6 +102,13 @@ const CampaignDetailOnly = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* プレビューバナー */}
+      {isPreview && (
+        <div className="bg-amber-500 text-white py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2">
+          <Eye className="w-4 h-4" />
+          プレビューモード
+        </div>
+      )}
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <Card className="shadow-lg">
           <CardHeader className="space-y-4">

@@ -12,9 +12,10 @@ interface OptInFormProps {
   onNext: () => void;
   onBack?: () => void;
   campaignId: string;
+  isPreview?: boolean;
 }
 
-const OptInForm = ({ onNext, onBack, campaignId }: OptInFormProps) => {
+const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormProps) => {
   const [wantsContact, setWantsContact] = useState(false);
   const [email, setEmail] = useState("");
   const [lineId, setLineId] = useState("");
@@ -45,6 +46,16 @@ const OptInForm = ({ onNext, onBack, campaignId }: OptInFormProps) => {
     setIsSubmitting(true);
 
     try {
+      // プレビューモードの場合はDB保存をスキップ
+      if (isPreview) {
+        toast({
+          title: "プレビューモード",
+          description: "プレビューのため、データは保存されません",
+        });
+        onNext();
+        return;
+      }
+
       // 連絡を希望しない場合もレコードを作成（status: declined）
       const submission = {
         campaign_id: campaignId,

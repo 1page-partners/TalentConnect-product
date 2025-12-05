@@ -113,7 +113,7 @@ const CampaignList = () => {
             <Link2 className="h-4 w-4 mr-1" />詳細配布用URLコピー
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-1" />プレビュー</Link>
+            <Link to={`/preview/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-1" />プレビュー</Link>
           </Button>
           {isAdmin && (
             <AlertDialog>

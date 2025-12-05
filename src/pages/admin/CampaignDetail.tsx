@@ -120,7 +120,7 @@ const CampaignDetail = () => {
         <div className="flex gap-2 flex-wrap">
           <Button variant="default" asChild><Link to={`/admin/campaign/${id}/edit`}><Pencil className="h-4 w-4 mr-2" />編集</Link></Button>
           <Button variant="outline" onClick={copyDistributionUrl}><Copy className="h-4 w-4 mr-2" />URLコピー</Button>
-          <Button variant="outline" asChild><Link to={`/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-2" />プレビュー</Link></Button>
+          <Button variant="outline" asChild><Link to={`/preview/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-2" />プレビュー</Link></Button>
         </div>
       </div>
 
