@@ -17,6 +17,7 @@ import CampaignList from "./pages/admin/CampaignList";
 import CampaignDetail from "./pages/admin/CampaignDetail";
 import EditCampaign from "./pages/admin/EditCampaign";
 import MemberManagement from "./pages/admin/MemberManagement";
+import CreatorListPage from "./pages/admin/CreatorList";
 import AdminLayout from "./components/admin/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/admin/list" element={<AdminLayout><CampaignList /></AdminLayout>} />
             <Route path="/admin/campaign/:id" element={<AdminLayout><CampaignDetail /></AdminLayout>} />
             <Route path="/admin/campaign/:id/edit" element={<AdminLayout><EditCampaign /></AdminLayout>} />
+            <Route path="/admin/creators" element={<AdminLayout><CreatorListPage /></AdminLayout>} />
             <Route path="/admin/members" element={<AdminLayout requireAdmin><MemberManagement /></AdminLayout>} />
             <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

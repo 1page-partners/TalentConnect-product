@@ -160,3 +160,118 @@ export const formatDate = (dateString: string): string => {
     day: 'numeric'
   });
 };
+
+// クリエイターリスト型定義
+export interface CreatorList {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface CreatorListItem {
+  id: string;
+  list_id: string;
+  submission_id: string;
+  added_at: string;
+}
+
+// クリエイターリスト関連のAPI
+export const creatorListApi = {
+  async getAll(): Promise<CreatorList[]> {
+    const { data, error } = await supabase
+      .from('creator_lists')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async create(name: string, userId: string): Promise<CreatorList> {
+    const { data, error } = await supabase
+      .from('creator_lists')
+      .insert({ name, user_id: userId })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, name: string): Promise<CreatorList> {
+    const { data, error } = await supabase
+      .from('creator_lists')
+      .update({ name })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('creator_lists')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
+  async getItems(listId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('creator_list_items')
+      .select('submission_id')
+      .eq('list_id', listId);
+    
+    if (error) throw error;
+    return data?.map(item => item.submission_id) || [];
+  },
+
+  async addItem(listId: string, submissionId: string): Promise<CreatorListItem> {
+    const { data, error } = await supabase
+      .from('creator_list_items')
+      .insert({ list_id: listId, submission_id: submissionId })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async removeItem(listId: string, submissionId: string): Promise<void> {
+    const { error } = await supabase
+      .from('creator_list_items')
+      .delete()
+      .eq('list_id', listId)
+      .eq('submission_id', submissionId);
+    
+    if (error) throw error;
+  }
+};
+
+// 全応募者取得（キャンペーン情報付き）
+export const getAllSubmissionsWithCampaign = async (): Promise<(InfluencerSubmission & { campaign_title: string; campaign_slug: string })[]> => {
+  const { data: submissions, error: subError } = await supabase
+    .from('influencer_submissions')
+    .select('*')
+    .order('submitted_at', { ascending: false });
+  
+  if (subError) throw subError;
+  
+  const { data: campaigns, error: campError } = await supabase
+    .from('campaigns')
+    .select('id, title, slug');
+  
+  if (campError) throw campError;
+  
+  const campaignMap = new Map(campaigns?.map(c => [c.id, { title: c.title, slug: c.slug }]) || []);
+  
+  return (submissions || []).map(s => ({
+    ...s,
+    campaign_title: campaignMap.get(s.campaign_id)?.title || '不明',
+    campaign_slug: campaignMap.get(s.campaign_id)?.slug || ''
+  }));
+};

@@ -157,6 +157,63 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_list_items: {
+        Row: {
+          added_at: string
+          id: string
+          list_id: string
+          submission_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          list_id: string
+          submission_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          list_id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "creator_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_list_items_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_lists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       influencer_submissions: {
         Row: {
           campaign_id: string
