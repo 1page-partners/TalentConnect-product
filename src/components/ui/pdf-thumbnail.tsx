@@ -24,7 +24,10 @@ const PdfThumbnail = ({ url, className, onClick }: PdfThumbnailProps) => {
         )}
         onClick={onClick}
       >
-        <FileText className="w-8 h-8 text-muted-foreground" />
+        <div className="text-center">
+          <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-1" />
+          <span className="text-xs text-muted-foreground">PDF</span>
+        </div>
       </div>
     );
   }
@@ -32,27 +35,41 @@ const PdfThumbnail = ({ url, className, onClick }: PdfThumbnailProps) => {
   return (
     <div 
       className={cn(
-        "relative w-full h-full overflow-hidden cursor-pointer",
+        "relative w-full h-full overflow-hidden cursor-pointer bg-muted",
         className
       )}
       onClick={onClick}
     >
       {isLoading && (
-        <div className="absolute inset-0 bg-muted flex items-center justify-center">
-          <FileText className="w-8 h-8 text-muted-foreground animate-pulse" />
+        <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
+          <div className="text-center">
+            <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-1 animate-pulse" />
+            <span className="text-xs text-muted-foreground">読み込み中...</span>
+          </div>
         </div>
       )}
-      <iframe
-        src={pdfUrl}
-        className="w-full h-full border-0 pointer-events-none"
-        title="PDF Preview"
-        onLoad={() => setIsLoading(false)}
-        onError={() => setHasError(true)}
+      {/* PDFをスケールダウンしてサムネイル表示 */}
+      <div 
+        className="absolute top-0 left-0 origin-top-left"
         style={{ 
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
+          width: '800px',
+          height: '1000px',
+          transform: 'scale(0.2)',
         }}
-      />
+      >
+        <iframe
+          src={pdfUrl}
+          className="w-full h-full border-0 bg-white"
+          title="PDF Preview"
+          onLoad={() => setIsLoading(false)}
+          onError={() => setHasError(true)}
+        />
+      </div>
+      {/* PDFアイコンオーバーレイ */}
+      <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+        <FileText className="w-3 h-3" />
+        PDF
+      </div>
     </div>
   );
 };
