@@ -6,8 +6,28 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { campaignApi, submissionApi, creatorApi, Campaign, InfluencerSubmission, CampaignCreator } from '@/lib/api';
-import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText, Image, File, FileVideo } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
+
+// ファイルタイプを判定するヘルパー関数
+const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
+  const extension = url.split('.').pop()?.toLowerCase() || '';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
+  if (['mp4', 'mov', 'avi', 'webm'].includes(extension)) return 'video';
+  if (extension === 'pdf') return 'pdf';
+  return 'other';
+};
+
+// ファイル名を取得するヘルパー関数
+const getFileName = (url: string): string => {
+  const parts = url.split('/');
+  const filename = parts[parts.length - 1];
+  try {
+    return decodeURIComponent(filename.split('?')[0]);
+  } catch {
+    return filename.split('?')[0];
+  }
+};
 
 const CampaignDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -97,13 +117,72 @@ const CampaignDetail = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList><TabsTrigger value="overview">概要</TabsTrigger><TabsTrigger value="submissions">応募者 ({submissions.length})</TabsTrigger><TabsTrigger value="creators">クリエイター ({creators.length})</TabsTrigger></TabsList>
-        <TabsContent value="overview" className="mt-4">
+        <TabsContent value="overview" className="mt-4 space-y-4">
           <Card><CardHeader><CardTitle>案件情報</CardTitle></CardHeader><CardContent className="space-y-4">
             <div><div className="text-sm font-medium text-muted-foreground mb-1">概要</div><p>{campaign.summary || '未設定'}</p></div>
             <div><div className="text-sm font-medium text-muted-foreground mb-1">プラットフォーム</div><SocialIconsList platforms={campaign.platforms} /></div>
             <div className="grid grid-cols-2 gap-4"><div><div className="text-sm font-medium text-muted-foreground mb-1">作成日</div><p>{formatDate(campaign.created_at)}</p></div><div><div className="text-sm font-medium text-muted-foreground mb-1">締切日</div><p>{formatDate(campaign.deadline)}</p></div></div>
             {campaign.management_sheet_url && <div><div className="text-sm font-medium text-muted-foreground mb-1">管理シート</div><Button variant="outline" size="sm" asChild><a href={campaign.management_sheet_url} target="_blank" rel="noopener noreferrer"><FileSpreadsheet className="h-4 w-4 mr-2" />シートを開く</a></Button></div>}
           </CardContent></Card>
+          
+          {/* 画像資料 */}
+          {campaign.image_materials && campaign.image_materials.length > 0 && (
+            <Card><CardHeader><CardTitle className="flex items-center gap-2"><Image className="h-5 w-5" />画像資料</CardTitle></CardHeader><CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {campaign.image_materials.map((imageUrl, index) => {
+                  const fileType = getFileType(imageUrl);
+                  return (
+                    <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden border">
+                      {fileType === 'image' ? (
+                        <img src={imageUrl} alt={`画像資料 ${index + 1}`} className="w-full h-full object-cover" />
+                      ) : fileType === 'video' ? (
+                        <video src={imageUrl} className="w-full h-full object-cover" controls muted><source src={imageUrl} /></video>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center"><FileText className="w-8 h-8 text-muted-foreground" /></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent></Card>
+          )}
+          
+          {/* 添付資料 */}
+          {campaign.attachments && campaign.attachments.length > 0 && (
+            <Card><CardHeader><CardTitle className="flex items-center gap-2"><File className="h-5 w-5" />添付資料</CardTitle></CardHeader><CardContent>
+              <div className="space-y-3">
+                {campaign.attachments.map((attachmentUrl, index) => {
+                  const fileType = getFileType(attachmentUrl);
+                  const fileName = getFileName(attachmentUrl);
+                  return (
+                    <div key={index} className="border rounded-lg overflow-hidden">
+                      {fileType === 'image' ? (
+                        <div className="relative">
+                          <img src={attachmentUrl} alt={`添付資料 ${index + 1}`} className="w-full max-h-[300px] object-contain bg-muted" />
+                          <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
+                        </div>
+                      ) : fileType === 'video' ? (
+                        <div className="relative">
+                          <video src={attachmentUrl} className="w-full max-h-[300px]" controls><source src={attachmentUrl} /></video>
+                          <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
+                        </div>
+                      ) : fileType === 'pdf' ? (
+                        <div className="relative">
+                          <iframe src={`${attachmentUrl}#toolbar=0`} className="w-full h-[400px] border-0" title={`PDF資料 ${index + 1}`} />
+                          <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 p-3 bg-muted/30">
+                          <FileText className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm truncate">{fileName}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent></Card>
+          )}
         </TabsContent>
         <TabsContent value="submissions" className="mt-4">
           <Card><CardHeader><div className="flex items-center justify-between"><CardTitle>応募者一覧</CardTitle><Button variant="outline" size="sm" onClick={exportToCSV}><Download className="h-4 w-4 mr-2" />CSV</Button></div></CardHeader><CardContent>

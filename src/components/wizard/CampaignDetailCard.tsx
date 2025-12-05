@@ -1,12 +1,33 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SocialIconsList } from "@/components/SocialIcons";
-import { Calendar, DollarSign, FileText, AlertTriangle } from "lucide-react";
+import { Calendar, FileText, AlertTriangle, Image, File, FileVideo, FileImage } from "lucide-react";
 import { Campaign } from "@/lib/mock-data";
 
 interface CampaignDetailCardProps {
   campaign: Campaign;
 }
+
+// ファイルタイプを判定するヘルパー関数
+const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
+  const extension = url.split('.').pop()?.toLowerCase() || '';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
+  if (['mp4', 'mov', 'avi', 'webm'].includes(extension)) return 'video';
+  if (extension === 'pdf') return 'pdf';
+  return 'other';
+};
+
+// ファイル名を取得するヘルパー関数
+const getFileName = (url: string): string => {
+  const parts = url.split('/');
+  const filename = parts[parts.length - 1];
+  // URLエンコードされたファイル名をデコード
+  try {
+    return decodeURIComponent(filename.split('?')[0]);
+  } catch {
+    return filename.split('?')[0];
+  }
+};
 
 const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
   const formatDate = (dateString: string) => {
@@ -60,13 +81,44 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
           {/* 画像資料 */}
           {campaign.imageMaterials && campaign.imageMaterials.length > 0 && (
             <div>
-              <h3 className="font-medium text-foreground mb-2">画像資料</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {campaign.imageMaterials.map((image, index) => (
-                  <div key={index} className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground">画像 {index + 1}</span>
-                  </div>
-                ))}
+              <h3 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                <Image className="w-4 h-4" />
+                画像資料
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {campaign.imageMaterials.map((imageUrl, index) => {
+                  const fileType = getFileType(imageUrl);
+                  return (
+                    <div 
+                      key={index} 
+                      className="relative aspect-video bg-muted rounded-lg overflow-hidden border"
+                    >
+                      {fileType === 'image' ? (
+                        <img 
+                          src={imageUrl} 
+                          alt={`画像資料 ${index + 1}`}
+                          className="w-full h-full object-cover select-none pointer-events-none"
+                          onContextMenu={(e) => e.preventDefault()}
+                          draggable={false}
+                        />
+                      ) : fileType === 'video' ? (
+                        <video 
+                          src={imageUrl}
+                          className="w-full h-full object-cover"
+                          controls={false}
+                          muted
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          <source src={imageUrl} />
+                        </video>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FileImage className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -157,14 +209,65 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
           {/* 添付資料 */}
           {campaign.attachments && campaign.attachments.length > 0 && (
             <div>
-              <h3 className="font-medium text-foreground mb-2">添付資料</h3>
-              <div className="space-y-2">
-                {campaign.attachments.map((attachment, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">資料 {index + 1}</span>
-                  </div>
-                ))}
+              <h3 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                <File className="w-4 h-4" />
+                添付資料
+              </h3>
+              <div className="space-y-3">
+                {campaign.attachments.map((attachmentUrl, index) => {
+                  const fileType = getFileType(attachmentUrl);
+                  const fileName = getFileName(attachmentUrl);
+                  
+                  return (
+                    <div key={index} className="border rounded-lg overflow-hidden">
+                      {fileType === 'image' ? (
+                        <div className="relative">
+                          <img 
+                            src={attachmentUrl} 
+                            alt={`添付資料 ${index + 1}`}
+                            className="w-full max-h-[300px] object-contain bg-muted select-none pointer-events-none"
+                            onContextMenu={(e) => e.preventDefault()}
+                            draggable={false}
+                          />
+                          <div className="p-2 bg-muted/50 border-t">
+                            <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
+                          </div>
+                        </div>
+                      ) : fileType === 'video' ? (
+                        <div className="relative">
+                          <video 
+                            src={attachmentUrl}
+                            className="w-full max-h-[300px]"
+                            controls
+                            controlsList="nodownload"
+                            onContextMenu={(e) => e.preventDefault()}
+                          >
+                            <source src={attachmentUrl} />
+                          </video>
+                          <div className="p-2 bg-muted/50 border-t">
+                            <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
+                          </div>
+                        </div>
+                      ) : fileType === 'pdf' ? (
+                        <div className="relative">
+                          <iframe 
+                            src={`${attachmentUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                            className="w-full h-[400px] border-0"
+                            title={`PDF資料 ${index + 1}`}
+                          />
+                          <div className="p-2 bg-muted/50 border-t">
+                            <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 p-3 bg-muted/30">
+                          <FileText className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm truncate">{fileName}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
