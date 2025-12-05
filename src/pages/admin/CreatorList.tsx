@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { getAllSubmissionsWithCampaign, creatorListApi, CreatorList as CreatorListType, InfluencerSubmission } from '@/lib/api';
-import { Search, Loader2, Mail, Phone, Plus, FolderPlus, MoreHorizontal, Pencil, Trash2, Star, Users, ExternalLink } from 'lucide-react';
+import { Search, Loader2, Mail, Phone, FolderPlus, MoreHorizontal, Pencil, Trash2, Users, ExternalLink, ListPlus, Folder } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 
 type SubmissionWithCampaign = InfluencerSubmission & { campaign_title: string; campaign_slug: string };
@@ -42,7 +42,6 @@ const CreatorListPage = () => {
       setSubmissions(submissionsData);
       setMyLists(listsData);
 
-      // 各リストのアイテムを取得
       const itemsMap: Record<string, string[]> = {};
       for (const list of listsData) {
         const items = await creatorListApi.getItems(list.id);
@@ -112,17 +111,25 @@ const CreatorListPage = () => {
           ...prev,
           [listId]: prev[listId].filter(id => id !== submissionId)
         }));
+        toast({ title: 'リストから削除しました' });
       } else {
         await creatorListApi.addItem(listId, submissionId);
         setListItemsMap(prev => ({
           ...prev,
           [listId]: [...(prev[listId] || []), submissionId]
         }));
+        toast({ title: 'リストに追加しました' });
       }
     } catch (error) {
       console.error('リストアイテム操作エラー:', error);
       toast({ title: 'エラー', description: '操作に失敗しました', variant: 'destructive' });
     }
+  };
+
+  // 現在のタブ（リスト）にクリエイターを追加
+  const handleAddToCurrentList = async (submissionId: string) => {
+    if (activeTab === 'all') return;
+    await handleToggleListItem(activeTab, submissionId);
   };
 
   const getFollowers = (data: any, key: string): number | null => {
@@ -142,7 +149,6 @@ const CreatorListPage = () => {
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
     
-    // 検索フィルタ
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase();
       filtered = filtered.filter(s => 
@@ -152,7 +158,6 @@ const CreatorListPage = () => {
       );
     }
     
-    // タブフィルタ
     if (activeTab !== 'all') {
       const listItems = listItemsMap[activeTab] || [];
       filtered = filtered.filter(s => listItems.includes(s.id));
@@ -161,33 +166,89 @@ const CreatorListPage = () => {
     return filtered;
   }, [submissions, searchKeyword, activeTab, listItemsMap]);
 
+  // 現在のリストに含まれていないクリエイター（追加候補）
+  const availableForCurrentList = useMemo(() => {
+    if (activeTab === 'all') return [];
+    const listItems = listItemsMap[activeTab] || [];
+    return submissions.filter(s => !listItems.includes(s.id));
+  }, [submissions, activeTab, listItemsMap]);
+
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  const CreatorCard = ({ submission }: { submission: SubmissionWithCampaign }) => {
+  const CreatorCard = ({ submission, showAddButton = false }: { submission: SubmissionWithCampaign; showAddButton?: boolean }) => {
     const igFollowers = getFollowers(submission.instagram, 'followers');
     const ttFollowers = getFollowers(submission.tiktok, 'followers');
     const ytSubs = getFollowers(submission.youtube, 'subscribers');
     const platforms = getPlatforms(submission);
+    const isInAnyList = Object.values(listItemsMap).some(items => items.includes(submission.id));
 
     return (
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-4">
-          <div className="flex justify-between items-start gap-4">
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg truncate">{submission.influencer_name}</h3>
-                {myLists.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-start gap-2">
+              <Link to={`/admin/creator/${submission.id}`} className="flex-1 min-w-0">
+                <h3 className="font-semibold text-lg truncate hover:text-primary transition-colors">{submission.influencer_name}</h3>
+              </Link>
+              {isInAnyList && <Badge variant="secondary" className="shrink-0">リスト登録済</Badge>}
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {submission.email && (
+                <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{submission.email}</span>
+              )}
+              {submission.phone && (
+                <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{submission.phone}</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <SocialIconsList platforms={platforms} />
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              {igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}
+              {ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}
+              {ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}
+            </div>
+
+            <div className="pt-2 border-t">
+              <div className="text-xs text-muted-foreground mb-1">応募案件</div>
+              <Link to={`/admin/campaign/${submission.campaign_id}`} className="text-sm text-primary hover:underline flex items-center gap-1">
+                {submission.campaign_title}
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+              <div className="text-xs text-muted-foreground mt-1">応募日: {formatDate(submission.submitted_at)}</div>
+            </div>
+
+            {/* アクションボタン */}
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" size="sm" asChild className="flex-1">
+                <Link to={`/admin/creator/${submission.id}`}>詳細を見る</Link>
+              </Button>
+              {myLists.length > 0 && (
+                showAddButton && activeTab !== 'all' ? (
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => handleAddToCurrentList(submission.id)}
+                  >
+                    <ListPlus className="h-4 w-4 mr-1" />
+                    追加
+                  </Button>
+                ) : (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <Star className={`h-4 w-4 ${Object.values(listItemsMap).some(items => items.includes(submission.id)) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                      <Button variant="outline" size="sm">
+                        <ListPlus className="h-4 w-4 mr-1" />
+                        リストへ追加
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
+                    <DropdownMenuContent align="end">
                       {myLists.map(list => (
                         <DropdownMenuItem key={list.id} onClick={() => handleToggleListItem(list.id, submission.id)}>
                           <Checkbox checked={listItemsMap[list.id]?.includes(submission.id)} className="mr-2" />
@@ -196,36 +257,8 @@ const CreatorListPage = () => {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )}
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                {submission.email && (
-                  <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{submission.email}</span>
-                )}
-                {submission.phone && (
-                  <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{submission.phone}</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <SocialIconsList platforms={platforms} />
-              </div>
-
-              <div className="flex flex-wrap gap-1.5 text-xs">
-                {igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}
-                {ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}
-                {ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}
-              </div>
-
-              <div className="pt-2 border-t">
-                <div className="text-xs text-muted-foreground mb-1">応募案件</div>
-                <Link to={`/admin/campaign/${submission.campaign_id}`} className="text-sm text-primary hover:underline flex items-center gap-1">
-                  {submission.campaign_title}
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
-                <div className="text-xs text-muted-foreground mt-1">応募日: {formatDate(submission.submitted_at)}</div>
-              </div>
+                )
+              )}
             </div>
           </div>
         </CardContent>
@@ -289,7 +322,7 @@ const CreatorListPage = () => {
           {myLists.map(list => (
             <div key={list.id} className="flex items-center">
               <TabsTrigger value={list.id} className="flex items-center gap-1 pr-1">
-                <Star className="h-4 w-4" />
+                <Folder className="h-4 w-4" />
                 {list.name} ({listItemsMap[list.id]?.length || 0})
               </TabsTrigger>
               <DropdownMenu>
@@ -312,7 +345,35 @@ const CreatorListPage = () => {
           ))}
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
+        <TabsContent value={activeTab} className="mt-4 space-y-6">
+          {/* リストタブの場合、追加候補を表示 */}
+          {activeTab !== 'all' && availableForCurrentList.length > 0 && (
+            <Card className="border-dashed">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium text-muted-foreground">クリエイターを追加</h3>
+                  <Badge variant="outline">{availableForCurrentList.length} 名追加可能</Badge>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {availableForCurrentList.slice(0, 6).map(submission => (
+                    <div key={submission.id} className="flex items-center justify-between p-2 border rounded-lg bg-muted/30">
+                      <Link to={`/admin/creator/${submission.id}`} className="text-sm font-medium hover:text-primary truncate flex-1">
+                        {submission.influencer_name}
+                      </Link>
+                      <Button variant="ghost" size="sm" onClick={() => handleAddToCurrentList(submission.id)}>
+                        <ListPlus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {availableForCurrentList.length > 6 && (
+                  <p className="text-xs text-muted-foreground mt-2">他 {availableForCurrentList.length - 6} 名...</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* クリエイター一覧 */}
           {filteredSubmissions.length === 0 ? (
             <div className="text-center py-12">
               <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />

@@ -792,7 +792,7 @@ const NewCampaignEnhanced = () => {
       </main>
       
       {/* Sticky footer with action buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-lg z-40">
+      <div className="fixed bottom-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-lg z-30" style={{ left: 'var(--sidebar-width, 240px)' }}>
         <div className="container mx-auto px-4 py-4 max-w-4xl flex justify-end space-x-3">
           <Dialog open={showPreview} onOpenChange={setShowPreview}>
             <DialogTrigger asChild>
