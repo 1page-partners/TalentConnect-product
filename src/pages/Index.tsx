@@ -64,16 +64,16 @@ const Index = () => {
             <div className="p-2 bg-primary/10 rounded-md">
               <Users className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-xl font-semibold">デモ体験</h2>
+            <h2 className="text-xl font-semibold">配布URLプレビュー</h2>
           </div>
           
           <p className="text-sm text-muted-foreground">
-            インフルエンサー向け配布URLのデモを体験できます
+            案件一覧から配布URLをプレビューできます
           </p>
           
           <Button asChild variant="secondary" className="w-full">
-            <Link to="/i/demo-token" target="_blank">
-              デモURLを開く
+            <Link to="/admin/list">
+              案件一覧でプレビュー
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
