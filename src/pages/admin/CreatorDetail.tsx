@@ -13,10 +13,14 @@ import { ArrowLeft, Mail, Phone, Loader2, ExternalLink, ListPlus, Image, FileTex
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 
+interface SubmissionWithCampaign extends InfluencerSubmission {
+  campaign?: Campaign | null;
+}
+
 const CreatorDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [submission, setSubmission] = useState<InfluencerSubmission | null>(null);
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [allSubmissions, setAllSubmissions] = useState<SubmissionWithCampaign[]>([]);
   const [myLists, setMyLists] = useState<CreatorList[]>([]);
   const [listItemsMap, setListItemsMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
@@ -31,7 +35,6 @@ const CreatorDetail = () => {
   const fetchData = async () => {
     if (!id) return;
     try {
-      // submissionApiには直接ID取得がないので、supabaseを直接使う
       const { supabase } = await import('@/integrations/supabase/client');
       const { data: subData, error: subError } = await supabase
         .from('influencer_submissions')
@@ -42,11 +45,23 @@ const CreatorDetail = () => {
       if (subError) throw subError;
       setSubmission(subData);
 
-      // キャンペーン情報を取得
-      if (subData.campaign_id) {
-        const campaignData = await campaignApi.getById(subData.campaign_id);
-        setCampaign(campaignData);
+      // 同じインフルエンサー名のすべての応募を取得
+      const { data: allSubs } = await supabase
+        .from('influencer_submissions')
+        .select('*')
+        .eq('influencer_name', subData.influencer_name)
+        .order('submitted_at', { ascending: false });
+
+      // 各応募のキャンペーン情報を取得
+      const subsWithCampaigns: SubmissionWithCampaign[] = [];
+      for (const sub of allSubs || []) {
+        let campaign: Campaign | null = null;
+        if (sub.campaign_id) {
+          campaign = await campaignApi.getById(sub.campaign_id);
+        }
+        subsWithCampaigns.push({ ...sub, campaign });
       }
+      setAllSubmissions(subsWithCampaigns);
 
       // リスト情報を取得
       const listsData = await creatorListApi.getAll();
@@ -112,6 +127,24 @@ const CreatorDetail = () => {
       'other': 'その他'
     };
     return map[method] || method;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">採用</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">不採用</Badge>;
+      case 'pending':
+      default:
+        return <Badge variant="secondary">提案中</Badge>;
+    }
+  };
+
+  const hasSnsData = (data: any): boolean => {
+    if (!data || typeof data !== 'object') return false;
+    const url = data.url || data.handle || data.account_url;
+    return !!url;
   };
 
   const buildPlatformUrl = (platform: string, handle: string | null): string | null => {
@@ -228,15 +261,9 @@ const CreatorDetail = () => {
         <Card>
           <CardHeader><CardTitle>基本情報</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">名前</div>
-                <p>{submission.influencer_name}</p>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">ステータス</div>
-                <Badge variant={submission.status === 'pending' ? 'secondary' : 'default'}>{submission.status}</Badge>
-              </div>
+            <div>
+              <div className="text-sm font-medium text-muted-foreground mb-1">名前</div>
+              <p>{submission.influencer_name}</p>
             </div>
             {submission.email && (
               <div>
@@ -285,28 +312,36 @@ const CreatorDetail = () => {
         <Card>
           <CardHeader><CardTitle>案件応募実績</CardTitle></CardHeader>
           <CardContent>
-            {campaign ? (
+            {allSubmissions.length > 0 ? (
               <div className="divide-y">
-                <Link 
-                  to={`/admin/campaign/${campaign.id}`} 
-                  className="flex items-center gap-4 py-2 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-primary hover:underline">{campaign.title}</span>
+                {allSubmissions.map((sub) => (
+                  <div key={sub.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                    <div className="flex-1 min-w-0">
+                      {sub.campaign ? (
+                        <Link 
+                          to={`/admin/campaign/${sub.campaign.id}`}
+                          className="font-medium text-primary hover:underline truncate block"
+                        >
+                          {sub.campaign.title}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">案件情報なし</span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground whitespace-nowrap hidden sm:block">
+                      {sub.campaign?.client_name || '-'}
+                    </div>
+                    <div className="flex items-center gap-1 hidden md:flex">
+                      {sub.campaign?.platforms && sub.campaign.platforms.length > 0 && (
+                        <SocialIconsList platforms={sub.campaign.platforms} />
+                      )}
+                    </div>
+                    {getStatusBadge(sub.status)}
                   </div>
-                  <div className="text-sm text-muted-foreground whitespace-nowrap">
-                    {campaign.client_name}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {campaign.platforms && campaign.platforms.length > 0 && (
-                      <SocialIconsList platforms={campaign.platforms} />
-                    )}
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                </Link>
+                ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">案件情報が取得できません</p>
+              <p className="text-muted-foreground">応募実績がありません</p>
             )}
           </CardContent>
         </Card>
@@ -316,7 +351,7 @@ const CreatorDetail = () => {
           <CardHeader><CardTitle>SNSアカウント情報</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {submission.instagram && (
+              {hasSnsData(submission.instagram) && (
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <SocialIconsList platforms={['Instagram']} />
@@ -325,17 +360,17 @@ const CreatorDetail = () => {
                   {igHandle && (
                     igUrl ? (
                       <a href={igUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                        @{igHandle.replace('@', '')}
+                        @{igHandle.replace(/^@/, '')}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     ) : (
-                      <p className="text-sm">@{igHandle.replace('@', '')}</p>
+                      <p className="text-sm">@{igHandle.replace(/^@/, '')}</p>
                     )
                   )}
-                  {igFollowers && <p className="text-sm text-muted-foreground mt-1">{igFollowers.toLocaleString()} フォロワー</p>}
+                  {igFollowers && igFollowers > 0 && <p className="text-sm text-muted-foreground mt-1">{igFollowers.toLocaleString()} フォロワー</p>}
                 </div>
               )}
-              {submission.tiktok && (
+              {hasSnsData(submission.tiktok) && (
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <SocialIconsList platforms={['TikTok']} />
@@ -344,17 +379,17 @@ const CreatorDetail = () => {
                   {ttHandle && (
                     ttUrl ? (
                       <a href={ttUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                        @{ttHandle.replace('@', '')}
+                        @{ttHandle.replace(/^@/, '')}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     ) : (
-                      <p className="text-sm">@{ttHandle.replace('@', '')}</p>
+                      <p className="text-sm">@{ttHandle.replace(/^@/, '')}</p>
                     )
                   )}
-                  {ttFollowers && <p className="text-sm text-muted-foreground mt-1">{ttFollowers.toLocaleString()} フォロワー</p>}
+                  {ttFollowers && ttFollowers > 0 && <p className="text-sm text-muted-foreground mt-1">{ttFollowers.toLocaleString()} フォロワー</p>}
                 </div>
               )}
-              {submission.youtube && (
+              {hasSnsData(submission.youtube) && (
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <SocialIconsList platforms={['YouTube']} />
@@ -370,17 +405,17 @@ const CreatorDetail = () => {
                       <p className="text-sm break-all">{ytHandle}</p>
                     )
                   )}
-                  {ytSubs && <p className="text-sm text-muted-foreground mt-1">{ytSubs.toLocaleString()} 登録者</p>}
+                  {ytSubs && ytSubs > 0 && <p className="text-sm text-muted-foreground mt-1">{ytSubs.toLocaleString()} 登録者</p>}
                 </div>
               )}
-              {submission.red && (
+              {hasSnsData(submission.red) && (
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <SocialIconsList platforms={['RED']} />
                     <span className="font-medium">RED</span>
                   </div>
                   {redHandle && <p className="text-sm">{redHandle}</p>}
-                  {redFollowers && <p className="text-sm text-muted-foreground mt-1">{redFollowers.toLocaleString()} フォロワー</p>}
+                  {redFollowers && redFollowers > 0 && <p className="text-sm text-muted-foreground mt-1">{redFollowers.toLocaleString()} フォロワー</p>}
                 </div>
               )}
               {submission.other_platforms && (
@@ -388,6 +423,9 @@ const CreatorDetail = () => {
                   <div className="font-medium mb-2">その他プラットフォーム</div>
                   <p className="whitespace-pre-wrap">{submission.other_platforms}</p>
                 </div>
+              )}
+              {!hasSnsData(submission.instagram) && !hasSnsData(submission.tiktok) && !hasSnsData(submission.youtube) && !hasSnsData(submission.red) && !submission.other_platforms && (
+                <p className="text-muted-foreground col-span-full">SNSアカウント情報がありません</p>
               )}
             </div>
           </CardContent>
