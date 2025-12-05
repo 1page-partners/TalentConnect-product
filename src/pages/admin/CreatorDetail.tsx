@@ -98,9 +98,30 @@ const CreatorDetail = () => {
     return data[key] ?? null;
   };
 
-  const getAccountUrl = (data: any): string | null => {
+  const getAccountHandle = (data: any): string | null => {
     if (!data || typeof data !== 'object') return null;
-    return data.account_url || data.url || null;
+    return data.handle || data.account_url || data.url || null;
+  };
+
+  const buildPlatformUrl = (platform: string, handle: string | null): string | null => {
+    if (!handle) return null;
+    // Remove @ if present
+    const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
+    
+    switch (platform) {
+      case 'instagram':
+        return `https://instagram.com/${cleanHandle}`;
+      case 'tiktok':
+        return `https://tiktok.com/@${cleanHandle}`;
+      case 'youtube':
+        // If it's already a URL, return as-is
+        if (handle.includes('youtube.com') || handle.includes('youtu.be')) return handle;
+        return `https://youtube.com/${cleanHandle}`;
+      case 'x':
+        return `https://x.com/${cleanHandle}`;
+      default:
+        return null;
+    }
   };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -149,10 +170,14 @@ const CreatorDetail = () => {
   const ytSubs = getFollowers(submission.youtube, 'subscribers');
   const redFollowers = getFollowers(submission.red, 'followers');
 
-  const igUrl = getAccountUrl(submission.instagram);
-  const ttUrl = getAccountUrl(submission.tiktok);
-  const ytUrl = getAccountUrl(submission.youtube);
-  const redUrl = getAccountUrl(submission.red);
+  const igHandle = getAccountHandle(submission.instagram);
+  const ttHandle = getAccountHandle(submission.tiktok);
+  const ytHandle = getAccountHandle(submission.youtube);
+  const redHandle = getAccountHandle(submission.red);
+
+  const igUrl = buildPlatformUrl('instagram', igHandle);
+  const ttUrl = buildPlatformUrl('tiktok', ttHandle);
+  const ytUrl = buildPlatformUrl('youtube', ytHandle);
 
   return (
     <div className="space-y-6">
@@ -240,21 +265,20 @@ const CreatorDetail = () => {
           <CardHeader><CardTitle>応募案件</CardTitle></CardHeader>
           <CardContent>
             {campaign ? (
-              <div className="space-y-3">
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-1">案件名</div>
-                  <Link to={`/admin/campaign/${campaign.id}`} className="text-primary hover:underline flex items-center gap-1">
-                    {campaign.title}
-                    <ExternalLink className="h-4 w-4" />
+              <div className="divide-y">
+                <div className="py-3 first:pt-0 last:pb-0">
+                  <Link to={`/admin/campaign/${campaign.id}`} className="block hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors">
+                    <div className="font-medium text-primary hover:underline flex items-center gap-1">
+                      {campaign.title}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-0.5">{campaign.client_name}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {campaign.platforms && campaign.platforms.length > 0 && (
+                        <SocialIconsList platforms={campaign.platforms} />
+                      )}
+                    </div>
                   </Link>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-1">クライアント</div>
-                  <p>{campaign.client_name}</p>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-1">締切</div>
-                  <p>{formatDate(campaign.deadline)}</p>
                 </div>
               </div>
             ) : (
@@ -274,8 +298,17 @@ const CreatorDetail = () => {
                     <SocialIconsList platforms={['Instagram']} />
                     <span className="font-medium">Instagram</span>
                   </div>
-                  {igFollowers && <p className="text-lg font-semibold">{igFollowers.toLocaleString()} フォロワー</p>}
-                  {igUrl && <a href={igUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{igUrl}</a>}
+                  {igHandle && (
+                    igUrl ? (
+                      <a href={igUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                        @{igHandle.replace('@', '')}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <p className="text-sm">@{igHandle.replace('@', '')}</p>
+                    )
+                  )}
+                  {igFollowers && <p className="text-sm text-muted-foreground mt-1">{igFollowers.toLocaleString()} フォロワー</p>}
                 </div>
               )}
               {submission.tiktok && (
@@ -284,8 +317,17 @@ const CreatorDetail = () => {
                     <SocialIconsList platforms={['TikTok']} />
                     <span className="font-medium">TikTok</span>
                   </div>
-                  {ttFollowers && <p className="text-lg font-semibold">{ttFollowers.toLocaleString()} フォロワー</p>}
-                  {ttUrl && <a href={ttUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{ttUrl}</a>}
+                  {ttHandle && (
+                    ttUrl ? (
+                      <a href={ttUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                        @{ttHandle.replace('@', '')}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <p className="text-sm">@{ttHandle.replace('@', '')}</p>
+                    )
+                  )}
+                  {ttFollowers && <p className="text-sm text-muted-foreground mt-1">{ttFollowers.toLocaleString()} フォロワー</p>}
                 </div>
               )}
               {submission.youtube && (
@@ -294,8 +336,17 @@ const CreatorDetail = () => {
                     <SocialIconsList platforms={['YouTube']} />
                     <span className="font-medium">YouTube</span>
                   </div>
-                  {ytSubs && <p className="text-lg font-semibold">{ytSubs.toLocaleString()} 登録者</p>}
-                  {ytUrl && <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{ytUrl}</a>}
+                  {ytHandle && (
+                    ytUrl ? (
+                      <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1 break-all">
+                        {ytHandle}
+                        <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <p className="text-sm break-all">{ytHandle}</p>
+                    )
+                  )}
+                  {ytSubs && <p className="text-sm text-muted-foreground mt-1">{ytSubs.toLocaleString()} 登録者</p>}
                 </div>
               )}
               {submission.red && (
@@ -304,8 +355,8 @@ const CreatorDetail = () => {
                     <SocialIconsList platforms={['RED']} />
                     <span className="font-medium">RED</span>
                   </div>
-                  {redFollowers && <p className="text-lg font-semibold">{redFollowers.toLocaleString()} フォロワー</p>}
-                  {redUrl && <a href={redUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{redUrl}</a>}
+                  {redHandle && <p className="text-sm">{redHandle}</p>}
+                  {redFollowers && <p className="text-sm text-muted-foreground mt-1">{redFollowers.toLocaleString()} フォロワー</p>}
                 </div>
               )}
               {submission.other_platforms && (
