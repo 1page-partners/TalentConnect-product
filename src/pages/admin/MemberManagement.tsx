@@ -29,10 +29,9 @@ const MemberManagement = () => {
 
       if (error) throw error;
 
-      // Get user emails from auth (via edge function or RPC would be ideal, but we'll use what we have)
       const usersWithRoles: UserWithRole[] = (data || []).map((role: any) => ({
         id: role.user_id,
-        email: '', // Will be populated if we add profiles table
+        email: role.email || '',
         role: role.role as 'admin' | 'member',
         created_at: role.created_at,
       }));
@@ -138,8 +137,9 @@ const MemberManagement = () => {
                       )}
                     </div>
                     <div>
-                      <div className="font-medium text-sm text-muted-foreground">
-                        ID: {user.id.slice(0, 8)}...
+                      <div className="font-medium flex items-center gap-1">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        {user.email || <span className="text-muted-foreground">メール未設定</span>}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         登録日: {formatDate(user.created_at)}
