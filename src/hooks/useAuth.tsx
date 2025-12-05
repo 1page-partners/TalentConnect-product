@@ -26,7 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // user_roles テーブルは types.ts に含まれていないため、any でキャスト
+      const { data, error } = await (supabase as any)
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
