@@ -45,7 +45,6 @@ const NewCampaignEnhanced = () => {
   const [attachments, setAttachments] = useState<string[]>([]);
   const [status, setStatus] = useState<'open' | 'closed'>('open');
   const [contactEmail, setContactEmail] = useState("");
-  const [requiresConsent, setRequiresConsent] = useState(true);
   
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,7 +160,7 @@ const NewCampaignEnhanced = () => {
         has_advertisement_appearance: hasAdvertisementAppearance,
         planned_post_date: plannedPostDate || null,
         attachments: attachments.length > 0 ? attachments : null,
-        requires_consent: requiresConsent,
+        requires_consent: true, // 常に参加許諾フローを含める
       };
 
       const newCampaign = await campaignApi.create(campaignData);
@@ -261,7 +260,7 @@ const NewCampaignEnhanced = () => {
     hasAdvertisementAppearance,
     plannedPostDate,
     attachments,
-    requiresConsent,
+    requiresConsent: true,
   };
 
   // 作成完了ダイアログ
@@ -342,57 +341,23 @@ const NewCampaignEnhanced = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => navigate('/admin/list')}
-                variant="ghost"
-                size="sm"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                戻る
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">新規案件作成</h1>
-                <p className="text-muted-foreground">インフルエンサー配布用の案件を作成します</p>
-              </div>
-            </div>
-            
-            <div className="flex space-x-2">
-              <Dialog open={showPreview} onOpenChange={setShowPreview}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Eye className="w-4 h-4 mr-2" />
-                    プレビュー
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>案件詳細プレビュー</DialogTitle>
-                  </DialogHeader>
-                  <CampaignDetailCard campaign={previewCampaign} />
-                </DialogContent>
-              </Dialog>
-              
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                variant="wizard"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    作成中...
-                  </>
-                ) : (
-                  "案件を作成"
-                )}
-              </Button>
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => navigate('/admin/list')}
+              variant="ghost"
+              size="sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              戻る
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">新規案件作成</h1>
+              <p className="text-muted-foreground">インフルエンサー配布用の案件を作成します</p>
             </div>
           </div>
 
@@ -717,24 +682,6 @@ const NewCampaignEnhanced = () => {
                     広告出演の有無
                   </Label>
                 </div>
-
-                <div className="pt-4 border-t">
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="requires-consent"
-                      checked={requiresConsent}
-                      onCheckedChange={(checked) => setRequiresConsent(checked === true)}
-                    />
-                    <div>
-                      <Label htmlFor="requires-consent" className="text-sm cursor-pointer">
-                        参加許諾フローを含める（NDA同意→案件詳細→情報提出）
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        チェックを外すと、案件詳細のみを表示するURLも生成されます
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -812,6 +759,41 @@ const NewCampaignEnhanced = () => {
           </Card>
         </div>
       </main>
+      
+      {/* Sticky footer with action buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-lg z-50">
+        <div className="container mx-auto px-4 py-4 max-w-4xl flex justify-end space-x-3">
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Eye className="w-4 h-4 mr-2" />
+                プレビュー
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>案件詳細プレビュー</DialogTitle>
+              </DialogHeader>
+              <CampaignDetailCard campaign={previewCampaign} />
+            </DialogContent>
+          </Dialog>
+          
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            variant="wizard"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                作成中...
+              </>
+            ) : (
+              "案件を作成"
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
