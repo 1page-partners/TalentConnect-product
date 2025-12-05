@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 interface FileUploadProps {
   onFilesSelected: (files: FileList) => void;
   onRemove?: (index: number) => void;
+  onPreview?: (url: string) => void;
   files?: string[];
   accept?: string;
   multiple?: boolean;
@@ -19,6 +20,7 @@ interface FileUploadProps {
 export function FileUpload({
   onFilesSelected,
   onRemove,
+  onPreview,
   files = [],
   accept = 'image/*,application/pdf,video/*',
   multiple = true,
@@ -130,7 +132,13 @@ export function FileUpload({
               key={index}
               className="flex items-center justify-between p-2 bg-muted rounded-md"
             >
-              <div className="flex items-center gap-2 min-w-0">
+              <div 
+                className={cn(
+                  "flex items-center gap-2 min-w-0",
+                  onPreview && "cursor-pointer hover:text-primary"
+                )}
+                onClick={() => onPreview?.(file)}
+              >
                 {getFileIcon(file)}
                 <span className="text-sm truncate">{getFileName(file)}</span>
               </div>
@@ -139,7 +147,10 @@ export function FileUpload({
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 shrink-0"
-                  onClick={() => onRemove(index)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(index);
+                  }}
                   type="button"
                 >
                   <X className="w-4 h-4" />

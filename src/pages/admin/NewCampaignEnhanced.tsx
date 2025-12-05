@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Header from "@/components/Header";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
+import FilePreviewModal from "@/components/ui/file-preview-modal";
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -17,6 +18,27 @@ import { campaignApi, generateDistributionUrl } from "@/lib/api";
 import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions, statusOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
 import { Loader2, Eye, ArrowLeft, X, Copy, Check } from "lucide-react";
+
+// ファイルタイプを判定するヘルパー関数
+const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
+  const urlWithoutQuery = url.split('?')[0];
+  const extension = urlWithoutQuery.split('.').pop()?.toLowerCase() || '';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
+  if (['mp4', 'mov', 'avi', 'webm'].includes(extension)) return 'video';
+  if (extension === 'pdf') return 'pdf';
+  return 'other';
+};
+
+// ファイル名を取得するヘルパー関数
+const getFileName = (url: string): string => {
+  const parts = url.split('/');
+  const filename = parts[parts.length - 1];
+  try {
+    return decodeURIComponent(filename.split('?')[0]);
+  } catch {
+    return filename.split('?')[0];
+  }
+};
 
 const NewCampaignEnhanced = () => {
   const navigate = useNavigate();
@@ -52,6 +74,13 @@ const NewCampaignEnhanced = () => {
   const [createdCampaign, setCreatedCampaign] = useState<{ slug: string } | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
+
+  const openFilePreview = (url: string) => {
+    const fileType = getFileType(url);
+    const fileName = getFileName(url);
+    setPreviewFile({ url, type: fileType, name: fileName });
+  };
 
   // File upload hooks
   const imageUpload = useFileUpload({
@@ -445,6 +474,7 @@ const NewCampaignEnhanced = () => {
                 <FileUpload
                   onFilesSelected={handleImageUpload}
                   onRemove={handleImageRemove}
+                  onPreview={openFilePreview}
                   files={imageMaterials}
                   accept="image/*"
                   isUploading={imageUpload.isUploading}
@@ -699,6 +729,7 @@ const NewCampaignEnhanced = () => {
                 <FileUpload
                   onFilesSelected={handleAttachmentUpload}
                   onRemove={handleAttachmentRemove}
+                  onPreview={openFilePreview}
                   files={attachments}
                   isUploading={attachmentUpload.isUploading}
                   maxFiles={10}
@@ -794,6 +825,15 @@ const NewCampaignEnhanced = () => {
           </Button>
         </div>
       </div>
+
+      {/* ファイルプレビューモーダル */}
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        fileUrl={previewFile?.url || ''}
+        fileType={previewFile?.type || 'other'}
+        fileName={previewFile?.name}
+      />
     </div>
   );
 };
