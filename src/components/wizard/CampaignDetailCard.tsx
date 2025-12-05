@@ -276,7 +276,7 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
                         <div className="relative">
                           <PdfThumbnail 
                             url={attachmentUrl} 
-                            className="w-full h-[200px]"
+                            className="w-full h-[150px]"
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                             <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">クリックして表示</span>
