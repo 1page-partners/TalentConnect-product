@@ -251,14 +251,42 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
     try {
       // SNSアカウント情報をプラットフォームごとに整理
       const filteredAccounts = socialAccounts.filter(acc => acc.platform && acc.url);
-      const instagramAccount = filteredAccounts.find(acc => acc.platform === 'Instagram');
-      const youtubeAccount = filteredAccounts.find(acc => acc.platform === 'YouTube');
-      const tiktokAccount = filteredAccounts.find(acc => acc.platform === 'TikTok');
-      const redAccount = filteredAccounts.find(acc => acc.platform === 'RED');
+      
+      // メインアカウントを該当プラットフォームに追加
+      const getAccountData = (platform: string) => {
+        const existingAccount = filteredAccounts.find(acc => acc.platform === platform);
+        if (existingAccount) {
+          return { url: existingAccount.url, followers: existingAccount.followers };
+        }
+        // メインアカウントが該当プラットフォームの場合
+        if (mainSns === platform && mainAccount) {
+          return { url: mainAccount, followers: 0 };
+        }
+        return null;
+      };
+
+      const instagramData = getAccountData('Instagram');
+      const youtubeData = getAccountData('YouTube');
+      const tiktokData = getAccountData('TikTok');
+      const redData = getAccountData('RED');
+      
+      // X とその他プラットフォーム
       const xAccount = filteredAccounts.find(acc => acc.platform === 'X');
       const otherAccounts = filteredAccounts.filter(acc => 
         !['Instagram', 'YouTube', 'TikTok', 'RED', 'X'].includes(acc.platform)
       );
+      
+      // メインアカウントがXの場合
+      let xData = xAccount ? { platform: 'X', url: xAccount.url, followers: xAccount.followers } : null;
+      if (!xData && mainSns === 'X' && mainAccount) {
+        xData = { platform: 'X', url: mainAccount, followers: 0 };
+      }
+      
+      // メインアカウントがその他の場合
+      let otherData = [...otherAccounts];
+      if (mainSns === 'その他' && mainAccount) {
+        otherData.push({ platform: 'その他', url: mainAccount, followers: 0 });
+      }
 
       const submission = {
         campaign_id: campaignId,
@@ -266,12 +294,12 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
         phone: phoneNumber.trim(),
         contact_email: contactEmail || null,
         contact_methods: contactMethods,
-        instagram: instagramAccount ? { url: instagramAccount.url, followers: instagramAccount.followers } : null,
-        youtube: youtubeAccount ? { url: youtubeAccount.url, followers: youtubeAccount.followers } : null,
-        tiktok: tiktokAccount ? { url: tiktokAccount.url, followers: tiktokAccount.followers } : null,
-        red: redAccount ? { url: redAccount.url, followers: redAccount.followers } : null,
-        other_platforms: [...(xAccount ? [xAccount] : []), ...otherAccounts].length > 0 
-          ? JSON.stringify([...(xAccount ? [xAccount] : []), ...otherAccounts]) 
+        instagram: instagramData,
+        youtube: youtubeData,
+        tiktok: tiktokData,
+        red: redData,
+        other_platforms: [...(xData ? [xData] : []), ...otherData].length > 0 
+          ? JSON.stringify([...(xData ? [xData] : []), ...otherData]) 
           : null,
         portfolio_files: portfolioFiles.length > 0 ? portfolioFiles : null,
         follower_insight_screenshot: insightScreenshot.length > 0 ? insightScreenshot[0] : null,
