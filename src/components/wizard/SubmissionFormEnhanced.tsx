@@ -66,7 +66,10 @@ const getInputPlaceholder = (platform: string): string => {
   if (URL_PLATFORMS.includes(platform)) {
     return 'https://www.youtube.com/channel/... または https://www.youtube.com/@...';
   }
-  return 'URL または @handle';
+  if (platform === 'その他') {
+    return 'アカウント名(プラットフォーム)';
+  }
+  return '';
 };
 
 const getInputHint = (platform: string): string => {
@@ -76,7 +79,15 @@ const getInputHint = (platform: string): string => {
   if (URL_PLATFORMS.includes(platform)) {
     return '⚠️ YouTubeチャンネルのURLを入力してください（例: https://www.youtube.com/@channelname）';
   }
+  if (platform === 'その他') {
+    return '💡 例: tanaka_taro(Threads)、yamada123(Weibo) など';
+  }
   return '';
+};
+
+// REDやその他の場合はヒントメッセージを表示しない
+const shouldShowHintBox = (platform: string): boolean => {
+  return HANDLE_PLATFORMS.includes(platform) || URL_PLATFORMS.includes(platform) || platform === 'その他';
 };
 
 const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEnhancedProps) => {
@@ -156,6 +167,10 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
 
     if (genderRatio.male + genderRatio.female !== 100) {
       newErrors.genderRatio = "男女比の合計は100%である必要があります";
+    }
+
+    if (!desiredPayment.trim()) {
+      newErrors.desiredPayment = "ご希望の報酬金額は必須です";
     }
 
     // 活動SNSアカウントのバリデーション
@@ -449,7 +464,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
             <Label htmlFor="main-account" className="text-sm font-medium">
               メインアカウント <span className="text-destructive">*</span>
             </Label>
-            {mainSns && (
+            {mainSns && mainSns !== 'RED' && (
               <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20 mb-2">
                 <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                 <div className="text-sm text-primary">
@@ -465,6 +480,13 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                       <p className="font-semibold">📝 入力形式: YouTubeチャンネルURL</p>
                       <p className="mt-1">YouTubeチャンネルのURLを完全な形で入力してください。</p>
                       <p className="text-xs mt-1 opacity-80">例: https://www.youtube.com/@channelname</p>
+                    </div>
+                  )}
+                  {mainSns === 'その他' && (
+                    <div>
+                      <p className="font-semibold">📝 入力形式: アカウント名(プラットフォーム)</p>
+                      <p className="mt-1">アカウント名と使用プラットフォーム名を括弧書きで入力してください。</p>
+                      <p className="text-xs mt-1 opacity-80">例: tanaka_taro(Threads)、yamada123(Weibo)</p>
                     </div>
                   )}
                 </div>
@@ -537,18 +559,27 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Select
                       value={account.platform}
                       onValueChange={(value) => {
-                        updateSocialAccount(index, 'platform', value);
-                        updateSocialAccount(index, 'url', ''); // プラットフォーム変更時にURLをリセット
+                        const updated = [...socialAccounts];
+                        updated[index] = { ...updated[index], platform: value, url: '' };
+                        setSocialAccounts(updated);
+                        // エラーをクリア
+                        if (errors[`socialAccount_${index}`]) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors[`socialAccount_${index}`];
+                            return newErrors;
+                          });
+                        }
                       }}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="プラットフォーム" />
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="プラットフォームを選択" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background z-50">
                         {platformOptions.map((platform) => (
                           <SelectItem key={platform.value} value={platform.value}>
                             <div className="flex items-center space-x-2">
@@ -567,23 +598,38 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                         onChange={(e) => updateSocialAccount(index, 'url', e.target.value)}
                         className={errors[`socialAccount_${index}`] ? "border-destructive" : ""}
                       />
-                      {account.platform && getInputHint(account.platform) && (
-                        <p className="text-xs text-amber-600 font-medium">
-                          {getInputHint(account.platform)}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <Input
-                        type="number"
-                        placeholder="フォロワー数"
-                        value={account.followers || ''}
-                        onChange={(e) => updateSocialAccount(index, 'followers', parseInt(e.target.value) || 0)}
-                        className="flex-1"
-                      />
                     </div>
                   </div>
+
+                  {/* ヒントメッセージ - REDの場合は表示しない */}
+                  {account.platform && account.platform !== 'RED' && (
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20">
+                      <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <div className="text-sm text-primary">
+                        {HANDLE_PLATFORMS.includes(account.platform) && (
+                          <div>
+                            <p className="font-semibold">📝 入力形式: @username</p>
+                            <p className="mt-1">必ず半角の「@」から始めて、ユーザー名を入力してください。</p>
+                            <p className="text-xs mt-1 opacity-80">例: @your_username</p>
+                          </div>
+                        )}
+                        {URL_PLATFORMS.includes(account.platform) && (
+                          <div>
+                            <p className="font-semibold">📝 入力形式: YouTubeチャンネルURL</p>
+                            <p className="mt-1">YouTubeチャンネルのURLを完全な形で入力してください。</p>
+                            <p className="text-xs mt-1 opacity-80">例: https://www.youtube.com/@channelname</p>
+                          </div>
+                        )}
+                        {account.platform === 'その他' && (
+                          <div>
+                            <p className="font-semibold">📝 入力形式: アカウント名(プラットフォーム)</p>
+                            <p className="mt-1">アカウント名と使用プラットフォーム名を括弧書きで入力してください。</p>
+                            <p className="text-xs mt-1 opacity-80">例: tanaka_taro(Threads)、yamada123(Weibo)</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* エラーメッセージ表示 */}
                   {errors[`socialAccount_${index}`] && (
@@ -752,15 +798,22 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
 
             <div className="space-y-2">
               <Label htmlFor="desired-payment" className="text-sm font-medium">
-                ご希望の報酬金額（税込）
+                ご希望の報酬金額（税込） <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="desired-payment"
                 value={desiredPayment}
-                onChange={(e) => setDesiredPayment(e.target.value)}
+                onChange={(e) => {
+                  setDesiredPayment(e.target.value);
+                  if (errors.desiredPayment) setErrors(prev => ({ ...prev, desiredPayment: '' }));
+                }}
                 onBlur={(e) => setDesiredPayment(formatPaymentAmount(e.target.value))}
                 placeholder="例: 50000"
+                className={errors.desiredPayment ? "border-destructive" : ""}
               />
+              {errors.desiredPayment && (
+                <p className="text-xs text-destructive">{errors.desiredPayment}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 数字のみ入力してください。自動で￥マークと桁区切りが追加されます。
               </p>
