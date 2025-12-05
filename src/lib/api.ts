@@ -110,6 +110,15 @@ export const submissionApi = {
     
     if (error) throw error;
     return data;
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('influencer_submissions')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 };
 

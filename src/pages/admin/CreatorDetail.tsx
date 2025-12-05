@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { submissionApi, creatorListApi, CreatorList, InfluencerSubmission, campaignApi, Campaign } from '@/lib/api';
-import { ArrowLeft, Mail, Phone, Loader2, ExternalLink, ListPlus, Image, FileText, Download } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Loader2, ExternalLink, ListPlus, Image, FileText, Download, Trash2 } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 
@@ -19,11 +19,14 @@ interface SubmissionWithCampaign extends InfluencerSubmission {
 
 const CreatorDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [submission, setSubmission] = useState<InfluencerSubmission | null>(null);
   const [allSubmissions, setAllSubmissions] = useState<SubmissionWithCampaign[]>([]);
   const [myLists, setMyLists] = useState<CreatorList[]>([]);
   const [listItemsMap, setListItemsMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -105,6 +108,22 @@ const CreatorDetail = () => {
     } catch (error) {
       console.error('リストアイテム操作エラー:', error);
       toast({ title: 'エラー', description: '操作に失敗しました', variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!submission) return;
+    setDeleting(true);
+    try {
+      await submissionApi.delete(submission.id);
+      toast({ title: '削除しました', description: 'クリエイター情報を削除しました' });
+      navigate('/admin/creators');
+    } catch (error) {
+      console.error('削除エラー:', error);
+      toast({ title: 'エラー', description: '削除に失敗しました', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -252,24 +271,51 @@ const CreatorDetail = () => {
             <p className="text-muted-foreground">応募日: {formatDate(submission.submitted_at)}</p>
           </div>
         </div>
-        {myLists.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <ListPlus className="h-4 w-4 mr-2" />
-                リストへ追加
+        <div className="flex items-center gap-2">
+          {myLists.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <ListPlus className="h-4 w-4 mr-2" />
+                  リストへ追加
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {myLists.map(list => (
+                  <DropdownMenuItem key={list.id} onClick={() => handleToggleListItem(list.id)}>
+                    <Checkbox checked={listItemsMap[list.id]?.includes(submission.id)} className="mr-2" />
+                    {list.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                削除
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {myLists.map(list => (
-                <DropdownMenuItem key={list.id} onClick={() => handleToggleListItem(list.id)}>
-                  <Checkbox checked={listItemsMap[list.id]?.includes(submission.id)} className="mr-2" />
-                  {list.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>クリエイター情報を削除</DialogTitle>
+                <DialogDescription>
+                  「{submission.influencer_name}」の情報を削除します。この操作は取り消せません。
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <DialogClose asChild>
+                  <Button variant="outline">キャンセル</Button>
+                </DialogClose>
+                <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                  {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  削除する
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
