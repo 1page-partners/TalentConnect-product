@@ -35,17 +35,24 @@ export const campaignApi = {
   },
 
   async getBySlug(slug: string): Promise<Campaign | null> {
-    const { data, error } = await supabase
-      .from('campaigns')
-      .select('*')
-      .eq('slug', slug)
-      .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
+    // 公開用Edge Functionを使用（機密フィールドを除外）
+    const response = await fetch(
+      `https://vpkhrrbfdfgmbrzuwspg.supabase.co/functions/v1/get-public-campaign?slug=${encodeURIComponent(slug)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error('Failed to fetch campaign');
     }
-    return data;
+
+    const campaignData = await response.json();
+    return campaignData as Campaign;
   },
 
   async create(campaign: CampaignInsert): Promise<Campaign> {
