@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { getAllSubmissionsWithCampaign, creatorListApi, CreatorList as CreatorListType, InfluencerSubmission } from '@/lib/api';
-import { Search, Loader2, Mail, Phone, FolderPlus, MoreHorizontal, Pencil, Trash2, Users, ExternalLink, ListPlus, Folder } from 'lucide-react';
+import { Search, Loader2, Mail, Phone, FolderPlus, MoreHorizontal, Pencil, Trash2, Users, ExternalLink, ListPlus, Folder, X } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 
 type SubmissionWithCampaign = InfluencerSubmission & { campaign_title: string; campaign_slug: string };
@@ -22,12 +22,26 @@ const CreatorListPage = () => {
   const [listItemsMap, setListItemsMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [debouncedKeyword, setDebouncedKeyword] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [newListName, setNewListName] = useState('');
   const [editingList, setEditingList] = useState<CreatorListType | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // 検索のデバウンス処理
+  useEffect(() => {
+    if (searchKeyword !== debouncedKeyword) {
+      setIsSearching(true);
+      const timer = setTimeout(() => {
+        setDebouncedKeyword(searchKeyword);
+        setIsSearching(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [searchKeyword, debouncedKeyword]);
 
   useEffect(() => {
     fetchData();
@@ -155,8 +169,8 @@ const CreatorListPage = () => {
   const filteredSubmissions = useMemo(() => {
     let filtered = submissions;
     
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
+    if (debouncedKeyword) {
+      const keyword = debouncedKeyword.toLowerCase();
       filtered = filtered.filter(s => 
         s.influencer_name.toLowerCase().includes(keyword) ||
         s.email?.toLowerCase().includes(keyword) ||
@@ -170,7 +184,7 @@ const CreatorListPage = () => {
     }
     
     return filtered;
-  }, [submissions, searchKeyword, activeTab, listItemsMap]);
+  }, [submissions, debouncedKeyword, activeTab, listItemsMap]);
 
   // 現在のリストに含まれていないクリエイター（追加候補）
   const availableForCurrentList = useMemo(() => {
@@ -288,14 +302,34 @@ const CreatorListPage = () => {
       {/* 検索 */}
       <Card>
         <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="名前、メール、案件名で検索..."
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              className="pl-10"
-            />
+          <div className="space-y-2">
+            <div className="relative">
+              {isSearching ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              )}
+              <Input
+                placeholder="名前、メール、案件名で検索..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchKeyword && (
+                <button
+                  onClick={() => setSearchKeyword('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {debouncedKeyword && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>「{debouncedKeyword}」の検索結果:</span>
+                <Badge variant="secondary">{filteredSubmissions.length} 件</Badge>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
