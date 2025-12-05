@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { campaignApi, submissionApi, creatorApi, Campaign, InfluencerSubmission, CampaignCreator } from '@/lib/api';
-import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText, Image, File, Play, Maximize2 } from 'lucide-react';
+import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText, Image, File, Play, Maximize2, Pencil } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 
@@ -118,7 +118,8 @@ const CampaignDetail = () => {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="default" asChild><Link to={`/admin/campaign/${id}/edit`}><Pencil className="h-4 w-4 mr-2" />編集</Link></Button>
           <Button variant="outline" onClick={copyDistributionUrl}><Copy className="h-4 w-4 mr-2" />URLコピー</Button>
           <Button variant="outline" asChild><Link to={`/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-2" />プレビュー</Link></Button>
         </div>
