@@ -11,7 +11,7 @@ import { submissionApi } from "@/lib/api";
 import { fetchYouTubeSubs, fetchInstagramFollowers, fetchTikTokFollowers, fetchXFollowers } from "@/lib/api-stubs";
 import { platformOptions, contactMethodOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, Upload, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, Upload, ArrowLeft, Info } from "lucide-react";
 
 interface SubmissionFormEnhancedProps {
   onNext: () => void;
@@ -26,6 +26,58 @@ interface SocialAccount {
   fetchedAt?: string;
   isLoading?: boolean;
 }
+
+// ハンドル形式を必要とするプラットフォーム
+const HANDLE_PLATFORMS = ['Instagram', 'TikTok', 'X'];
+// URL形式を必要とするプラットフォーム
+const URL_PLATFORMS = ['YouTube'];
+
+// バリデーションヘルパー関数
+const validateHandle = (value: string): boolean => {
+  // @から始まり、英数字とアンダースコアのみ許可
+  return /^@[a-zA-Z0-9_]+$/.test(value);
+};
+
+const validateYouTubeUrl = (value: string): boolean => {
+  // YouTubeチャンネルURLのパターン
+  return /^https?:\/\/(www\.)?(youtube\.com\/(channel\/|c\/|@|user\/)|youtu\.be\/)/i.test(value);
+};
+
+const validatePhoneNumber = (value: string): boolean => {
+  // ハイフンあり形式: 090-1234-5678, 03-1234-5678, 0120-123-456 など
+  return /^\d{2,4}-\d{2,4}-\d{3,4}$/.test(value);
+};
+
+const formatPhoneNumber = (value: string): string => {
+  // 数字のみを抽出
+  const digits = value.replace(/\D/g, '');
+  
+  // 長さに応じてフォーマット
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  if (digits.length <= 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+};
+
+const getInputPlaceholder = (platform: string): string => {
+  if (HANDLE_PLATFORMS.includes(platform)) {
+    return '@username （@から始まるハンドル）';
+  }
+  if (URL_PLATFORMS.includes(platform)) {
+    return 'https://www.youtube.com/channel/... または https://www.youtube.com/@...';
+  }
+  return 'URL または @handle';
+};
+
+const getInputHint = (platform: string): string => {
+  if (HANDLE_PLATFORMS.includes(platform)) {
+    return '⚠️ 必ず「@」から始めてください（例: @username）';
+  }
+  if (URL_PLATFORMS.includes(platform)) {
+    return '⚠️ YouTubeチャンネルのURLを入力してください（例: https://www.youtube.com/@channelname）';
+  }
+  return '';
+};
 
 const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEnhancedProps) => {
   const [activityName, setActivityName] = useState("");
@@ -46,6 +98,24 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  const validateSocialAccount = (platform: string, value: string): string | null => {
+    if (!platform || !value.trim()) return null;
+    
+    if (HANDLE_PLATFORMS.includes(platform)) {
+      if (!validateHandle(value)) {
+        return `【入力形式エラー】${platform}は「@username」の形式で入力してください。\n\n✅ 正しい例: @your_username\n❌ 間違い例: your_username, https://...\n\n必ず半角の「@」から始めてください。`;
+      }
+    }
+    
+    if (URL_PLATFORMS.includes(platform)) {
+      if (!validateYouTubeUrl(value)) {
+        return `【入力形式エラー】YouTubeはチャンネルURLを入力してください。\n\n✅ 正しい例:\n・https://www.youtube.com/@channelname\n・https://www.youtube.com/channel/UCxxxxxxx\n\n❌ 間違い例:\n・@channelname（URLではない）\n・https://youtube.com/watch?v=...（動画URL）`;
+      }
+    }
+    
+    return null;
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -59,10 +129,17 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
 
     if (!mainAccount.trim()) {
       newErrors.mainAccount = "メインアカウントは必須です";
+    } else {
+      const mainAccountError = validateSocialAccount(mainSns, mainAccount);
+      if (mainAccountError) {
+        newErrors.mainAccount = mainAccountError;
+      }
     }
 
     if (!phoneNumber.trim()) {
       newErrors.phoneNumber = "電話番号は必須です";
+    } else if (!validatePhoneNumber(phoneNumber)) {
+      newErrors.phoneNumber = `【入力形式エラー】電話番号はハイフン（-）付きで入力してください。\n\n✅ 正しい例:\n・090-1234-5678（携帯電話）\n・03-1234-5678（固定電話）\n・0120-123-456（フリーダイヤル）\n\n❌ 間違い例:\n・09012345678（ハイフンなし）\n・090 1234 5678（スペース区切り）`;
     }
 
     if (contactMethods.length === 0) {
@@ -81,6 +158,16 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
       newErrors.genderRatio = "男女比の合計は100%である必要があります";
     }
 
+    // 活動SNSアカウントのバリデーション
+    socialAccounts.forEach((account, index) => {
+      if (account.platform && account.url) {
+        const accountError = validateSocialAccount(account.platform, account.url);
+        if (accountError) {
+          newErrors[`socialAccount_${index}`] = accountError;
+        }
+      }
+    });
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -93,11 +180,19 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
     return value;
   };
 
+  const handlePhoneChange = (value: string) => {
+    // 数字とハイフンのみ許可
+    const cleaned = value.replace(/[^\d-]/g, '');
+    const formatted = formatPhoneNumber(cleaned);
+    setPhoneNumber(formatted);
+    if (errors.phoneNumber) setErrors(prev => ({ ...prev, phoneNumber: '' }));
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast({
         title: "入力エラー",
-        description: "必須項目をご確認ください",
+        description: "入力内容を確認してください。エラー箇所を赤枠で表示しています。",
         variant: "destructive",
       });
       return;
@@ -112,8 +207,9 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
       const youtubeAccount = filteredAccounts.find(acc => acc.platform === 'YouTube');
       const tiktokAccount = filteredAccounts.find(acc => acc.platform === 'TikTok');
       const redAccount = filteredAccounts.find(acc => acc.platform === 'RED');
+      const xAccount = filteredAccounts.find(acc => acc.platform === 'X');
       const otherAccounts = filteredAccounts.filter(acc => 
-        !['Instagram', 'YouTube', 'TikTok', 'RED'].includes(acc.platform)
+        !['Instagram', 'YouTube', 'TikTok', 'RED', 'X'].includes(acc.platform)
       );
 
       const submission = {
@@ -126,7 +222,9 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
         youtube: youtubeAccount ? { url: youtubeAccount.url, followers: youtubeAccount.followers } : null,
         tiktok: tiktokAccount ? { url: tiktokAccount.url, followers: tiktokAccount.followers } : null,
         red: redAccount ? { url: redAccount.url, followers: redAccount.followers } : null,
-        other_platforms: otherAccounts.length > 0 ? JSON.stringify(otherAccounts) : null,
+        other_platforms: [...(xAccount ? [xAccount] : []), ...otherAccounts].length > 0 
+          ? JSON.stringify([...(xAccount ? [xAccount] : []), ...otherAccounts]) 
+          : null,
         portfolio_files: portfolioFiles.length > 0 ? portfolioFiles : null,
         preferred_fee: desiredPayment ? formatPaymentAmount(desiredPayment) : null,
         notes: memo.trim() || null,
@@ -159,12 +257,28 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
 
   const removeSocialAccount = (index: number) => {
     setSocialAccounts(socialAccounts.filter((_, i) => i !== index));
+    // エラーもクリア
+    if (errors[`socialAccount_${index}`]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`socialAccount_${index}`];
+        return newErrors;
+      });
+    }
   };
 
   const updateSocialAccount = (index: number, field: keyof SocialAccount, value: any) => {
     const updated = [...socialAccounts];
     updated[index] = { ...updated[index], [field]: value };
     setSocialAccounts(updated);
+    // エラーをクリア
+    if (errors[`socialAccount_${index}`]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[`socialAccount_${index}`];
+        return newErrors;
+      });
+    }
   };
 
   const fetchMetrics = async (index: number) => {
@@ -306,7 +420,9 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                 value={mainSns}
                 onValueChange={(value) => {
                   setMainSns(value);
+                  setMainAccount(""); // プラットフォーム変更時にアカウント入力をリセット
                   if (errors.mainSns) setErrors(prev => ({ ...prev, mainSns: '' }));
+                  if (errors.mainAccount) setErrors(prev => ({ ...prev, mainAccount: '' }));
                 }}
               >
                 <SelectTrigger className={errors.mainSns ? "border-destructive" : ""}>
@@ -333,6 +449,27 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
             <Label htmlFor="main-account" className="text-sm font-medium">
               メインアカウント <span className="text-destructive">*</span>
             </Label>
+            {mainSns && (
+              <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20 mb-2">
+                <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm text-primary">
+                  {HANDLE_PLATFORMS.includes(mainSns) && (
+                    <div>
+                      <p className="font-semibold">📝 入力形式: @username</p>
+                      <p className="mt-1">必ず半角の「@」から始めて、ユーザー名を入力してください。</p>
+                      <p className="text-xs mt-1 opacity-80">例: @your_username</p>
+                    </div>
+                  )}
+                  {URL_PLATFORMS.includes(mainSns) && (
+                    <div>
+                      <p className="font-semibold">📝 入力形式: YouTubeチャンネルURL</p>
+                      <p className="mt-1">YouTubeチャンネルのURLを完全な形で入力してください。</p>
+                      <p className="text-xs mt-1 opacity-80">例: https://www.youtube.com/@channelname</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             <Input
               id="main-account"
               value={mainAccount}
@@ -340,11 +477,13 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                 setMainAccount(e.target.value);
                 if (errors.mainAccount) setErrors(prev => ({ ...prev, mainAccount: '' }));
               }}
-              placeholder="例: @username または https://..."
+              placeholder={getInputPlaceholder(mainSns)}
               className={errors.mainAccount ? "border-destructive" : ""}
             />
             {errors.mainAccount && (
-              <p className="text-xs text-destructive">{errors.mainAccount}</p>
+              <div className="p-3 rounded-md bg-destructive/10 border border-destructive/30">
+                <p className="text-sm text-destructive whitespace-pre-line">{errors.mainAccount}</p>
+              </div>
             )}
           </div>
 
@@ -380,7 +519,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
             </div>
 
             {socialAccounts.map((account, index) => (
-              <Card key={index} className="p-4 bg-muted/30">
+              <Card key={index} className={`p-4 bg-muted/30 ${errors[`socialAccount_${index}`] ? 'border-destructive' : ''}`}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs text-muted-foreground">
@@ -401,7 +540,10 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <Select
                       value={account.platform}
-                      onValueChange={(value) => updateSocialAccount(index, 'platform', value)}
+                      onValueChange={(value) => {
+                        updateSocialAccount(index, 'platform', value);
+                        updateSocialAccount(index, 'url', ''); // プラットフォーム変更時にURLをリセット
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="プラットフォーム" />
@@ -418,11 +560,19 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                       </SelectContent>
                     </Select>
 
-                    <Input
-                      placeholder="URL または @handle"
-                      value={account.url}
-                      onChange={(e) => updateSocialAccount(index, 'url', e.target.value)}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        placeholder={getInputPlaceholder(account.platform)}
+                        value={account.url}
+                        onChange={(e) => updateSocialAccount(index, 'url', e.target.value)}
+                        className={errors[`socialAccount_${index}`] ? "border-destructive" : ""}
+                      />
+                      {account.platform && getInputHint(account.platform) && (
+                        <p className="text-xs text-amber-600 font-medium">
+                          {getInputHint(account.platform)}
+                        </p>
+                      )}
+                    </div>
 
                     <div className="flex space-x-2">
                       <Input
@@ -434,6 +584,13 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                       />
                     </div>
                   </div>
+
+                  {/* エラーメッセージ表示 */}
+                  {errors[`socialAccount_${index}`] && (
+                    <div className="p-3 rounded-md bg-destructive/10 border border-destructive/30">
+                      <p className="text-sm text-destructive whitespace-pre-line">{errors[`socialAccount_${index}`]}</p>
+                    </div>
+                  )}
 
                   {/* 自動取得セクション */}
                   {account.platform && (
@@ -499,19 +656,26 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
               <Label htmlFor="phone-number" className="text-sm font-medium">
                 電話番号 <span className="text-destructive">*</span>
               </Label>
+              <div className="flex items-start gap-2 p-3 rounded-md bg-primary/10 border border-primary/20 mb-2">
+                <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm text-primary">
+                  <p className="font-semibold">📝 入力形式: ハイフン（-）付きで入力</p>
+                  <p className="mt-1">数字を入力すると自動でハイフンが追加されます。</p>
+                  <p className="text-xs mt-1 opacity-80">例: 090-1234-5678</p>
+                </div>
+              </div>
               <Input
                 id="phone-number"
                 type="tel"
                 value={phoneNumber}
-                onChange={(e) => {
-                  setPhoneNumber(e.target.value);
-                  if (errors.phoneNumber) setErrors(prev => ({ ...prev, phoneNumber: '' }));
-                }}
-                placeholder="例: 090-1234-5678"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="090-1234-5678"
                 className={errors.phoneNumber ? "border-destructive" : ""}
               />
               {errors.phoneNumber && (
-                <p className="text-xs text-destructive">{errors.phoneNumber}</p>
+                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/30">
+                  <p className="text-sm text-destructive whitespace-pre-line">{errors.phoneNumber}</p>
+                </div>
               )}
             </div>
 

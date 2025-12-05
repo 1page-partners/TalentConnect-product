@@ -15,7 +15,7 @@ export const SocialIcon = ({ platform, className = "w-5 h-5" }: SocialIconProps)
       return <Hash className={`text-black ${className}`} />;
     case 'x':
     case 'twitter':
-      return <Twitter className={`text-blue-500 ${className}`} />;
+      return <Twitter className={`text-foreground ${className}`} />;
     default:
       return <Hash className={`text-muted-foreground ${className}`} />;
   }

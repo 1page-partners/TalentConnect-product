@@ -165,6 +165,7 @@ export const platformOptions = [
   { value: 'Instagram', label: 'Instagram' },
   { value: 'TikTok', label: 'TikTok' },
   { value: 'YouTube', label: 'YouTube' },
+  { value: 'X', label: 'X' },
   { value: 'RED', label: 'RED' },
   { value: 'その他', label: 'その他' }
 ];
@@ -174,6 +175,7 @@ export const platformDeliverables = {
   Instagram: ['リール', 'フィード', 'ストーリーズ'],
   TikTok: ['動画'],
   YouTube: ['動画', 'Shorts'],
+  X: ['ポスト'],
   RED: ['图文(フィード)', '视频(ビデオ)'],
   その他: []
 };
