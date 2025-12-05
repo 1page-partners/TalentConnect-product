@@ -11,10 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import Header from "@/components/Header";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
 import { useToast } from "@/hooks/use-toast";
-import { saveCampaignToNotion } from "@/lib/api-stubs";
-import { addCampaign, platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions, statusOptions } from "@/lib/mock-data";
+import { campaignApi, generateDistributionUrl } from "@/lib/api";
+import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions, statusOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Eye, ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { Loader2, Eye, ArrowLeft, Upload, X, Plus, Copy, Check } from "lucide-react";
 
 const NewCampaignEnhanced = () => {
   const navigate = useNavigate();
@@ -43,10 +43,13 @@ const NewCampaignEnhanced = () => {
   const [attachments, setAttachments] = useState<string[]>([]);
   const [status, setStatus] = useState<'open' | 'closed'>('open');
   const [contactEmail, setContactEmail] = useState("");
+  const [requiresConsent, setRequiresConsent] = useState(true);
   
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [createdCampaign, setCreatedCampaign] = useState<{ slug: string } | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const validateForm = () => {
@@ -93,55 +96,52 @@ const NewCampaignEnhanced = () => {
     setIsSubmitting(true);
 
     try {
-      // Generate slug from title
-      const slug = title.toLowerCase()
+      // Generate unique slug from title + timestamp
+      const baseSlug = title.toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .trim();
+      const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
       const campaignData = {
-        clientName: clientName.trim(),
+        client_name: clientName.trim(),
         title: title.trim(),
         slug,
         summary: summary.trim(),
-        requirements: requirements.trim(),
+        requirements: requirements.trim() || null,
         platforms: selectedPlatforms,
         deadline,
-        restrictions: restrictions.trim(),
-        ndaUrl: ndaTemplate === 'custom' ? ndaUrl.trim() : `https://example.com/nda-${ndaTemplate.toLowerCase()}.pdf`,
+        restrictions: restrictions.trim() || null,
+        nda_url: ndaTemplate === 'custom' ? ndaUrl.trim() : null,
+        nda_template: ndaTemplate,
         status,
-        contactEmail: contactEmail.trim(),
-        // Enhanced fields
-        isTH,
-        imageMaterials,
-        platformDeliverables: platformDeliverableMap,
-        ndaTemplate,
-        isVideoProductionOnly,
-        secondaryUsage: hasSecondaryUsage ? {
+        contact_email: contactEmail.trim() || null,
+        is_th: isTH,
+        image_materials: imageMaterials.length > 0 ? imageMaterials : null,
+        platform_deliverables: platformDeliverableMap,
+        is_video_production_only: isVideoProductionOnly,
+        secondary_usage: hasSecondaryUsage ? {
           hasUsage: true,
-          duration: secondaryUsageDuration as any,
+          duration: secondaryUsageDuration,
           purpose: secondaryUsagePurpose.trim()
         } : { hasUsage: false },
-        hasAdvertisementAppearance,
-        plannedPostDate,
-        attachments,
+        has_advertisement_appearance: hasAdvertisementAppearance,
+        planned_post_date: plannedPostDate || null,
+        attachments: attachments.length > 0 ? attachments : null,
+        requires_consent: requiresConsent,
       };
 
-      // Save to Notion (stub)
-      await saveCampaignToNotion(campaignData);
+      const newCampaign = await campaignApi.create(campaignData);
       
-      // Add to mock data
-      const newCampaign = addCampaign(campaignData);
+      setCreatedCampaign({ slug: newCampaign.slug });
       
       toast({
         title: "案件作成完了",
         description: `案件「${newCampaign.title}」を作成しました`,
       });
-
-      // Navigate to campaign list
-      navigate('/admin/list');
     } catch (error) {
+      console.error('Campaign creation error:', error);
       toast({
         title: "作成エラー",
         description: "案件の作成に失敗しました。もう一度お試しください。",
@@ -150,6 +150,16 @@ const NewCampaignEnhanced = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCopyUrl = async (url: string, type: string) => {
+    await navigator.clipboard.writeText(url);
+    setCopiedUrl(type);
+    setTimeout(() => setCopiedUrl(null), 2000);
+    toast({
+      title: "コピーしました",
+      description: "URLをクリップボードにコピーしました",
+    });
   };
 
   const handlePlatformToggle = (platform: string, checked: boolean) => {
@@ -219,7 +229,85 @@ const NewCampaignEnhanced = () => {
     hasAdvertisementAppearance,
     plannedPostDate,
     attachments,
+    requiresConsent,
   };
+
+  // 作成完了ダイアログ
+  if (createdCampaign) {
+    const urls = generateDistributionUrl(createdCampaign.slug, true);
+    const urlWithConsent = `${window.location.origin}/i/${createdCampaign.slug}`;
+    const urlWithoutConsent = `${window.location.origin}/c/${createdCampaign.slug}`;
+
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8 max-w-2xl">
+          <Card className="shadow-lg">
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+              <CardTitle className="text-2xl">案件を作成しました</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    参加許諾フロー付きURL（NDA同意→案件詳細→情報提出）
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input value={urlWithConsent} readOnly className="font-mono text-sm" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopyUrl(urlWithConsent, 'consent')}
+                    >
+                      {copiedUrl === 'consent' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    案件詳細のみURL（参加許諾なし）
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input value={urlWithoutConsent} readOnly className="font-mono text-sm" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopyUrl(urlWithoutConsent, 'detail')}
+                    >
+                      {copiedUrl === 'detail' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button variant="outline" onClick={() => navigate('/admin/list')} className="flex-1">
+                  案件一覧へ
+                </Button>
+                <Button onClick={() => {
+                  setCreatedCampaign(null);
+                  setClientName("");
+                  setTitle("");
+                  setSummary("");
+                  setRequirements("");
+                  setSelectedPlatforms([]);
+                  setPlatformDeliverableMap({});
+                  setDeadline("");
+                  setRestrictions("");
+                }} className="flex-1">
+                  新規案件を作成
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -596,6 +684,24 @@ const NewCampaignEnhanced = () => {
                   <Label htmlFor="advertisement-appearance" className="text-sm cursor-pointer">
                     広告出演の有無
                   </Label>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="requires-consent"
+                      checked={requiresConsent}
+                      onCheckedChange={(checked) => setRequiresConsent(checked === true)}
+                    />
+                    <div>
+                      <Label htmlFor="requires-consent" className="text-sm cursor-pointer">
+                        参加許諾フローを含める（NDA同意→案件詳細→情報提出）
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        チェックを外すと、案件詳細のみを表示するURLも生成されます
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

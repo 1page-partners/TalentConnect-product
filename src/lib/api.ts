@@ -130,8 +130,18 @@ export const creatorApi = {
 };
 
 // ユーティリティ関数
-export const generateDistributionUrl = (slug: string): string => {
-  return `${window.location.origin}/campaign/${slug}`;
+export const generateDistributionUrl = (slug: string, requiresConsent: boolean = true): string => {
+  // 参加許諾ありの場合は /i/:slug（ウィザードフロー）
+  // 参加許諾なしの場合は /c/:slug（詳細のみ表示）
+  const path = requiresConsent ? `/i/${slug}` : `/c/${slug}`;
+  return `${window.location.origin}${path}`;
+};
+
+export const generateBothDistributionUrls = (slug: string): { withConsent: string; withoutConsent: string } => {
+  return {
+    withConsent: `${window.location.origin}/i/${slug}`,
+    withoutConsent: `${window.location.origin}/c/${slug}`,
+  };
 };
 
 export const formatDate = (dateString: string): string => {

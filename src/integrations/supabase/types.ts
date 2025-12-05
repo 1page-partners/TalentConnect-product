@@ -93,6 +93,7 @@ export type Database = {
           platforms: string[] | null
           report_url: string | null
           requirements: string | null
+          requires_consent: boolean
           restrictions: string | null
           secondary_usage: Json | null
           slug: string
@@ -119,6 +120,7 @@ export type Database = {
           platforms?: string[] | null
           report_url?: string | null
           requirements?: string | null
+          requires_consent?: boolean
           restrictions?: string | null
           secondary_usage?: Json | null
           slug: string
@@ -145,6 +147,7 @@ export type Database = {
           platforms?: string[] | null
           report_url?: string | null
           requirements?: string | null
+          requires_consent?: boolean
           restrictions?: string | null
           secondary_usage?: Json | null
           slug?: string

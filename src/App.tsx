@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import InfluencerWizard from "./pages/InfluencerWizard";
+import CampaignDetailOnly from "./pages/CampaignDetailOnly";
 import Auth from "./pages/admin/Auth";
 import RegistrationComplete from "./pages/admin/RegistrationComplete";
 import Dashboard from "./pages/admin/Dashboard";
@@ -28,6 +29,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<AdminLayout><Index /></AdminLayout>} />
             <Route path="/i/:token" element={<InfluencerWizard />} />
+            <Route path="/c/:slug" element={<CampaignDetailOnly />} />
             <Route path="/admin/auth" element={<Auth />} />
             <Route path="/admin/registration-complete" element={<RegistrationComplete />} />
             <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />

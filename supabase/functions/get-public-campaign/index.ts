@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
         is_th,
         image_materials,
         attachments,
-        nda_template
+        nda_template,
+        requires_consent,
+        client_name
       `)
       .eq('slug', slug)
       .single()
