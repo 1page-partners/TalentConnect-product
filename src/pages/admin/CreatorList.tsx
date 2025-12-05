@@ -213,15 +213,6 @@ const CreatorListPage = () => {
               <SocialIconsList platforms={platforms} />
             </div>
 
-            <div className="pt-2 border-t">
-              <div className="text-xs text-muted-foreground mb-1">応募案件</div>
-              <Link to={`/admin/campaign/${submission.campaign_id}`} className="text-sm text-primary hover:underline flex items-center gap-1">
-                {submission.campaign_title}
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-              <div className="text-xs text-muted-foreground mt-1">応募日: {formatDate(submission.submitted_at)}</div>
-            </div>
-
             {/* アクションボタン */}
             <div className="flex gap-2 pt-2">
               <Button variant="outline" size="sm" asChild className="flex-1">
