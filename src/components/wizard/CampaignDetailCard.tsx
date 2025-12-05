@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SocialIconsList } from "@/components/SocialIcons";
-import { Calendar, FileText, AlertTriangle, Image, File, FileVideo, FileImage } from "lucide-react";
+import { Calendar, FileText, AlertTriangle, Image, File, FileImage, Play, Maximize2 } from "lucide-react";
 import { Campaign } from "@/lib/mock-data";
+import FilePreviewModal from "@/components/ui/file-preview-modal";
 
 interface CampaignDetailCardProps {
   campaign: Campaign;
@@ -10,7 +12,6 @@ interface CampaignDetailCardProps {
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
-  // URLからクエリパラメータを除去してから拡張子を取得
   const urlWithoutQuery = url.split('?')[0];
   const extension = urlWithoutQuery.split('.').pop()?.toLowerCase() || '';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
@@ -23,7 +24,6 @@ const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
 const getFileName = (url: string): string => {
   const parts = url.split('/');
   const filename = parts[parts.length - 1];
-  // URLエンコードされたファイル名をデコード
   try {
     return decodeURIComponent(filename.split('?')[0]);
   } catch {
@@ -32,12 +32,20 @@ const getFileName = (url: string): string => {
 };
 
 const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const openPreview = (url: string) => {
+    const fileType = getFileType(url);
+    const fileName = getFileName(url);
+    setPreviewFile({ url, type: fileType, name: fileName });
   };
 
   return (
@@ -93,31 +101,37 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
                   return (
                     <div 
                       key={index} 
-                      className="relative aspect-video bg-muted rounded-lg overflow-hidden border"
+                      className="relative aspect-video bg-muted rounded-lg overflow-hidden border cursor-pointer group"
+                      onClick={() => openPreview(imageUrl)}
                     >
                       {fileType === 'image' ? (
                         <img 
                           src={imageUrl} 
                           alt={`画像資料 ${index + 1}`}
-                          className="w-full h-full object-cover select-none pointer-events-none"
+                          className="w-full h-full object-cover select-none"
                           onContextMenu={(e) => e.preventDefault()}
                           draggable={false}
                         />
                       ) : fileType === 'video' ? (
-                        <video 
-                          src={imageUrl}
-                          className="w-full h-full object-cover"
-                          controls={false}
-                          muted
-                          onContextMenu={(e) => e.preventDefault()}
-                        >
-                          <source src={imageUrl} />
-                        </video>
+                        <>
+                          <video 
+                            src={imageUrl}
+                            className="w-full h-full object-cover"
+                            muted
+                            onContextMenu={(e) => e.preventDefault()}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Play className="w-10 h-10 text-white" />
+                          </div>
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <FileImage className="w-8 h-8 text-muted-foreground" />
                         </div>
                       )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <Maximize2 className="w-6 h-6 text-white" />
+                      </div>
                     </div>
                   );
                 })}
@@ -147,7 +161,6 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
                 </div>
               ))}
               
-              {/* 納品動画制作のみの場合 */}
               {campaign.isVideoProductionOnly && (
                 <div className="mt-2">
                   <Badge variant="outline" className="bg-info/10 text-info border-info">
@@ -159,17 +172,19 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
           </div>
 
           {/* 成果物・条件 */}
-          <div>
-            <h3 className="font-medium text-foreground mb-2 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              成果物・条件
-            </h3>
-            <div className="bg-muted/30 p-4 rounded-md">
-              <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">
-                {campaign.requirements}
-              </pre>
+          {campaign.requirements && (
+            <div>
+              <h3 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                成果物・条件
+              </h3>
+              <div className="bg-muted/30 p-4 rounded-md">
+                <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">
+                  {campaign.requirements}
+                </pre>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* スケジュール */}
           <div>
@@ -221,16 +236,23 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
                   const fileName = getFileName(attachmentUrl);
                   
                   return (
-                    <div key={index} className="border rounded-lg overflow-hidden">
+                    <div 
+                      key={index} 
+                      className="border rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => openPreview(attachmentUrl)}
+                    >
                       {fileType === 'image' ? (
                         <div className="relative">
                           <img 
                             src={attachmentUrl} 
                             alt={`添付資料 ${index + 1}`}
-                            className="w-full max-h-[300px] object-contain bg-muted select-none pointer-events-none"
+                            className="w-full max-h-[300px] object-contain bg-muted select-none"
                             onContextMenu={(e) => e.preventDefault()}
                             draggable={false}
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <Maximize2 className="w-8 h-8 text-white" />
+                          </div>
                           <div className="p-2 bg-muted/50 border-t">
                             <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
                           </div>
@@ -240,23 +262,23 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
                           <video 
                             src={attachmentUrl}
                             className="w-full max-h-[300px]"
-                            controls
-                            controlsList="nodownload"
                             onContextMenu={(e) => e.preventDefault()}
-                          >
-                            <source src={attachmentUrl} />
-                          </video>
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                            <Play className="w-12 h-12 text-white" />
+                          </div>
                           <div className="p-2 bg-muted/50 border-t">
                             <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
                           </div>
                         </div>
                       ) : fileType === 'pdf' ? (
                         <div className="relative">
-                          <iframe 
-                            src={`${attachmentUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                            className="w-full h-[400px] border-0"
-                            title={`PDF資料 ${index + 1}`}
-                          />
+                          <div className="w-full h-[200px] bg-muted flex items-center justify-center">
+                            <FileText className="w-12 h-12 text-muted-foreground" />
+                          </div>
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">クリックして表示</span>
+                          </div>
                           <div className="p-2 bg-muted/50 border-t">
                             <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
                           </div>
@@ -307,6 +329,15 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
           )}
         </CardContent>
       </Card>
+
+      {/* プレビューモーダル */}
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        fileUrl={previewFile?.url || ''}
+        fileType={previewFile?.type || 'other'}
+        fileName={previewFile?.name}
+      />
     </div>
   );
 };

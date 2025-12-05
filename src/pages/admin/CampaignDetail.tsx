@@ -6,12 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { campaignApi, submissionApi, creatorApi, Campaign, InfluencerSubmission, CampaignCreator } from '@/lib/api';
-import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText, Image, File, FileVideo } from 'lucide-react';
+import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText, Image, File, Play, Maximize2 } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
+import FilePreviewModal from '@/components/ui/file-preview-modal';
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
-  // URLからクエリパラメータを除去してから拡張子を取得
   const urlWithoutQuery = url.split('?')[0];
   const extension = urlWithoutQuery.split('.').pop()?.toLowerCase() || '';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image';
@@ -38,6 +38,7 @@ const CampaignDetail = () => {
   const [creators, setCreators] = useState<CampaignCreator[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,6 +67,12 @@ const CampaignDetail = () => {
     if (!campaign) return;
     navigator.clipboard.writeText(`${window.location.origin}/i/${campaign.slug}`);
     toast({ title: 'URLをコピーしました' });
+  };
+
+  const openPreview = (url: string) => {
+    const fileType = getFileType(url);
+    const fileName = getFileName(url);
+    setPreviewFile({ url, type: fileType, name: fileName });
   };
 
   // Json型からフォロワー数を取得するヘルパー
@@ -100,7 +107,7 @@ const CampaignDetail = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild><Link to="/admin/list"><ArrowLeft className="h-4 w-4" /></Link></Button>
           <div>
@@ -118,12 +125,16 @@ const CampaignDetail = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList><TabsTrigger value="overview">概要</TabsTrigger><TabsTrigger value="submissions">応募者 ({submissions.length})</TabsTrigger><TabsTrigger value="creators">クリエイター ({creators.length})</TabsTrigger></TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="overview">概要</TabsTrigger>
+          <TabsTrigger value="submissions">応募者 ({submissions.length})</TabsTrigger>
+          <TabsTrigger value="creators">クリエイター ({creators.length})</TabsTrigger>
+        </TabsList>
         <TabsContent value="overview" className="mt-4 space-y-4">
           <Card><CardHeader><CardTitle>案件情報</CardTitle></CardHeader><CardContent className="space-y-4">
             <div><div className="text-sm font-medium text-muted-foreground mb-1">概要</div><p>{campaign.summary || '未設定'}</p></div>
             <div><div className="text-sm font-medium text-muted-foreground mb-1">プラットフォーム</div><SocialIconsList platforms={campaign.platforms} /></div>
-            <div className="grid grid-cols-2 gap-4"><div><div className="text-sm font-medium text-muted-foreground mb-1">作成日</div><p>{formatDate(campaign.created_at)}</p></div><div><div className="text-sm font-medium text-muted-foreground mb-1">締切日</div><p>{formatDate(campaign.deadline)}</p></div></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><div className="text-sm font-medium text-muted-foreground mb-1">作成日</div><p>{formatDate(campaign.created_at)}</p></div><div><div className="text-sm font-medium text-muted-foreground mb-1">締切日</div><p>{formatDate(campaign.deadline)}</p></div></div>
             {campaign.management_sheet_url && <div><div className="text-sm font-medium text-muted-foreground mb-1">管理シート</div><Button variant="outline" size="sm" asChild><a href={campaign.management_sheet_url} target="_blank" rel="noopener noreferrer"><FileSpreadsheet className="h-4 w-4 mr-2" />シートを開く</a></Button></div>}
           </CardContent></Card>
           
@@ -134,14 +145,26 @@ const CampaignDetail = () => {
                 {campaign.image_materials.map((imageUrl, index) => {
                   const fileType = getFileType(imageUrl);
                   return (
-                    <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden border">
+                    <div 
+                      key={index} 
+                      className="relative aspect-video bg-muted rounded-lg overflow-hidden border cursor-pointer group"
+                      onClick={() => openPreview(imageUrl)}
+                    >
                       {fileType === 'image' ? (
                         <img src={imageUrl} alt={`画像資料 ${index + 1}`} className="w-full h-full object-cover" />
                       ) : fileType === 'video' ? (
-                        <video src={imageUrl} className="w-full h-full object-cover" controls muted><source src={imageUrl} /></video>
+                        <>
+                          <video src={imageUrl} className="w-full h-full object-cover" muted />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Play className="w-10 h-10 text-white" />
+                          </div>
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center"><FileText className="w-8 h-8 text-muted-foreground" /></div>
                       )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <Maximize2 className="w-6 h-6 text-white" />
+                      </div>
                     </div>
                   );
                 })}
@@ -157,20 +180,35 @@ const CampaignDetail = () => {
                   const fileType = getFileType(attachmentUrl);
                   const fileName = getFileName(attachmentUrl);
                   return (
-                    <div key={index} className="border rounded-lg overflow-hidden">
+                    <div 
+                      key={index} 
+                      className="border rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => openPreview(attachmentUrl)}
+                    >
                       {fileType === 'image' ? (
                         <div className="relative">
                           <img src={attachmentUrl} alt={`添付資料 ${index + 1}`} className="w-full max-h-[300px] object-contain bg-muted" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <Maximize2 className="w-8 h-8 text-white" />
+                          </div>
                           <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
                         </div>
                       ) : fileType === 'video' ? (
                         <div className="relative">
-                          <video src={attachmentUrl} className="w-full max-h-[300px]" controls><source src={attachmentUrl} /></video>
+                          <video src={attachmentUrl} className="w-full max-h-[300px]" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                            <Play className="w-12 h-12 text-white" />
+                          </div>
                           <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
                         </div>
                       ) : fileType === 'pdf' ? (
                         <div className="relative">
-                          <iframe src={`${attachmentUrl}#toolbar=0`} className="w-full h-[400px] border-0" title={`PDF資料 ${index + 1}`} />
+                          <div className="w-full h-[200px] bg-muted flex items-center justify-center">
+                            <FileText className="w-12 h-12 text-muted-foreground" />
+                          </div>
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">クリックして表示</span>
+                          </div>
                           <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
                         </div>
                       ) : (
@@ -187,23 +225,32 @@ const CampaignDetail = () => {
           )}
         </TabsContent>
         <TabsContent value="submissions" className="mt-4">
-          <Card><CardHeader><div className="flex items-center justify-between"><CardTitle>応募者一覧</CardTitle><Button variant="outline" size="sm" onClick={exportToCSV}><Download className="h-4 w-4 mr-2" />CSV</Button></div></CardHeader><CardContent>
+          <Card><CardHeader><div className="flex items-center justify-between flex-wrap gap-2"><CardTitle>応募者一覧</CardTitle><Button variant="outline" size="sm" onClick={exportToCSV}><Download className="h-4 w-4 mr-2" />CSV</Button></div></CardHeader><CardContent>
             {submissions.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">応募者はまだいません</p></div> : <div className="space-y-4">{submissions.map(s => {
               const igFollowers = getFollowers(s.instagram, 'followers');
               const ttFollowers = getFollowers(s.tiktok, 'followers');
               const ytSubs = getFollowers(s.youtube, 'subscribers');
               return (
-                <Card key={s.id}><CardContent className="p-4"><div className="flex justify-between items-start"><div className="space-y-2"><h3 className="font-semibold">{s.influencer_name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}{ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}{ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.submitted_at)}</div></div></CardContent></Card>
+                <Card key={s.id}><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start gap-2"><div className="space-y-2"><h3 className="font-semibold">{s.influencer_name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}{ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}{ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.submitted_at)}</div></div></CardContent></Card>
               );
             })}</div>}
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="creators" className="mt-4">
           <Card><CardHeader><CardTitle>クリエイター</CardTitle></CardHeader><CardContent>
-            {creators.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">クリエイターはまだいません</p></div> : <div className="space-y-4">{creators.map(c => <Card key={c.id}><CardContent className="p-4"><div className="flex justify-between items-center"><div><h3 className="font-semibold">{c.name}</h3><a href={c.account_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">{c.account_url}</a></div>{c.deliverable_url && <Button variant="outline" size="sm" asChild><a href={c.deliverable_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4 mr-1" />成果物</a></Button>}</div></CardContent></Card>)}</div>}
+            {creators.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">クリエイターはまだいません</p></div> : <div className="space-y-4">{creators.map(c => <Card key={c.id}><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h3 className="font-semibold">{c.name}</h3><a href={c.account_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{c.account_url}</a></div>{c.deliverable_url && <Button variant="outline" size="sm" asChild><a href={c.deliverable_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4 mr-1" />成果物</a></Button>}</div></CardContent></Card>)}</div>}
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      {/* プレビューモーダル */}
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        fileUrl={previewFile?.url || ''}
+        fileType={previewFile?.type || 'other'}
+        fileName={previewFile?.name}
+      />
     </div>
   );
 };

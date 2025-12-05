@@ -4,7 +4,8 @@ import { campaignApi, Campaign } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Calendar, AlertCircle, Image, File, FileText } from "lucide-react";
+import { Loader2, Calendar, AlertCircle, Image, File, FileText, Play, Maximize2 } from "lucide-react";
+import FilePreviewModal from "@/components/ui/file-preview-modal";
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -31,6 +32,7 @@ const CampaignDetailOnly = () => {
   const navigate = useNavigate();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
 
   useEffect(() => {
     const fetchCampaign = async () => {
@@ -56,6 +58,12 @@ const CampaignDetailOnly = () => {
 
     fetchCampaign();
   }, [slug, navigate]);
+
+  const openPreview = (url: string) => {
+    const fileType = getFileType(url);
+    const fileName = getFileName(url);
+    setPreviewFile({ url, type: fileType, name: fileName });
+  };
 
   if (loading) {
     return (
@@ -126,7 +134,6 @@ const CampaignDetailOnly = () => {
                   ))}
                 </div>
                 
-                {/* 成果物詳細 */}
                 {platformDeliverables && Object.keys(platformDeliverables).length > 0 && (
                   <div className="mt-3 space-y-2">
                     {Object.entries(platformDeliverables).map(([platform, deliverables]) => (
@@ -199,28 +206,39 @@ const CampaignDetailOnly = () => {
                   {campaign.image_materials.map((imageUrl, index) => {
                     const fileType = getFileType(imageUrl);
                     return (
-                      <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden border">
+                      <div 
+                        key={index} 
+                        className="relative aspect-video bg-muted rounded-lg overflow-hidden border cursor-pointer group"
+                        onClick={() => openPreview(imageUrl)}
+                      >
                         {fileType === 'image' ? (
                           <img 
                             src={imageUrl} 
                             alt={`画像資料 ${index + 1}`}
-                            className="w-full h-full object-cover select-none pointer-events-none"
+                            className="w-full h-full object-cover select-none"
                             onContextMenu={(e) => e.preventDefault()}
                             draggable={false}
                           />
                         ) : fileType === 'video' ? (
-                          <video 
-                            src={imageUrl}
-                            className="w-full h-full object-cover"
-                            controls
-                            controlsList="nodownload"
-                            onContextMenu={(e) => e.preventDefault()}
-                          />
+                          <>
+                            <video 
+                              src={imageUrl}
+                              className="w-full h-full object-cover"
+                              muted
+                              onContextMenu={(e) => e.preventDefault()}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Play className="w-10 h-10 text-white" />
+                            </div>
+                          </>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <FileText className="w-8 h-8 text-muted-foreground" />
                           </div>
                         )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <Maximize2 className="w-6 h-6 text-white" />
+                        </div>
                       </div>
                     );
                   })}
@@ -240,16 +258,23 @@ const CampaignDetailOnly = () => {
                     const fileType = getFileType(attachmentUrl);
                     const fileName = getFileName(attachmentUrl);
                     return (
-                      <div key={index} className="border rounded-lg overflow-hidden">
+                      <div 
+                        key={index} 
+                        className="border rounded-lg overflow-hidden cursor-pointer group"
+                        onClick={() => openPreview(attachmentUrl)}
+                      >
                         {fileType === 'image' ? (
                           <div className="relative">
                             <img 
                               src={attachmentUrl} 
                               alt={`添付資料 ${index + 1}`}
-                              className="w-full max-h-[300px] object-contain bg-muted select-none pointer-events-none"
+                              className="w-full max-h-[300px] object-contain bg-muted select-none"
                               onContextMenu={(e) => e.preventDefault()}
                               draggable={false}
                             />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <Maximize2 className="w-8 h-8 text-white" />
+                            </div>
                             <div className="p-2 bg-muted/50 border-t">
                               <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
                             </div>
@@ -259,21 +284,23 @@ const CampaignDetailOnly = () => {
                             <video 
                               src={attachmentUrl}
                               className="w-full max-h-[300px]"
-                              controls
-                              controlsList="nodownload"
                               onContextMenu={(e) => e.preventDefault()}
                             />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                              <Play className="w-12 h-12 text-white" />
+                            </div>
                             <div className="p-2 bg-muted/50 border-t">
                               <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
                             </div>
                           </div>
                         ) : fileType === 'pdf' ? (
                           <div className="relative">
-                            <iframe 
-                              src={`${attachmentUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                              className="w-full h-[400px] border-0"
-                              title={`PDF資料 ${index + 1}`}
-                            />
+                            <div className="w-full h-[200px] bg-muted flex items-center justify-center">
+                              <FileText className="w-12 h-12 text-muted-foreground" />
+                            </div>
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">クリックして表示</span>
+                            </div>
                             <div className="p-2 bg-muted/50 border-t">
                               <span className="text-xs text-muted-foreground truncate block">{fileName}</span>
                             </div>
@@ -297,6 +324,15 @@ const CampaignDetailOnly = () => {
           Powered by TalentConnect
         </p>
       </main>
+
+      {/* プレビューモーダル */}
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        fileUrl={previewFile?.url || ''}
+        fileType={previewFile?.type || 'other'}
+        fileName={previewFile?.name}
+      />
     </div>
   );
 };
