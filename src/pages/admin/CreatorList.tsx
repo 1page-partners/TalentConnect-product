@@ -143,6 +143,17 @@ const CreatorListPage = () => {
     if (submission.tiktok) platforms.push('TikTok');
     if (submission.youtube) platforms.push('YouTube');
     if (submission.red) platforms.push('RED');
+    // other_platforms から X を取得
+    if (submission.other_platforms) {
+      try {
+        const others = typeof submission.other_platforms === 'string' 
+          ? JSON.parse(submission.other_platforms) 
+          : submission.other_platforms;
+        if (Array.isArray(others)) {
+          if (others.some(p => p.platform === 'X')) platforms.push('X');
+        }
+      } catch {}
+    }
     return platforms;
   };
 
