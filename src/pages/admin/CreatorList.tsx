@@ -132,11 +132,6 @@ const CreatorListPage = () => {
     await handleToggleListItem(activeTab, submissionId);
   };
 
-  const getFollowers = (data: any, key: string): number | null => {
-    if (!data || typeof data !== 'object') return null;
-    return data[key] ?? null;
-  };
-
   const getPlatforms = (submission: SubmissionWithCampaign): string[] => {
     const platforms: string[] = [];
     if (submission.instagram) platforms.push('Instagram');
@@ -191,9 +186,6 @@ const CreatorListPage = () => {
   }
 
   const CreatorCard = ({ submission, showAddButton = false }: { submission: SubmissionWithCampaign; showAddButton?: boolean }) => {
-    const igFollowers = getFollowers(submission.instagram, 'followers');
-    const ttFollowers = getFollowers(submission.tiktok, 'followers');
-    const ytSubs = getFollowers(submission.youtube, 'subscribers');
     const platforms = getPlatforms(submission);
     const isInAnyList = Object.values(listItemsMap).some(items => items.includes(submission.id));
 
@@ -219,12 +211,6 @@ const CreatorListPage = () => {
 
             <div className="flex items-center gap-2">
               <SocialIconsList platforms={platforms} />
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 text-xs">
-              {igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}
-              {ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}
-              {ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}
             </div>
 
             <div className="pt-2 border-t">
