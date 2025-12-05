@@ -48,13 +48,13 @@ const PdfThumbnail = ({ url, className, onClick }: PdfThumbnailProps) => {
           </div>
         </div>
       )}
-      {/* PDFをスケールダウンしてサムネイル表示 */}
+      {/* PDFをスケールダウンしてサムネイル表示（中央配置） */}
       <div 
-        className="absolute top-0 left-0 origin-top-left"
+        className="absolute top-1/2 left-1/2 origin-center"
         style={{ 
           width: '800px',
           height: '1000px',
-          transform: 'scale(0.2)',
+          transform: 'translate(-50%, -50%) scale(0.18)',
         }}
       >
         <iframe
