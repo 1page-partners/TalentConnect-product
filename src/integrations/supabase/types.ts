@@ -224,6 +224,7 @@ export type Database = {
           id: string
           influencer_name: string
           instagram: Json | null
+          line_id: string | null
           notes: string | null
           other_platforms: string | null
           phone: string | null
@@ -244,6 +245,7 @@ export type Database = {
           id?: string
           influencer_name: string
           instagram?: Json | null
+          line_id?: string | null
           notes?: string | null
           other_platforms?: string | null
           phone?: string | null
@@ -264,6 +266,7 @@ export type Database = {
           id?: string
           influencer_name?: string
           instagram?: Json | null
+          line_id?: string | null
           notes?: string | null
           other_platforms?: string | null
           phone?: string | null

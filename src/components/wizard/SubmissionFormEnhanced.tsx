@@ -295,6 +295,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
         phone: phoneNumber.trim(),
         contact_email: contactEmail || null,
         contact_methods: contactMethods,
+        line_id: contactLineId.trim() || null,
         instagram: instagramData,
         youtube: youtubeData,
         tiktok: tiktokData,
