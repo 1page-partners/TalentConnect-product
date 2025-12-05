@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { campaignApi, submissionApi, creatorApi, Campaign, InfluencerSubmission, CampaignCreator } from '@/lib/api';
+import { campaignApi, submissionApi, Campaign, InfluencerSubmission } from '@/lib/api';
 import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, Phone, Loader2, FileText, Image, File, Play, Maximize2, Pencil } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
@@ -36,7 +36,6 @@ const CampaignDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [submissions, setSubmissions] = useState<InfluencerSubmission[]>([]);
-  const [creators, setCreators] = useState<CampaignCreator[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
@@ -46,12 +45,11 @@ const CampaignDetail = () => {
     const fetchData = async () => {
       if (!id) return;
       try {
-        const [campaignData, submissionsData, creatorsData] = await Promise.all([
-          campaignApi.getById(id), submissionApi.getByCampaignId(id), creatorApi.getByCampaignId(id)
+        const [campaignData, submissionsData] = await Promise.all([
+          campaignApi.getById(id), submissionApi.getByCampaignId(id)
         ]);
         setCampaign(campaignData);
         setSubmissions(submissionsData);
-        setCreators(creatorsData);
       } catch (error) {
         console.error('データ取得エラー:', error);
         toast({ title: 'エラー', description: 'データの取得に失敗しました', variant: 'destructive' });
@@ -130,7 +128,6 @@ const CampaignDetail = () => {
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="overview">概要</TabsTrigger>
           <TabsTrigger value="submissions">応募者 ({submissions.length})</TabsTrigger>
-          <TabsTrigger value="creators">クリエイター ({creators.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-4 space-y-4">
           <Card><CardHeader><CardTitle>案件情報</CardTitle></CardHeader><CardContent className="space-y-4">
@@ -247,11 +244,6 @@ const CampaignDetail = () => {
                 <Card key={s.id}><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start gap-2"><div className="space-y-2"><h3 className="font-semibold">{s.influencer_name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}{ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}{ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.submitted_at)}</div></div></CardContent></Card>
               );
             })}</div>}
-          </CardContent></Card>
-        </TabsContent>
-        <TabsContent value="creators" className="mt-4">
-          <Card><CardHeader><CardTitle>クリエイター</CardTitle></CardHeader><CardContent>
-            {creators.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">クリエイターはまだいません</p></div> : <div className="space-y-4">{creators.map(c => <Card key={c.id}><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h3 className="font-semibold">{c.name}</h3><a href={c.account_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{c.account_url}</a></div>{c.deliverable_url && <Button variant="outline" size="sm" asChild><a href={c.deliverable_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4 mr-1" />成果物</a></Button>}</div></CardContent></Card>)}</div>}
           </CardContent></Card>
         </TabsContent>
       </Tabs>
