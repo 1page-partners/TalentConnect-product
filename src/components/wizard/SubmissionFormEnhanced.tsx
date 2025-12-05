@@ -638,7 +638,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                     </div>
                   )}
 
-                  {/* 自動取得セクション */}
+                  {/* 自動取得セクション - 一時的にコメントアウト
                   {account.platform && (
                     <div className="flex items-center justify-between p-3 bg-background rounded-md border">
                       <div className="flex-1">
@@ -672,6 +672,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
                       {getAutoFetchButton(account.platform, index, account.isLoading || false)}
                     </div>
                   )}
+                  */}
                 </div>
               </Card>
             ))}
