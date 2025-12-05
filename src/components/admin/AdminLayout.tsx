@@ -117,8 +117,7 @@ function AdminSidebar() {
   );
 }
 
-// TODO: 一時的に認証を無効化中 - 本番前に戻すこと
-const SKIP_AUTH = true;
+const SKIP_AUTH = false;
 
 const AdminLayout = ({ children, requireAdmin = false }: AdminLayoutProps) => {
   const { user, loading, isAdmin, role } = useAuth();
