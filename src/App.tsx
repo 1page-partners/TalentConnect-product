@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import InfluencerWizard from "./pages/InfluencerWizard";
 import CampaignDetailOnly from "./pages/CampaignDetailOnly";
+import Install from "./pages/Install";
 import Auth from "./pages/admin/Auth";
 import RegistrationComplete from "./pages/admin/RegistrationComplete";
 import Dashboard from "./pages/admin/Dashboard";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/admin/list" element={<AdminLayout><CampaignList /></AdminLayout>} />
             <Route path="/admin/campaign/:id" element={<AdminLayout><CampaignDetail /></AdminLayout>} />
             <Route path="/admin/members" element={<AdminLayout requireAdmin><MemberManagement /></AdminLayout>} />
+            <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
