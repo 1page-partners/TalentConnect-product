@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { FileUpload } from "@/components/ui/file-upload";
 import { submissionApi } from "@/lib/api";
 import { fetchYouTubeSubs, fetchInstagramFollowers, fetchTikTokFollowers, fetchXFollowers } from "@/lib/api-stubs";
 import { platformOptions, contactMethodOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, Upload, ArrowLeft, Info } from "lucide-react";
+import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, ArrowLeft, Info } from "lucide-react";
 
 interface SubmissionFormEnhancedProps {
   onNext: () => void;
@@ -107,7 +109,38 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
   const [memo, setMemo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [insightScreenshot, setInsightScreenshot] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // File upload hooks
+  const portfolioUpload = useFileUpload({
+    folder: 'submissions/portfolio',
+    allowedTypes: ['image/*', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    maxSizeMB: 20,
+  });
+  const insightUpload = useFileUpload({
+    folder: 'submissions/insights',
+    allowedTypes: ['image/*'],
+    maxSizeMB: 10,
+  });
+
+  const handlePortfolioUpload = async (files: FileList) => {
+    const urls = await portfolioUpload.uploadFiles(files);
+    setPortfolioFiles(prev => [...prev, ...urls]);
+  };
+
+  const handlePortfolioRemove = (index: number) => {
+    setPortfolioFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleInsightUpload = async (files: FileList) => {
+    const urls = await insightUpload.uploadFiles(files);
+    setInsightScreenshot(prev => [...prev, ...urls]);
+  };
+
+  const handleInsightRemove = (index: number) => {
+    setInsightScreenshot(prev => prev.filter((_, i) => i !== index));
+  };
 
   const validateSocialAccount = (platform: string, value: string): string | null => {
     if (!platform || !value.trim()) return null;
@@ -241,6 +274,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
           ? JSON.stringify([...(xAccount ? [xAccount] : []), ...otherAccounts]) 
           : null,
         portfolio_files: portfolioFiles.length > 0 ? portfolioFiles : null,
+        follower_insight_screenshot: insightScreenshot.length > 0 ? insightScreenshot[0] : null,
         preferred_fee: desiredPayment ? formatPaymentAmount(desiredPayment) : null,
         notes: memo.trim() || null,
         status: 'pending',
@@ -514,15 +548,15 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
             <Label className="text-sm font-medium">
               ポートフォリオがあれば添付ください
             </Label>
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-2">
-                PNG, JPG, PDF, DOCX, PPTに対応
-              </p>
-              <Button variant="outline" size="sm">
-                ファイルを選択
-              </Button>
-            </div>
+            <FileUpload
+              onFilesSelected={handlePortfolioUpload}
+              onRemove={handlePortfolioRemove}
+              files={portfolioFiles}
+              accept="image/*,application/pdf,.docx,.pptx"
+              isUploading={portfolioUpload.isUploading}
+              label="ファイルをドラッグ&ドロップまたはクリックして選択"
+              hint="PNG, JPG, PDF, DOCX, PPTに対応（最大20MB）"
+            />
           </div>
 
           {/* SNSアカウント */}
@@ -683,18 +717,16 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
             <Label className="text-sm font-medium">
               フォロワー男女比（インサイトスクリーンショット）
             </Label>
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-2">
-                インサイト画面のスクリーンショットをアップロード
-              </p>
-              <p className="text-xs text-muted-foreground mb-3">
-                PNG, JPG, JPEG対応
-              </p>
-              <Button variant="outline" size="sm">
-                ファイルを選択
-              </Button>
-            </div>
+            <FileUpload
+              onFilesSelected={handleInsightUpload}
+              onRemove={handleInsightRemove}
+              files={insightScreenshot}
+              accept="image/*"
+              multiple={false}
+              isUploading={insightUpload.isUploading}
+              label="インサイト画面のスクリーンショットをアップロード"
+              hint="PNG, JPG, JPEG対応（最大10MB）"
+            />
           </div>
 
           {/* 連絡先情報 */}
