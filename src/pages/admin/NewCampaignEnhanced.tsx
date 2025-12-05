@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import Header from "@/components/Header";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
 import { useToast } from "@/hooks/use-toast";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { FileUpload } from "@/components/ui/file-upload";
 import { campaignApi, generateDistributionUrl } from "@/lib/api";
 import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions, statusOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Eye, ArrowLeft, Upload, X, Plus, Copy, Check } from "lucide-react";
+import { Loader2, Eye, ArrowLeft, X, Copy, Check } from "lucide-react";
 
 const NewCampaignEnhanced = () => {
   const navigate = useNavigate();
@@ -51,6 +53,36 @@ const NewCampaignEnhanced = () => {
   const [createdCampaign, setCreatedCampaign] = useState<{ slug: string } | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+
+  // File upload hooks
+  const imageUpload = useFileUpload({
+    folder: 'campaigns/images',
+    allowedTypes: ['image/*'],
+    maxSizeMB: 10,
+  });
+  const attachmentUpload = useFileUpload({
+    folder: 'campaigns/attachments',
+    allowedTypes: ['image/*', 'application/pdf', 'video/*'],
+    maxSizeMB: 50,
+  });
+
+  const handleImageUpload = async (files: FileList) => {
+    const urls = await imageUpload.uploadFiles(files);
+    setImageMaterials(prev => [...prev, ...urls]);
+  };
+
+  const handleImageRemove = (index: number) => {
+    setImageMaterials(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAttachmentUpload = async (files: FileList) => {
+    const urls = await attachmentUpload.uploadFiles(files);
+    setAttachments(prev => [...prev, ...urls]);
+  };
+
+  const handleAttachmentRemove = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -445,15 +477,15 @@ const NewCampaignEnhanced = () => {
                 <Label className="text-sm font-medium">
                   画像資料
                 </Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    画像をドラッグ&ドロップまたはクリックして選択
-                  </p>
-                  <Button variant="outline" size="sm">
-                    ファイルを選択
-                  </Button>
-                </div>
+                <FileUpload
+                  onFilesSelected={handleImageUpload}
+                  onRemove={handleImageRemove}
+                  files={imageMaterials}
+                  accept="image/*"
+                  isUploading={imageUpload.isUploading}
+                  label="画像をドラッグ&ドロップまたはクリックして選択"
+                  hint="PNG, JPG, GIF, WebP対応（最大10MB）"
+                />
               </div>
             </CardContent>
           </Card>
@@ -717,16 +749,15 @@ const NewCampaignEnhanced = () => {
                 <Label className="text-sm font-medium">
                   添付資料アップロード（最大10個まで）
                 </Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">
-                    資料をドラッグ&ドロップまたはクリックして選択
-                  </p>
-                  <Button variant="outline" size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    ファイルを選択
-                  </Button>
-                </div>
+                <FileUpload
+                  onFilesSelected={handleAttachmentUpload}
+                  onRemove={handleAttachmentRemove}
+                  files={attachments}
+                  isUploading={attachmentUpload.isUploading}
+                  maxFiles={10}
+                  label="資料をドラッグ&ドロップまたはクリックして選択"
+                  hint="画像、PDF、動画対応（最大50MB）"
+                />
               </div>
 
               <div className="space-y-2">
