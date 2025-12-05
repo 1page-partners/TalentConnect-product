@@ -100,7 +100,18 @@ const CreatorDetail = () => {
 
   const getAccountHandle = (data: any): string | null => {
     if (!data || typeof data !== 'object') return null;
-    return data.handle || data.account_url || data.url || null;
+    return data.url || data.handle || data.account_url || null;
+  };
+
+  const formatContactMethod = (method: string): string => {
+    const map: Record<string, string> = {
+      'email': 'メール',
+      'phone': '電話',
+      'instagram': 'Instagram DM',
+      'line': 'LINE',
+      'other': 'その他'
+    };
+    return map[method] || method;
   };
 
   const buildPlatformUrl = (platform: string, handle: string | null): string | null => {
@@ -251,6 +262,16 @@ const CreatorDetail = () => {
                 <p className="font-semibold text-primary">{submission.preferred_fee}</p>
               </div>
             )}
+            {submission.contact_methods && submission.contact_methods.length > 0 && (
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">連絡手段</div>
+                <div className="flex flex-wrap gap-2">
+                  {submission.contact_methods.map((method, index) => (
+                    <Badge key={index} variant="outline">{formatContactMethod(method)}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             {submission.notes && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">備考</div>
@@ -260,26 +281,29 @@ const CreatorDetail = () => {
           </CardContent>
         </Card>
 
-        {/* 応募案件 */}
+        {/* 案件応募実績 */}
         <Card>
-          <CardHeader><CardTitle>応募案件</CardTitle></CardHeader>
+          <CardHeader><CardTitle>案件応募実績</CardTitle></CardHeader>
           <CardContent>
             {campaign ? (
               <div className="divide-y">
-                <div className="py-3 first:pt-0 last:pb-0">
-                  <Link to={`/admin/campaign/${campaign.id}`} className="block hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors">
-                    <div className="font-medium text-primary hover:underline flex items-center gap-1">
-                      {campaign.title}
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-0.5">{campaign.client_name}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      {campaign.platforms && campaign.platforms.length > 0 && (
-                        <SocialIconsList platforms={campaign.platforms} />
-                      )}
-                    </div>
-                  </Link>
-                </div>
+                <Link 
+                  to={`/admin/campaign/${campaign.id}`} 
+                  className="flex items-center gap-4 py-2 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-primary hover:underline">{campaign.title}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    {campaign.client_name}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {campaign.platforms && campaign.platforms.length > 0 && (
+                      <SocialIconsList platforms={campaign.platforms} />
+                    )}
+                  </div>
+                  <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                </Link>
               </div>
             ) : (
               <p className="text-muted-foreground">案件情報が取得できません</p>
