@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { getAllSubmissionsWithCampaign, creatorListApi, CreatorList as CreatorListType, InfluencerSubmission } from '@/lib/api';
-import { Search, Loader2, Mail, Phone, FolderPlus, MoreHorizontal, Pencil, Trash2, Users, ExternalLink, ListPlus, Folder, X } from 'lucide-react';
+import { Search, Loader2, Mail, FolderPlus, MoreHorizontal, Pencil, Trash2, Users, ExternalLink, ListPlus, Folder, X } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 
 type SubmissionWithCampaign = InfluencerSubmission & { campaign_title: string; campaign_slug: string };
@@ -204,67 +204,56 @@ const CreatorListPage = () => {
     const isInAnyList = Object.values(listItemsMap).some(items => items.includes(submission.id));
 
     return (
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-start gap-2">
-              <Link to={`/admin/creator/${submission.id}`} className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg truncate hover:text-primary transition-colors">{submission.influencer_name}</h3>
-              </Link>
-              {isInAnyList && <Badge variant="secondary" className="shrink-0">リスト登録済</Badge>}
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              {submission.email && (
-                <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{submission.email}</span>
-              )}
-              {submission.phone && (
-                <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{submission.phone}</span>
-              )}
-            </div>
+      <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+        <Link to={`/admin/creator/${submission.id}`} className="font-medium hover:text-primary transition-colors truncate min-w-[120px] max-w-[180px]">
+          {submission.influencer_name}
+        </Link>
+        
+        <div className="flex items-center gap-1.5 shrink-0">
+          <SocialIconsList platforms={platforms} />
+        </div>
 
-            <div className="flex items-center gap-2">
-              <SocialIconsList platforms={platforms} />
-            </div>
+        {submission.email && (
+          <span className="hidden md:flex items-center gap-1 text-sm text-muted-foreground truncate max-w-[200px]">
+            <Mail className="h-3 w-3 shrink-0" />{submission.email}
+          </span>
+        )}
 
-            {/* アクションボタン */}
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" size="sm" asChild className="flex-1">
-                <Link to={`/admin/creator/${submission.id}`}>詳細を見る</Link>
+        {isInAnyList && <Badge variant="secondary" className="shrink-0 hidden sm:inline-flex">登録済</Badge>}
+
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to={`/admin/creator/${submission.id}`}>詳細</Link>
+          </Button>
+          {myLists.length > 0 && (
+            showAddButton && activeTab !== 'all' ? (
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => handleAddToCurrentList(submission.id)}
+              >
+                <ListPlus className="h-4 w-4" />
               </Button>
-              {myLists.length > 0 && (
-                showAddButton && activeTab !== 'all' ? (
-                  <Button 
-                    variant="default" 
-                    size="sm"
-                    onClick={() => handleAddToCurrentList(submission.id)}
-                  >
-                    <ListPlus className="h-4 w-4 mr-1" />
-                    追加
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <ListPlus className="h-4 w-4" />
                   </Button>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <ListPlus className="h-4 w-4 mr-1" />
-                        リストへ追加
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {myLists.map(list => (
-                        <DropdownMenuItem key={list.id} onClick={() => handleToggleListItem(list.id, submission.id)}>
-                          <Checkbox checked={listItemsMap[list.id]?.includes(submission.id)} className="mr-2" />
-                          {list.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {myLists.map(list => (
+                    <DropdownMenuItem key={list.id} onClick={() => handleToggleListItem(list.id, submission.id)}>
+                      <Checkbox checked={listItemsMap[list.id]?.includes(submission.id)} className="mr-2" />
+                      {list.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          )}
+        </div>
+      </div>
     );
   };
 
@@ -404,7 +393,7 @@ const CreatorListPage = () => {
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-2">
               {filteredSubmissions.map(submission => (
                 <CreatorCard key={submission.id} submission={submission} />
               ))}
