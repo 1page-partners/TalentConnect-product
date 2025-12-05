@@ -142,86 +142,99 @@ const CampaignDetail = () => {
           
           {/* 画像資料 */}
           {campaign.image_materials && campaign.image_materials.length > 0 && (
-            <Card><CardHeader><CardTitle className="flex items-center gap-2"><Image className="h-5 w-5" />画像資料</CardTitle></CardHeader><CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {campaign.image_materials.map((imageUrl, index) => {
-                  const fileType = getFileType(imageUrl);
-                  return (
-                    <div 
-                      key={index} 
-                      className="relative aspect-video bg-muted rounded-lg overflow-hidden border cursor-pointer group"
-                      onClick={() => openPreview(imageUrl)}
-                    >
-                      {fileType === 'image' ? (
-                        <img src={imageUrl} alt={`画像資料 ${index + 1}`} className="w-full h-full object-cover" />
-                      ) : fileType === 'video' ? (
-                        <>
-                          <video src={imageUrl} className="w-full h-full object-cover" muted />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                            <Play className="w-10 h-10 text-white" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Image className="h-5 w-5" />画像資料
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {campaign.image_materials.map((imageUrl, index) => {
+                    const fileType = getFileType(imageUrl);
+                    const fileName = getFileName(imageUrl);
+                    return (
+                      <div 
+                        key={index} 
+                        className="relative aspect-square bg-muted rounded-lg overflow-hidden border cursor-pointer group hover:ring-2 hover:ring-primary/50 transition-all"
+                        onClick={() => openPreview(imageUrl)}
+                      >
+                        {fileType === 'image' ? (
+                          <img src={imageUrl} alt={`画像資料 ${index + 1}`} className="w-full h-full object-cover" />
+                        ) : fileType === 'video' ? (
+                          <>
+                            <video src={imageUrl} className="w-full h-full object-cover" muted />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Play className="w-8 h-8 text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <FileText className="w-8 h-8 text-muted-foreground" />
                           </div>
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center"><FileText className="w-8 h-8 text-muted-foreground" /></div>
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <Maximize2 className="w-6 h-6 text-white" />
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <Maximize2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/60 to-transparent">
+                          <span className="text-[10px] text-white/90 truncate block">{fileName}</span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent></Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           )}
           
           {/* 添付資料 */}
           {campaign.attachments && campaign.attachments.length > 0 && (
-            <Card><CardHeader><CardTitle className="flex items-center gap-2"><File className="h-5 w-5" />添付資料</CardTitle></CardHeader><CardContent>
-              <div className="space-y-3">
-                {campaign.attachments.map((attachmentUrl, index) => {
-                  const fileType = getFileType(attachmentUrl);
-                  const fileName = getFileName(attachmentUrl);
-                  return (
-                    <div 
-                      key={index} 
-                      className="border rounded-lg overflow-hidden cursor-pointer group"
-                      onClick={() => openPreview(attachmentUrl)}
-                    >
-                      {fileType === 'image' ? (
-                        <div className="relative">
-                          <img src={attachmentUrl} alt={`添付資料 ${index + 1}`} className="w-full max-h-[300px] object-contain bg-muted" />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <Maximize2 className="w-8 h-8 text-white" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <File className="h-5 w-5" />添付資料
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {campaign.attachments.map((attachmentUrl, index) => {
+                    const fileType = getFileType(attachmentUrl);
+                    const fileName = getFileName(attachmentUrl);
+                    return (
+                      <div 
+                        key={index} 
+                        className="relative aspect-square bg-muted rounded-lg overflow-hidden border cursor-pointer group hover:ring-2 hover:ring-primary/50 transition-all"
+                        onClick={() => openPreview(attachmentUrl)}
+                      >
+                        {fileType === 'image' ? (
+                          <img src={attachmentUrl} alt={`添付資料 ${index + 1}`} className="w-full h-full object-cover" />
+                        ) : fileType === 'video' ? (
+                          <>
+                            <video src={attachmentUrl} className="w-full h-full object-cover" muted />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <Play className="w-8 h-8 text-white" />
+                            </div>
+                          </>
+                        ) : fileType === 'pdf' ? (
+                          <PdfThumbnail url={attachmentUrl} className="w-full h-full" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                            <FileText className="w-8 h-8 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">ファイル</span>
                           </div>
-                          <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <Maximize2 className="w-5 h-5 text-white" />
                         </div>
-                      ) : fileType === 'video' ? (
-                        <div className="relative">
-                          <video src={attachmentUrl} className="w-full max-h-[300px]" />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-                            <Play className="w-12 h-12 text-white" />
-                          </div>
-                          <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
+                        <div className="absolute bottom-0 left-0 right-0 p-1.5 bg-gradient-to-t from-black/60 to-transparent">
+                          <span className="text-[10px] text-white/90 truncate block">{fileName}</span>
                         </div>
-                      ) : fileType === 'pdf' ? (
-                        <div className="relative">
-                          <PdfThumbnail url={attachmentUrl} className="w-full h-[150px]" />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded">クリックして表示</span>
-                          </div>
-                          <div className="p-2 bg-muted/50 border-t"><span className="text-xs text-muted-foreground truncate block">{fileName}</span></div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3 p-3 bg-muted/30">
-                          <FileText className="w-6 h-6 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm truncate">{fileName}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent></Card>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
         <TabsContent value="submissions" className="mt-4">
