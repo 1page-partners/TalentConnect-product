@@ -89,10 +89,10 @@ const CampaignList = () => {
             <Link to={`/admin/campaign/${campaign.id}`}><Eye className="h-4 w-4 mr-1" />詳細</Link>
           </Button>
           <Button variant="outline" size="sm" onClick={() => copyConsentUrl(campaign.slug, campaign.title)}>
-            <Copy className="h-4 w-4 mr-1" />許諾取得用
+            <Copy className="h-4 w-4 mr-1" />許諾取得用URLコピー
           </Button>
           <Button variant="outline" size="sm" onClick={() => copyDetailOnlyUrl(campaign.slug, campaign.title)}>
-            <Link2 className="h-4 w-4 mr-1" />詳細のみ
+            <Link2 className="h-4 w-4 mr-1" />詳細配布用URLコピー
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to={`/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-1" />プレビュー</Link>
