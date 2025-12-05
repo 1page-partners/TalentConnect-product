@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/Header";
 import NDASectionEnhanced from "@/components/wizard/NDASectionEnhanced";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
@@ -8,7 +8,8 @@ import SubmissionFormEnhanced from "@/components/wizard/SubmissionFormEnhanced";
 import OptInForm from "@/components/wizard/OptInForm";
 import ThanksPane from "@/components/wizard/ThanksPane";
 import { campaignApi, Campaign } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // CampaignDetailCard用に変換
 interface CampaignDisplay {
@@ -38,6 +39,8 @@ interface CampaignDisplay {
 const InfluencerWizard = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isPreview = location.pathname.startsWith('/preview/');
   const [currentStep, setCurrentStep] = useState(1);
   const [campaign, setCampaign] = useState<CampaignDisplay | null>(null);
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
@@ -154,6 +157,7 @@ const InfluencerWizard = () => {
               onNext={handleNext}
               onBack={handleBack}
               campaignId={campaign.id}
+              isPreview={isPreview}
             />
           );
         } else if (isAccepted === false) {
@@ -162,6 +166,7 @@ const InfluencerWizard = () => {
               onNext={handleNext}
               onBack={handleBack}
               campaignId={campaign.id}
+              isPreview={isPreview}
             />
           );
         }
@@ -207,6 +212,13 @@ const InfluencerWizard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* プレビューバナー */}
+      {isPreview && (
+        <div className="bg-amber-500 text-white py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2">
+          <Eye className="w-4 h-4" />
+          プレビューモード - フォームに入力してもデータは保存されません
+        </div>
+      )}
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         {/* ステッパー表示 */}
         <div className="mb-8">

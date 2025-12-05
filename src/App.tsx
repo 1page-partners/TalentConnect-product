@@ -33,7 +33,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<AdminLayout><Index /></AdminLayout>} />
             <Route path="/i/:token" element={<InfluencerWizard />} />
+            <Route path="/preview/i/:token" element={<InfluencerWizard />} />
             <Route path="/c/:slug" element={<CampaignDetailOnly />} />
+            <Route path="/preview/c/:slug" element={<CampaignDetailOnly />} />
             <Route path="/admin/auth" element={<Auth />} />
             <Route path="/admin/registration-complete" element={<RegistrationComplete />} />
             <Route path="/admin" element={<AdminLayout><Dashboard /></AdminLayout>} />

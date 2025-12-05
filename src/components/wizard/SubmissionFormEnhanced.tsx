@@ -19,6 +19,7 @@ interface SubmissionFormEnhancedProps {
   onNext: () => void;
   onBack?: () => void;
   campaignId: string;
+  isPreview?: boolean;
 }
 
 interface SocialAccount {
@@ -92,7 +93,7 @@ const shouldShowHintBox = (platform: string): boolean => {
   return HANDLE_PLATFORMS.includes(platform) || URL_PLATFORMS.includes(platform) || platform === 'その他';
 };
 
-const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEnhancedProps) => {
+const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false }: SubmissionFormEnhancedProps) => {
   const [activityName, setActivityName] = useState("");
   const [mainSns, setMainSns] = useState("");
   const [mainAccount, setMainAccount] = useState("");
@@ -307,6 +308,16 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId }: SubmissionFormEn
         notes: memo.trim() || null,
         status: 'pending',
       };
+
+      // プレビューモードの場合はDB保存をスキップ
+      if (isPreview) {
+        toast({
+          title: "プレビューモード",
+          description: "プレビューのため、データは保存されません",
+        });
+        onNext();
+        return;
+      }
 
       await submissionApi.create(submission);
       
