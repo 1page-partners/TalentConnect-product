@@ -150,7 +150,6 @@ const InfluencerWizard = () => {
         return (
           <ThanksPane 
             isAccepted={isAccepted === true}
-            onBackToStart={handleBackToStart}
           />
         );
       default:
