@@ -4,10 +4,12 @@ import { CheckCircle, Heart } from "lucide-react";
 
 interface ThanksPaneProps {
   isAccepted: boolean;
-  onBackToStart: () => void;
 }
 
-const ThanksPane = ({ isAccepted, onBackToStart }: ThanksPaneProps) => {
+const ThanksPane = ({ isAccepted }: ThanksPaneProps) => {
+  const handleClose = () => {
+    window.close();
+  };
   return (
     <div className="space-y-6">
       <Card className="shadow-card">
@@ -55,11 +57,14 @@ const ThanksPane = ({ isAccepted, onBackToStart }: ThanksPaneProps) => {
           <div className="border-t pt-6">
             <Button 
               variant="outline"
-              onClick={onBackToStart}
+              onClick={handleClose}
               className="px-8"
             >
-              完了
+              ウィンドウを閉じる
             </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              ※ブラウザの設定によっては閉じられない場合があります
+            </p>
           </div>
 
           <div className="text-xs text-muted-foreground">
