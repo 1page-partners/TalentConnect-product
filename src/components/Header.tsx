@@ -15,7 +15,7 @@ const Header = ({ showStepper = false, currentStep = 1, totalSteps = 4 }: Header
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link to="/" className="hover:opacity-80 transition-opacity">
-              <img src={logo} alt="TalentConnect" className="h-8 object-contain" />
+              <img src={logo} alt="TalentConnect" className="h-16 object-contain" />
             </Link>
           </div>
           
