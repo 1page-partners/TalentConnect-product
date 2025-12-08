@@ -14,16 +14,315 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaign_creators: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          status: string | null
+          submission_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          submission_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          status?: string | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_creators_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_creators_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          ad_appearance: boolean | null
+          attachments: string[] | null
+          client_name: string
+          contact_email: string | null
+          created_at: string
+          deliverables: Json | null
+          description: string | null
+          id: string
+          image_materials: string[] | null
+          management_sheet_url: string | null
+          nda_template: string | null
+          nda_url: string | null
+          ng_items: string | null
+          posting_date: string | null
+          report_url: string | null
+          requires_consent: boolean | null
+          secondary_usage: boolean | null
+          secondary_usage_period: string | null
+          secondary_usage_purpose: string | null
+          slug: string
+          status: string | null
+          target_platforms: string[] | null
+          title: string
+          updated_at: string
+          video_production_only: boolean | null
+        }
+        Insert: {
+          ad_appearance?: boolean | null
+          attachments?: string[] | null
+          client_name: string
+          contact_email?: string | null
+          created_at?: string
+          deliverables?: Json | null
+          description?: string | null
+          id?: string
+          image_materials?: string[] | null
+          management_sheet_url?: string | null
+          nda_template?: string | null
+          nda_url?: string | null
+          ng_items?: string | null
+          posting_date?: string | null
+          report_url?: string | null
+          requires_consent?: boolean | null
+          secondary_usage?: boolean | null
+          secondary_usage_period?: string | null
+          secondary_usage_purpose?: string | null
+          slug: string
+          status?: string | null
+          target_platforms?: string[] | null
+          title: string
+          updated_at?: string
+          video_production_only?: boolean | null
+        }
+        Update: {
+          ad_appearance?: boolean | null
+          attachments?: string[] | null
+          client_name?: string
+          contact_email?: string | null
+          created_at?: string
+          deliverables?: Json | null
+          description?: string | null
+          id?: string
+          image_materials?: string[] | null
+          management_sheet_url?: string | null
+          nda_template?: string | null
+          nda_url?: string | null
+          ng_items?: string | null
+          posting_date?: string | null
+          report_url?: string | null
+          requires_consent?: boolean | null
+          secondary_usage?: boolean | null
+          secondary_usage_period?: string | null
+          secondary_usage_purpose?: string | null
+          slug?: string
+          status?: string | null
+          target_platforms?: string[] | null
+          title?: string
+          updated_at?: string
+          video_production_only?: boolean | null
+        }
+        Relationships: []
+      }
+      creator_list_items: {
+        Row: {
+          created_at: string
+          id: string
+          list_id: string
+          submission_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          list_id: string
+          submission_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          list_id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "creator_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_list_items_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_lists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      influencer_submissions: {
+        Row: {
+          campaign_id: string
+          can_participate: boolean | null
+          created_at: string
+          desired_fee: string | null
+          email: string
+          id: string
+          insight_screenshots: string[] | null
+          instagram: string | null
+          line_id: string | null
+          main_account: string | null
+          main_sns: string | null
+          name: string
+          notes: string | null
+          other_sns: Json | null
+          phone: string | null
+          portfolio_urls: string[] | null
+          preferred_contact: string | null
+          red: string | null
+          status: string | null
+          tiktok: string | null
+          updated_at: string
+          x_twitter: string | null
+          youtube: string | null
+        }
+        Insert: {
+          campaign_id: string
+          can_participate?: boolean | null
+          created_at?: string
+          desired_fee?: string | null
+          email: string
+          id?: string
+          insight_screenshots?: string[] | null
+          instagram?: string | null
+          line_id?: string | null
+          main_account?: string | null
+          main_sns?: string | null
+          name: string
+          notes?: string | null
+          other_sns?: Json | null
+          phone?: string | null
+          portfolio_urls?: string[] | null
+          preferred_contact?: string | null
+          red?: string | null
+          status?: string | null
+          tiktok?: string | null
+          updated_at?: string
+          x_twitter?: string | null
+          youtube?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          can_participate?: boolean | null
+          created_at?: string
+          desired_fee?: string | null
+          email?: string
+          id?: string
+          insight_screenshots?: string[] | null
+          instagram?: string | null
+          line_id?: string | null
+          main_account?: string | null
+          main_sns?: string | null
+          name?: string
+          notes?: string | null
+          other_sns?: Json | null
+          phone?: string | null
+          portfolio_urls?: string[] | null
+          preferred_contact?: string | null
+          red?: string | null
+          status?: string | null
+          tiktok?: string | null
+          updated_at?: string
+          x_twitter?: string | null
+          youtube?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_submissions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_member: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +449,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member"],
+    },
   },
 } as const
