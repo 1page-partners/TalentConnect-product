@@ -76,13 +76,13 @@ const CampaignList = () => {
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(campaign => {
       const matchesKeyword = searchKeyword === '' || campaign.title.toLowerCase().includes(searchKeyword.toLowerCase());
-      const matchesPlatform = selectedPlatform === 'all' || campaign.platforms.includes(selectedPlatform);
+      const matchesPlatform = selectedPlatform === 'all' || (campaign.target_platforms || []).includes(selectedPlatform);
       return matchesKeyword && matchesPlatform;
     });
   }, [campaigns, searchKeyword, selectedPlatform]);
 
-  const openCampaigns = filteredCampaigns.filter(c => c.status === 'open');
-  const closedCampaigns = filteredCampaigns.filter(c => c.status === 'closed');
+  const openCampaigns = filteredCampaigns.filter(c => c.status === 'active');
+  const closedCampaigns = filteredCampaigns.filter(c => c.status !== 'active');
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -94,14 +94,16 @@ const CampaignList = () => {
         <div className="flex justify-between items-start mb-4">
           <div className="space-y-1">
             <h3 className="font-semibold text-lg">{campaign.title}</h3>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>締切: {formatDate(campaign.deadline)}</span>
-            </div>
+            {campaign.posting_date && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>投稿予定: {campaign.posting_date}</span>
+              </div>
+            )}
           </div>
-          <Badge variant={campaign.status === 'open' ? 'default' : 'secondary'}>{campaign.status === 'open' ? '募集中' : '終了'}</Badge>
+          <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>{campaign.status === 'active' ? '募集中' : '終了'}</Badge>
         </div>
-        <div className="flex items-center gap-2 mb-4"><SocialIconsList platforms={campaign.platforms} /></div>
+        <div className="flex items-center gap-2 mb-4"><SocialIconsList platforms={campaign.target_platforms || []} /></div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to={`/admin/campaign/${campaign.id}`}><Eye className="h-4 w-4 mr-1" />詳細</Link>

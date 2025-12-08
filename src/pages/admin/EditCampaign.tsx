@@ -112,32 +112,31 @@ const EditCampaign = () => {
         // Populate form fields
         setClientName(campaign.client_name || "");
         setTitle(campaign.title || "");
-        setSummary(campaign.summary || "");
-        setRequirements(campaign.requirements || "");
-        setIsTH(campaign.is_th || false);
+        setSummary(campaign.description || "");
+        setRequirements("");
+        setIsTH(false);
         setImageMaterials(campaign.image_materials || []);
-        setSelectedPlatforms(campaign.platforms || []);
+        setSelectedPlatforms(campaign.target_platforms || []);
         
         // Parse platform deliverables
-        const deliverables = campaign.platform_deliverables as Record<string, string[]> | null;
+        const deliverables = campaign.deliverables as Record<string, string[]> | null;
         setPlatformDeliverableMap(deliverables || {});
         
-        setDeadline(campaign.deadline || "");
-        setRestrictions(campaign.restrictions || "");
+        setDeadline(campaign.posting_date || "");
+        setRestrictions(campaign.ng_items || "");
         setNdaTemplate((campaign.nda_template as 'PlanC' | 'MARKON' | 'custom') || 'PlanC');
         setNdaUrl(campaign.nda_url || "");
-        setIsVideoProductionOnly(campaign.is_video_production_only || false);
+        setIsVideoProductionOnly(campaign.video_production_only || false);
         
         // Parse secondary usage
-        const secondaryUsage = campaign.secondary_usage as { hasUsage?: boolean; duration?: string; purpose?: string } | null;
-        if (secondaryUsage?.hasUsage) {
+        if (campaign.secondary_usage) {
           setHasSecondaryUsage(true);
-          setSecondaryUsageDuration(secondaryUsage.duration || "");
-          setSecondaryUsagePurpose(secondaryUsage.purpose || "");
+          setSecondaryUsageDuration(campaign.secondary_usage_period || "");
+          setSecondaryUsagePurpose(campaign.secondary_usage_purpose || "");
         }
         
-        setHasAdvertisementAppearance(campaign.has_advertisement_appearance || false);
-        setPlannedPostDate(campaign.planned_post_date || "");
+        setHasAdvertisementAppearance(campaign.ad_appearance || false);
+        setPlannedPostDate(campaign.posting_date || "");
         setAttachments(campaign.attachments || []);
         setStatus(campaign.status as 'open' | 'closed' || 'open');
         setContactEmail(campaign.contact_email || "");
@@ -217,26 +216,21 @@ const EditCampaign = () => {
       const campaignData = {
         client_name: clientName.trim(),
         title: title.trim(),
-        summary: summary.trim(),
-        requirements: requirements.trim() || null,
-        platforms: selectedPlatforms,
-        deadline,
-        restrictions: restrictions.trim() || null,
+        description: summary.trim(),
+        target_platforms: selectedPlatforms,
+        posting_date: deadline || null,
+        ng_items: restrictions.trim() || null,
         nda_url: ndaTemplate === 'custom' ? ndaUrl.trim() : null,
         nda_template: ndaTemplate,
         status,
         contact_email: contactEmail.trim() || null,
-        is_th: isTH,
         image_materials: imageMaterials.length > 0 ? imageMaterials : null,
-        platform_deliverables: platformDeliverableMap,
-        is_video_production_only: isVideoProductionOnly,
-        secondary_usage: hasSecondaryUsage ? {
-          hasUsage: true,
-          duration: secondaryUsageDuration,
-          purpose: secondaryUsagePurpose.trim()
-        } : { hasUsage: false },
-        has_advertisement_appearance: hasAdvertisementAppearance,
-        planned_post_date: plannedPostDate || null,
+        deliverables: platformDeliverableMap,
+        video_production_only: isVideoProductionOnly,
+        secondary_usage: hasSecondaryUsage,
+        secondary_usage_period: hasSecondaryUsage ? secondaryUsageDuration : null,
+        secondary_usage_purpose: hasSecondaryUsage ? secondaryUsagePurpose.trim() : null,
+        ad_appearance: hasAdvertisementAppearance,
         attachments: attachments.length > 0 ? attachments : null,
       };
 

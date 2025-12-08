@@ -84,13 +84,13 @@ const CampaignDetail = () => {
     if (submissions.length === 0) { toast({ title: 'エクスポートできません', variant: 'destructive' }); return; }
     const headers = ['名前', 'メール', '電話番号', 'Instagram', 'TikTok', 'YouTube', '応募日'];
     const rows = submissions.map(s => [
-      s.influencer_name, 
+      s.name, 
       s.email || '', 
       s.phone || '', 
-      getFollowers(s.instagram, 'followers')?.toString() || '', 
-      getFollowers(s.tiktok, 'followers')?.toString() || '', 
-      getFollowers(s.youtube, 'subscribers')?.toString() || '', 
-      formatDate(s.submitted_at)
+      s.instagram || '', 
+      s.tiktok || '', 
+      s.youtube || '', 
+      formatDate(s.created_at)
     ]);
     const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -112,8 +112,8 @@ const CampaignDetail = () => {
           <div>
             <h1 className="text-2xl font-bold">{campaign.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={campaign.status === 'open' ? 'default' : 'secondary'}>{campaign.status === 'open' ? '募集中' : '終了'}</Badge>
-              <span className="text-sm text-muted-foreground">締切: {formatDate(campaign.deadline)}</span>
+              <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>{campaign.status === 'active' ? '募集中' : '終了'}</Badge>
+              {campaign.posting_date && <span className="text-sm text-muted-foreground">投稿予定: {campaign.posting_date}</span>}
             </div>
           </div>
         </div>
@@ -131,9 +131,9 @@ const CampaignDetail = () => {
         </TabsList>
         <TabsContent value="overview" className="mt-4 space-y-4">
           <Card><CardHeader><CardTitle>案件情報</CardTitle></CardHeader><CardContent className="space-y-4">
-            <div><div className="text-sm font-medium text-muted-foreground mb-1">概要</div><p>{campaign.summary || '未設定'}</p></div>
-            <div><div className="text-sm font-medium text-muted-foreground mb-1">プラットフォーム</div><SocialIconsList platforms={campaign.platforms} /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><div className="text-sm font-medium text-muted-foreground mb-1">作成日</div><p>{formatDate(campaign.created_at)}</p></div><div><div className="text-sm font-medium text-muted-foreground mb-1">締切日</div><p>{formatDate(campaign.deadline)}</p></div></div>
+            <div><div className="text-sm font-medium text-muted-foreground mb-1">概要</div><p>{campaign.description || '未設定'}</p></div>
+            <div><div className="text-sm font-medium text-muted-foreground mb-1">プラットフォーム</div><SocialIconsList platforms={campaign.target_platforms || []} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><div className="text-sm font-medium text-muted-foreground mb-1">作成日</div><p>{formatDate(campaign.created_at)}</p></div>{campaign.posting_date && <div><div className="text-sm font-medium text-muted-foreground mb-1">投稿予定日</div><p>{campaign.posting_date}</p></div>}</div>
             {campaign.management_sheet_url && <div><div className="text-sm font-medium text-muted-foreground mb-1">管理シート</div><Button variant="outline" size="sm" asChild><a href={campaign.management_sheet_url} target="_blank" rel="noopener noreferrer"><FileSpreadsheet className="h-4 w-4 mr-2" />シートを開く</a></Button></div>}
           </CardContent></Card>
           
@@ -237,11 +237,8 @@ const CampaignDetail = () => {
         <TabsContent value="submissions" className="mt-4">
           <Card><CardHeader><div className="flex items-center justify-between flex-wrap gap-2"><CardTitle>応募者一覧</CardTitle><Button variant="outline" size="sm" onClick={exportToCSV}><Download className="h-4 w-4 mr-2" />CSV</Button></div></CardHeader><CardContent>
             {submissions.length === 0 ? <div className="text-center py-8"><Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">応募者はまだいません</p></div> : <div className="space-y-4">{submissions.map(s => {
-              const igFollowers = getFollowers(s.instagram, 'followers');
-              const ttFollowers = getFollowers(s.tiktok, 'followers');
-              const ytSubs = getFollowers(s.youtube, 'subscribers');
               return (
-                <Card key={s.id}><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start gap-2"><div className="space-y-2"><h3 className="font-semibold">{s.influencer_name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{igFollowers && <Badge variant="outline">IG: {igFollowers.toLocaleString()}</Badge>}{ttFollowers && <Badge variant="outline">TT: {ttFollowers.toLocaleString()}</Badge>}{ytSubs && <Badge variant="outline">YT: {ytSubs.toLocaleString()}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.submitted_at)}</div></div></CardContent></Card>
+                <Card key={s.id}><CardContent className="p-4"><div className="flex flex-col sm:flex-row justify-between items-start gap-2"><div className="space-y-2"><h3 className="font-semibold">{s.name}</h3><div className="flex flex-col gap-1 text-sm text-muted-foreground"><div className="flex items-center gap-2"><Mail className="h-4 w-4" />{s.email}</div>{s.phone && <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{s.phone}</div>}</div><div className="flex flex-wrap gap-2 text-sm">{s.instagram && <Badge variant="outline">IG: {s.instagram}</Badge>}{s.tiktok && <Badge variant="outline">TT: {s.tiktok}</Badge>}{s.youtube && <Badge variant="outline">YT: {s.youtube}</Badge>}</div></div><div className="text-sm text-muted-foreground">{formatDate(s.created_at)}</div></div></CardContent></Card>
               );
             })}</div>}
           </CardContent></Card>

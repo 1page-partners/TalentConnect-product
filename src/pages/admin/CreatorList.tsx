@@ -152,14 +152,17 @@ const CreatorListPage = () => {
     if (submission.tiktok) platforms.push('TikTok');
     if (submission.youtube) platforms.push('YouTube');
     if (submission.red) platforms.push('RED');
-    // other_platforms から X を取得
-    if (submission.other_platforms) {
+    if (submission.x_twitter) platforms.push('X');
+    // other_sns から他のプラットフォームを取得
+    if (submission.other_sns) {
       try {
-        const others = typeof submission.other_platforms === 'string' 
-          ? JSON.parse(submission.other_platforms) 
-          : submission.other_platforms;
+        const others = submission.other_sns as Array<{platform: string; url: string}>;
         if (Array.isArray(others)) {
-          if (others.some(p => p.platform === 'X')) platforms.push('X');
+          others.forEach(p => {
+            if (p.platform && !platforms.includes(p.platform)) {
+              platforms.push(p.platform);
+            }
+          });
         }
       } catch {}
     }
@@ -172,7 +175,7 @@ const CreatorListPage = () => {
     if (debouncedKeyword) {
       const keyword = debouncedKeyword.toLowerCase();
       filtered = filtered.filter(s => 
-        s.influencer_name.toLowerCase().includes(keyword) ||
+        s.name.toLowerCase().includes(keyword) ||
         s.email?.toLowerCase().includes(keyword) ||
         s.campaign_title.toLowerCase().includes(keyword)
       );
@@ -206,7 +209,7 @@ const CreatorListPage = () => {
     return (
       <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
         <Link to={`/admin/creator/${submission.id}`} className="font-medium hover:text-primary transition-colors truncate min-w-[120px] max-w-[180px]">
-          {submission.influencer_name}
+          {submission.name}
         </Link>
         
         <div className="flex items-center gap-1.5 shrink-0">
@@ -369,7 +372,7 @@ const CreatorListPage = () => {
                   {availableForCurrentList.slice(0, 6).map(submission => (
                     <div key={submission.id} className="flex items-center justify-between p-2 border rounded-lg bg-muted/30">
                       <Link to={`/admin/creator/${submission.id}`} className="text-sm font-medium hover:text-primary truncate flex-1">
-                        {submission.influencer_name}
+                        {submission.name}
                       </Link>
                       <Button variant="ghost" size="sm" onClick={() => handleAddToCurrentList(submission.id)}>
                         <ListPlus className="h-4 w-4" />

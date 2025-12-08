@@ -182,7 +182,7 @@ export interface CreatorListItem {
   id: string;
   list_id: string;
   submission_id: string;
-  added_at: string;
+  created_at: string;
 }
 
 // クリエイターリスト関連のAPI

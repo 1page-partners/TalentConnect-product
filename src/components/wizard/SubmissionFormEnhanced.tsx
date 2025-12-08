@@ -290,23 +290,27 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
 
       const submission = {
         campaign_id: campaignId,
-        influencer_name: activityName.trim(),
-        phone: phoneNumber.trim(),
-        contact_email: contactEmail || null,
-        contact_methods: contactMethods,
+        name: activityName.trim(),
+        email: contactEmail || 'no-email@example.com',
+        phone: phoneNumber.trim() || null,
         line_id: contactLineId.trim() || null,
-        instagram: instagramData,
-        youtube: youtubeData,
-        tiktok: tiktokData,
-        red: redData,
-        other_platforms: [...(xData ? [xData] : []), ...otherData].length > 0 
-          ? JSON.stringify([...(xData ? [xData] : []), ...otherData]) 
-          : null,
-        portfolio_files: portfolioFiles.length > 0 ? portfolioFiles : null,
-        follower_insight_screenshot: insightScreenshot.length > 0 ? insightScreenshot[0] : null,
-        preferred_fee: desiredPayment ? formatPaymentAmount(desiredPayment) : null,
+        preferred_contact: contactMethods[0] || 'email',
+        main_sns: mainSns || null,
+        main_account: mainAccount || null,
+        instagram: instagramData?.url || null,
+        youtube: youtubeData?.url || null,
+        tiktok: tiktokData?.url || null,
+        red: redData?.url || null,
+        x_twitter: xData?.url || null,
+        other_sns: [...otherData].length > 0 
+          ? otherData.map(d => ({ platform: d.platform, url: d.url }))
+          : [],
+        portfolio_urls: portfolioFiles.length > 0 ? portfolioFiles : [],
+        insight_screenshots: insightScreenshot.length > 0 ? insightScreenshot : [],
+        desired_fee: desiredPayment ? formatPaymentAmount(desiredPayment) : null,
         notes: memo.trim() || null,
         status: 'pending',
+        can_participate: true,
       };
 
       // プレビューモードの場合はDB保存をスキップ

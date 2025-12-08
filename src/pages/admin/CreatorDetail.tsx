@@ -52,8 +52,8 @@ const CreatorDetail = () => {
       const { data: allSubs } = await supabase
         .from('influencer_submissions')
         .select('*')
-        .eq('influencer_name', subData.influencer_name)
-        .order('submitted_at', { ascending: false });
+        .eq('name', subData.name)
+        .order('created_at', { ascending: false });
 
       // 各応募のキャンペーン情報を取得
       const subsWithCampaigns: SubmissionWithCampaign[] = [];
@@ -230,24 +230,23 @@ const CreatorDetail = () => {
     );
   }
 
-  const igHandle = getAccountHandle(submission.instagram);
-  const ttHandle = getAccountHandle(submission.tiktok);
-  const ytHandle = getAccountHandle(submission.youtube);
-  const redHandle = getAccountHandle(submission.red);
+  const igHandle = submission.instagram;
+  const ttHandle = submission.tiktok;
+  const ytHandle = submission.youtube;
+  const redHandle = submission.red;
+  const xHandle = submission.x_twitter;
 
   const igUrl = buildPlatformUrl('instagram', igHandle);
   const ttUrl = buildPlatformUrl('tiktok', ttHandle);
   const ytUrl = buildPlatformUrl('youtube', ytHandle);
+  const xUrl = buildPlatformUrl('x', xHandle);
 
-  // other_platforms をパース (X等を含む)
+  // other_sns をパース
   const parseOtherPlatforms = (): Array<{platform: string; url: string}> => {
-    if (!submission.other_platforms) return [];
+    if (!submission.other_sns) return [];
     try {
-      if (typeof submission.other_platforms === 'string') {
-        return JSON.parse(submission.other_platforms);
-      }
-      if (Array.isArray(submission.other_platforms)) {
-        return submission.other_platforms;
+      if (Array.isArray(submission.other_sns)) {
+        return submission.other_sns as Array<{platform: string; url: string}>;
       }
       return [];
     } catch {
@@ -255,10 +254,6 @@ const CreatorDetail = () => {
     }
   };
   const otherPlatforms = parseOtherPlatforms();
-  const xAccount = otherPlatforms.find(p => p.platform === 'X');
-  const xHandle = xAccount?.url || null;
-  const xUrl = buildPlatformUrl('x', xHandle);
-  const otherNonXPlatforms = otherPlatforms.filter(p => p.platform !== 'X');
 
   return (
     <div className="space-y-6">
@@ -269,8 +264,8 @@ const CreatorDetail = () => {
             <Link to="/admin/creators"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{submission.influencer_name}</h1>
-            <p className="text-muted-foreground">応募日: {formatDate(submission.submitted_at)}</p>
+            <h1 className="text-2xl font-bold">{submission.name}</h1>
+            <p className="text-muted-foreground">応募日: {formatDate(submission.created_at)}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -303,7 +298,7 @@ const CreatorDetail = () => {
               <DialogHeader>
                 <DialogTitle>クリエイター情報を削除</DialogTitle>
                 <DialogDescription>
-                  「{submission.influencer_name}」の情報を削除します。この操作は取り消せません。
+                  「{submission.name}」の情報を削除します。この操作は取り消せません。
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="gap-2 sm:gap-0">
@@ -327,7 +322,7 @@ const CreatorDetail = () => {
           <CardContent className="space-y-4">
             <div>
               <div className="text-sm font-medium text-muted-foreground mb-1">名前</div>
-              <p>{submission.influencer_name}</p>
+              <p>{submission.name}</p>
             </div>
             {submission.email && (
               <div>
@@ -341,32 +336,22 @@ const CreatorDetail = () => {
                 <p className="flex items-center gap-2"><Phone className="h-4 w-4" />{submission.phone}</p>
               </div>
             )}
-            {submission.preferred_fee && (
+            {submission.desired_fee && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">希望報酬</div>
-                <p className="font-semibold text-primary">{submission.preferred_fee}</p>
+                <p className="font-semibold text-primary">{submission.desired_fee}</p>
               </div>
             )}
-            {submission.contact_methods && submission.contact_methods.length > 0 && (
+            {submission.preferred_contact && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">連絡手段</div>
-                <div className="flex flex-wrap gap-2">
-                  {submission.contact_methods.map((method, index) => (
-                    <Badge key={index} variant="outline">{formatContactMethod(method)}</Badge>
-                  ))}
-                </div>
+                <Badge variant="outline">{formatContactMethod(submission.preferred_contact)}</Badge>
               </div>
             )}
-            {submission.contact_methods?.includes('email') && submission.contact_email && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">連絡先メールアドレス</div>
-                <p className="flex items-center gap-2"><Mail className="h-4 w-4" />{submission.contact_email}</p>
-              </div>
-            )}
-            {submission.contact_methods?.includes('line') && (submission as any).line_id && (
+            {submission.line_id && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">LINE ID</div>
-                <p>{(submission as any).line_id}</p>
+                <p>{submission.line_id}</p>
               </div>
             )}
             {submission.notes && (
@@ -402,8 +387,8 @@ const CreatorDetail = () => {
                       {sub.campaign?.client_name || '-'}
                     </div>
                     <div className="flex items-center gap-1 hidden md:flex">
-                      {sub.campaign?.platforms && sub.campaign.platforms.length > 0 && (
-                        <SocialIconsList platforms={sub.campaign.platforms} />
+                      {sub.campaign?.target_platforms && sub.campaign.target_platforms.length > 0 && (
+                        <SocialIconsList platforms={sub.campaign.target_platforms} />
                       )}
                     </div>
                     {getStatusBadge(sub.status)}
@@ -500,11 +485,11 @@ const CreatorDetail = () => {
                   )}
                 </div>
               )}
-              {otherNonXPlatforms.length > 0 && (
+              {otherPlatforms.length > 0 && (
                 <div className="p-4 border rounded-lg sm:col-span-2 lg:col-span-4">
                   <div className="font-medium mb-2">その他プラットフォーム</div>
                   <div className="space-y-2">
-                    {otherNonXPlatforms.map((p, i) => (
+                    {otherPlatforms.map((p, i) => (
                       <div key={i} className="text-sm">
                         <span className="font-medium">{p.platform}:</span> {p.url}
                       </div>
@@ -512,7 +497,7 @@ const CreatorDetail = () => {
                   </div>
                 </div>
               )}
-              {!hasSnsData(submission.instagram) && !hasSnsData(submission.tiktok) && !hasSnsData(submission.youtube) && !hasSnsData(submission.red) && !xHandle && otherNonXPlatforms.length === 0 && (
+              {!hasSnsData(submission.instagram) && !hasSnsData(submission.tiktok) && !hasSnsData(submission.youtube) && !hasSnsData(submission.red) && !xHandle && otherPlatforms.length === 0 && (
                 <p className="text-muted-foreground col-span-full">SNSアカウント情報がありません</p>
               )}
             </div>
@@ -520,27 +505,27 @@ const CreatorDetail = () => {
         </Card>
 
         {/* インサイトスクリーンショット */}
-        {submission.follower_insight_screenshot && (
+        {submission.insight_screenshots && submission.insight_screenshots.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><Image className="h-5 w-5" />フォロワーインサイト</CardTitle></CardHeader>
             <CardContent>
               <div 
                 className="relative aspect-video bg-muted rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-                onClick={() => openPreview(submission.follower_insight_screenshot!)}
+                onClick={() => openPreview(submission.insight_screenshots![0])}
               >
-                <img src={submission.follower_insight_screenshot} alt="フォロワーインサイト" className="w-full h-full object-contain" />
+                <img src={submission.insight_screenshots[0]} alt="フォロワーインサイト" className="w-full h-full object-contain" />
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* ポートフォリオファイル */}
-        {submission.portfolio_files && submission.portfolio_files.length > 0 && (
+        {submission.portfolio_urls && submission.portfolio_urls.length > 0 && (
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5" />ポートフォリオ</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {submission.portfolio_files.map((fileUrl, index) => {
+                {submission.portfolio_urls.map((fileUrl, index) => {
                   const fileType = getFileType(fileUrl);
                   const fileName = getFileName(fileUrl);
                   return (

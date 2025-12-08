@@ -96,9 +96,11 @@ const CampaignDetailOnly = () => {
     });
   };
 
-  const platforms = campaign.platforms || [];
-  const platformDeliverables = campaign.platform_deliverables as Record<string, string[]> | null;
-  const secondaryUsage = campaign.secondary_usage as { hasUsage: boolean; duration?: string; purpose?: string } | null;
+  const platforms = campaign.target_platforms || [];
+  const platformDeliverables = campaign.deliverables as Record<string, string[]> | null;
+  const secondaryUsage = campaign.secondary_usage 
+    ? { hasUsage: true, duration: campaign.secondary_usage_period || undefined, purpose: campaign.secondary_usage_purpose || undefined }
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,9 +118,6 @@ const CampaignDetailOnly = () => {
               <Badge variant={campaign.status === 'open' ? 'default' : 'secondary'}>
                 {campaign.status === 'open' ? '募集中' : '募集終了'}
               </Badge>
-              {campaign.is_th && (
-                <Badge variant="outline">TH案件</Badge>
-              )}
             </div>
             <CardTitle className="text-2xl">{campaign.title}</CardTitle>
             <p className="text-muted-foreground">{campaign.client_name}</p>
@@ -128,7 +127,7 @@ const CampaignDetailOnly = () => {
             {/* 概要 */}
             <div>
               <h3 className="font-semibold mb-2">概要</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">{campaign.summary}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{campaign.description}</p>
             </div>
 
             {/* 想定媒体 */}
@@ -159,31 +158,21 @@ const CampaignDetailOnly = () => {
               </div>
             )}
 
-            {/* 条件詳細 */}
-            {campaign.requirements && (
-              <div>
-                <h3 className="font-semibold mb-2">成果物・条件詳細</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">{campaign.requirements}</p>
+
+            {/* スケジュール */}
+            {campaign.posting_date && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span>投稿予定日: {campaign.posting_date}</span>
               </div>
             )}
 
-            {/* スケジュール */}
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span>締切: {formatDate(campaign.deadline)}</span>
-              {campaign.planned_post_date && (
-                <span className="text-muted-foreground">
-                  （投稿予定: {campaign.planned_post_date}）
-                </span>
-              )}
-            </div>
-
             {/* 契約条件 */}
             <div className="space-y-2">
-              {campaign.is_video_production_only && (
+              {campaign.video_production_only && (
                 <Badge variant="outline">納品動画の制作のみ</Badge>
               )}
-              {campaign.has_advertisement_appearance && (
+              {campaign.ad_appearance && (
                 <Badge variant="outline">広告出演あり</Badge>
               )}
               {secondaryUsage?.hasUsage && (
@@ -198,10 +187,10 @@ const CampaignDetailOnly = () => {
             </div>
 
             {/* NG事項 */}
-            {campaign.restrictions && (
+            {campaign.ng_items && (
               <div>
                 <h3 className="font-semibold mb-2 text-destructive">NG事項・制約</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">{campaign.restrictions}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{campaign.ng_items}</p>
               </div>
             )}
 

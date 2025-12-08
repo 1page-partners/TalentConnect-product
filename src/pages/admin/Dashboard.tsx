@@ -143,13 +143,15 @@ const Dashboard = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{campaign.title}</span>
-                      <Badge variant={campaign.status === 'open' ? 'default' : 'secondary'}>
-                        {campaign.status === 'open' ? '募集中' : '終了'}
+                      <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                        {campaign.status === 'active' ? '募集中' : '終了'}
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      締切: {new Date(campaign.deadline).toLocaleDateString('ja-JP')}
-                    </div>
+                    {campaign.posting_date && (
+                      <div className="text-sm text-muted-foreground">
+                        投稿予定: {campaign.posting_date}
+                      </div>
+                    )}
                   </div>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/admin/campaign/${campaign.id}`}>

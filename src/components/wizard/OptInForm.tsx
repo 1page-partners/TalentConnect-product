@@ -59,10 +59,12 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
       // 連絡を希望しない場合もレコードを作成（status: declined）
       const submission = {
         campaign_id: campaignId,
-        influencer_name: wantsContact ? '連絡希望者' : '辞退者',
-        contact_email: email || null,
-        notes: lineId ? `LINE ID: ${lineId}` : (wantsContact ? '今後の連絡を希望' : '今回は辞退'),
+        name: wantsContact ? '連絡希望者' : '辞退者',
+        email: email || 'declined@example.com',
+        line_id: lineId || null,
+        notes: wantsContact ? '今後の連絡を希望' : '今回は辞退',
         status: 'declined',
+        can_participate: false,
       };
 
       await submissionApi.create(submission);
