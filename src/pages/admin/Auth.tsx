@@ -85,7 +85,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src={logo} alt="TalentConnect" className="h-8 mx-auto object-contain" />
+          <img src={logo} alt="TalentConnect" className="h-12 mx-auto object-contain" />
           <CardDescription>
             {isLogin ? '管理画面にログイン' : '新規アカウント登録'}
           </CardDescription>

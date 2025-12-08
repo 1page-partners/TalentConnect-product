@@ -8,7 +8,7 @@ const Index = () => {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <img src={logo} alt="TalentConnect" className="h-10 mx-auto object-contain" />
+        <img src={logo} alt="TalentConnect" className="h-16 mx-auto object-contain" />
         <p className="text-muted-foreground">インフルエンサー案件管理ツール</p>
       </div>
 
