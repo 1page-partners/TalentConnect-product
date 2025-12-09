@@ -95,7 +95,7 @@ export const submissionApi = {
       .from('influencer_submissions')
       .select('*')
       .eq('campaign_id', campaignId)
-      .order('created_at', { ascending: false });
+      .order('submitted_at', { ascending: false });
     
     if (error) throw error;
     return data || [];
@@ -291,7 +291,7 @@ export const getAllSubmissionsWithCampaign = async (): Promise<(InfluencerSubmis
     const { data: submissions, error: subError } = await supabase
       .from('influencer_submissions')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('submitted_at', { ascending: false });
     
     if (subError) {
       console.error('応募者取得エラー:', subError);
