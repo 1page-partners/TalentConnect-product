@@ -7,6 +7,7 @@ import { SocialIcon } from "@/components/SocialIcons";
 import { Loader2, Calendar, AlertCircle, Image, File, FileText, Play, Maximize2, Eye } from "lucide-react";
 import FilePreviewModal from "@/components/ui/file-preview-modal";
 import PdfThumbnail from "@/components/ui/pdf-thumbnail";
+import CampaignClosedMessage from "@/components/wizard/CampaignClosedMessage";
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -86,6 +87,11 @@ const CampaignDetailOnly = () => {
         </div>
       </div>
     );
+  }
+
+  // 募集終了チェック（プレビューモードでは表示しない）
+  if ((campaign as any).is_closed && !isPreview) {
+    return <CampaignClosedMessage />;
   }
 
   const formatDate = (dateString: string) => {

@@ -86,6 +86,7 @@ export type Database = {
           has_advertisement_appearance: boolean | null
           id: string
           image_materials: string[] | null
+          is_closed: boolean | null
           is_th: boolean | null
           is_video_production_only: boolean | null
           management_sheet_url: string | null
@@ -121,6 +122,7 @@ export type Database = {
           has_advertisement_appearance?: boolean | null
           id?: string
           image_materials?: string[] | null
+          is_closed?: boolean | null
           is_th?: boolean | null
           is_video_production_only?: boolean | null
           management_sheet_url?: string | null
@@ -156,6 +158,7 @@ export type Database = {
           has_advertisement_appearance?: boolean | null
           id?: string
           image_materials?: string[] | null
+          is_closed?: boolean | null
           is_th?: boolean | null
           is_video_production_only?: boolean | null
           management_sheet_url?: string | null
