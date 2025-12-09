@@ -99,6 +99,8 @@ const CampaignList = () => {
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter(campaign => {
+      // デモ案件を除外
+      if (campaign.slug === 'demo-campaign') return false;
       const matchesKeyword = searchKeyword === '' || campaign.title.toLowerCase().includes(searchKeyword.toLowerCase());
       const matchesPlatform = selectedPlatform === 'all' || (campaign.platforms || []).includes(selectedPlatform);
       return matchesKeyword && matchesPlatform;
