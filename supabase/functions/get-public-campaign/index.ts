@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
         description,
         target_platforms,
         deliverables,
+        deadline,
         posting_date,
         ng_items,
         status,

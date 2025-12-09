@@ -60,6 +60,7 @@ export type Database = {
           client_name: string
           contact_email: string | null
           created_at: string
+          deadline: string | null
           deliverables: Json | null
           description: string | null
           editing_only: boolean | null
@@ -91,6 +92,7 @@ export type Database = {
           client_name: string
           contact_email?: string | null
           created_at?: string
+          deadline?: string | null
           deliverables?: Json | null
           description?: string | null
           editing_only?: boolean | null
@@ -122,6 +124,7 @@ export type Database = {
           client_name?: string
           contact_email?: string | null
           created_at?: string
+          deadline?: string | null
           deliverables?: Json | null
           description?: string | null
           editing_only?: boolean | null

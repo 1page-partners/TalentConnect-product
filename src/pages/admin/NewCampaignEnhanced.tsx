@@ -176,6 +176,7 @@ const NewCampaignEnhanced = () => {
         description: summary.trim(),
         target_platforms: selectedPlatforms,
         deliverables: platformDeliverableMap,
+        deadline: deadline || null,
         posting_date: plannedPostDate || null,
         ng_items: restrictions.trim() || null,
         nda_url: ndaTemplate === 'custom' ? ndaUrl.trim() : null,

@@ -127,7 +127,8 @@ const EditCampaign = () => {
         const deliverables = campaign.deliverables as Record<string, string[]> | null;
         setPlatformDeliverableMap(deliverables || {});
         
-        setDeadline(campaign.posting_date || "");
+        setDeadline(campaign.deadline || "");
+        setPlannedPostDate(campaign.posting_date || "");
         setRestrictions(campaign.ng_items || "");
         setNdaTemplate((campaign.nda_template as 'PlanC' | 'MARKON' | 'custom') || 'PlanC');
         setNdaUrl(campaign.nda_url || "");
@@ -141,7 +142,6 @@ const EditCampaign = () => {
         }
         
         setHasAdvertisementAppearance(campaign.ad_appearance || false);
-        setPlannedPostDate(campaign.posting_date || "");
         setAttachments(campaign.attachments || []);
         setStatus(campaign.status as 'open' | 'closed' || 'open');
         setContactEmail(campaign.contact_email || "");
@@ -228,7 +228,8 @@ const EditCampaign = () => {
         title: title.trim(),
         description: summary.trim(),
         target_platforms: selectedPlatforms,
-        posting_date: deadline || null,
+        deadline: deadline || null,
+        posting_date: plannedPostDate || null,
         ng_items: restrictions.trim() || null,
         nda_url: ndaTemplate === 'custom' ? ndaUrl.trim() : null,
         nda_template: ndaTemplate,

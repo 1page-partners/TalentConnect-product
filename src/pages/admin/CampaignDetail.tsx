@@ -183,9 +183,15 @@ const CampaignDetail = () => {
           <Card>
             <CardHeader><CardTitle>スケジュール・契約条件</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">投稿予定日</div>
-                <p>{campaign.posting_date || '未設定'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">締め切り日</div>
+                  <p>{campaign.deadline || '未設定'}</p>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">投稿予定日</div>
+                  <p>{campaign.posting_date || '未設定'}</p>
+                </div>
               </div>
               
               {/* 納品物条件 */}
