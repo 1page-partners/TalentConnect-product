@@ -37,7 +37,7 @@ export const campaignApi = {
   async getBySlug(slug: string): Promise<Campaign | null> {
     // 公開用Edge Functionを使用（機密フィールドを除外）
     const response = await fetch(
-      `https://vpkhrrbfdfgmbrzuwspg.supabase.co/functions/v1/get-public-campaign?slug=${encodeURIComponent(slug)}`,
+      `https://durcilecgrrsudnyaynq.supabase.co/functions/v1/get-public-campaign?slug=${encodeURIComponent(slug)}`,
       {
         method: 'GET',
         headers: {
@@ -95,7 +95,7 @@ export const submissionApi = {
       .from('influencer_submissions')
       .select('*')
       .eq('campaign_id', campaignId)
-      .order('submitted_at', { ascending: false });
+      .order('created_at', { ascending: false });
     
     if (error) throw error;
     return data || [];
@@ -266,7 +266,7 @@ export const getAllSubmissionsWithCampaign = async (): Promise<(InfluencerSubmis
   const { data: submissions, error: subError } = await supabase
     .from('influencer_submissions')
     .select('*')
-    .order('submitted_at', { ascending: false });
+    .order('created_at', { ascending: false });
   
   if (subError) throw subError;
   
