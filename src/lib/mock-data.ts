@@ -212,8 +212,10 @@ export const contactMethodOptions = [
 
 // Status options
 export const statusOptions = [
-  { value: 'open', label: '募集中' },
-  { value: 'closed', label: '募集終了' }
+  { value: 'active', label: '募集中' },
+  { value: 'proposal', label: '提案中' },
+  { value: 'production', label: '制作中' },
+  { value: 'completed', label: '終了' }
 ];
 
 // Mock submission data

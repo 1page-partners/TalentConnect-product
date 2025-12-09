@@ -23,11 +23,13 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const campaignsData = await campaignApi.getAll();
-        setCampaigns(campaignsData);
+        // デモ案件を除外
+        const filteredCampaigns = campaignsData.filter(c => c.slug !== 'demo-campaign');
+        setCampaigns(filteredCampaigns);
 
-        // 全キャンペーンの応募数を取得
+        // 全キャンペーンの応募数を取得（デモ案件を除く）
         let total = 0;
-        for (const campaign of campaignsData) {
+        for (const campaign of filteredCampaigns) {
           const submissions = await submissionApi.getByCampaignId(campaign.id);
           total += submissions.length;
         }
@@ -42,8 +44,8 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  const openCampaigns = campaigns.filter(c => c.status === 'open');
-  const closedCampaigns = campaigns.filter(c => c.status === 'closed');
+  const activeCampaigns = campaigns.filter(c => c.status === 'active');
+  const otherCampaigns = campaigns.filter(c => c.status !== 'active');
 
   if (loading) {
     return (
@@ -86,17 +88,17 @@ const Dashboard = () => {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{openCampaigns.length}</div>
+            <div className="text-2xl font-bold text-green-600">{activeCampaigns.length}</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">募集終了</CardTitle>
+            <CardTitle className="text-sm font-medium">その他</CardTitle>
             <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">{closedCampaigns.length}</div>
+            <div className="text-2xl font-bold text-muted-foreground">{otherCampaigns.length}</div>
           </CardContent>
         </Card>
         
