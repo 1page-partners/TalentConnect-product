@@ -130,12 +130,156 @@ const CampaignDetail = () => {
           <TabsTrigger value="submissions">応募者 ({submissions.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-4 space-y-4">
-          <Card><CardHeader><CardTitle>案件情報</CardTitle></CardHeader><CardContent className="space-y-4">
-            <div><div className="text-sm font-medium text-muted-foreground mb-1">概要</div><p>{campaign.description || '未設定'}</p></div>
-            <div><div className="text-sm font-medium text-muted-foreground mb-1">プラットフォーム</div><SocialIconsList platforms={campaign.target_platforms || []} /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><div className="text-sm font-medium text-muted-foreground mb-1">作成日</div><p>{formatDate(campaign.created_at)}</p></div>{campaign.posting_date && <div><div className="text-sm font-medium text-muted-foreground mb-1">投稿予定日</div><p>{campaign.posting_date}</p></div>}</div>
-            {campaign.management_sheet_url && <div><div className="text-sm font-medium text-muted-foreground mb-1">管理シート</div><Button variant="outline" size="sm" asChild><a href={campaign.management_sheet_url} target="_blank" rel="noopener noreferrer"><FileSpreadsheet className="h-4 w-4 mr-2" />シートを開く</a></Button></div>}
-          </CardContent></Card>
+          {/* 基本情報 */}
+          <Card>
+            <CardHeader><CardTitle>基本情報</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">クライアント名</div>
+                  <p>{campaign.client_name}</p>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">作成日</div>
+                  <p>{formatDate(campaign.created_at)}</p>
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">案件概要</div>
+                <p className="whitespace-pre-wrap">{campaign.description || '未設定'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 想定媒体・成果物 */}
+          <Card>
+            <CardHeader><CardTitle>想定媒体・成果物</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">想定媒体</div>
+                <SocialIconsList platforms={campaign.target_platforms || []} />
+              </div>
+              {campaign.deliverables && Object.keys(campaign.deliverables).length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-2">各媒体の成果物</div>
+                  <div className="space-y-2">
+                    {Object.entries(campaign.deliverables as Record<string, string[]>).map(([platform, items]) => (
+                      items && items.length > 0 && (
+                        <div key={platform} className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium capitalize">{platform}:</span>
+                          {items.map((item, idx) => (
+                            <Badge key={idx} variant="outline">{item}</Badge>
+                          ))}
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* スケジュール・契約条件 */}
+          <Card>
+            <CardHeader><CardTitle>スケジュール・契約条件</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">投稿予定日</div>
+                <p>{campaign.posting_date || '未設定'}</p>
+              </div>
+              
+              {/* 納品物条件 */}
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-2">納品物条件</div>
+                <div className="flex flex-wrap gap-2">
+                  {campaign.shooting_only && <Badge variant="secondary">撮影のみ</Badge>}
+                  {campaign.editing_only && <Badge variant="secondary">編集のみ</Badge>}
+                  {campaign.shooting_and_editing && <Badge variant="secondary">撮影・編集両方</Badge>}
+                  {campaign.video_production_only && <Badge variant="secondary">動画制作のみ</Badge>}
+                  {campaign.tieup_post_production && <Badge variant="secondary">タイアップ投稿後の制作</Badge>}
+                  {!campaign.shooting_only && !campaign.editing_only && !campaign.shooting_and_editing && !campaign.video_production_only && !campaign.tieup_post_production && (
+                    <span className="text-muted-foreground text-sm">条件なし</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 二次利用 */}
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">二次利用</div>
+                {campaign.secondary_usage ? (
+                  <div className="space-y-1">
+                    <Badge>あり</Badge>
+                    {campaign.secondary_usage_period && (
+                      <p className="text-sm mt-1">期間: {campaign.secondary_usage_period}</p>
+                    )}
+                    {campaign.secondary_usage_purpose && (
+                      <p className="text-sm">用途: {campaign.secondary_usage_purpose}</p>
+                    )}
+                  </div>
+                ) : (
+                  <Badge variant="outline">なし</Badge>
+                )}
+              </div>
+
+              {/* 広告出演 */}
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">広告出演</div>
+                <Badge variant={campaign.ad_appearance ? 'default' : 'outline'}>
+                  {campaign.ad_appearance ? 'あり' : 'なし'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* NG事項・制約 */}
+          {campaign.ng_items && (
+            <Card>
+              <CardHeader><CardTitle>NG事項・制約</CardTitle></CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap">{campaign.ng_items}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 管理情報 */}
+          <Card>
+            <CardHeader><CardTitle>管理情報</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {campaign.contact_email && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">案件窓口メールアドレス</div>
+                  <p>{campaign.contact_email}</p>
+                </div>
+              )}
+              {campaign.management_sheet_url && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">管理シート</div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={campaign.management_sheet_url} target="_blank" rel="noopener noreferrer">
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />シートを開く
+                    </a>
+                  </Button>
+                </div>
+              )}
+              {campaign.report_url && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">レポートURL</div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={campaign.report_url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />レポートを開く
+                    </a>
+                  </Button>
+                </div>
+              )}
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">利用NDAテンプレート</div>
+                <Badge variant="outline">{campaign.nda_template || 'PlanC'}</Badge>
+              </div>
+              {!campaign.contact_email && !campaign.management_sheet_url && !campaign.report_url && (
+                <p className="text-muted-foreground text-sm">管理情報は設定されていません</p>
+              )}
+            </CardContent>
+          </Card>
           
           {/* 画像資料 */}
           {campaign.image_materials && campaign.image_materials.length > 0 && (
