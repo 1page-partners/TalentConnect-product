@@ -169,30 +169,35 @@ const CampaignList = () => {
         <div><h1 className="text-2xl font-bold">案件一覧</h1><p className="text-muted-foreground">全 {campaigns.length} 件</p></div>
         <Button asChild><Link to="/admin/new"><Plus className="h-4 w-4 mr-2" />新規作成</Link></Button>
       </div>
-      <Card><CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="案件名で検索..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="pl-10" />
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">ステータス</Label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-[120px]"><SelectValue placeholder="ステータス" /></SelectTrigger>
-                <SelectContent>{statusFilterOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
-              </Select>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex-1 space-y-1">
+              <Label className="text-xs text-muted-foreground">キーワード</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="案件名で検索..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="pl-10" />
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">媒体</Label>
-              <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                <SelectTrigger className="w-[150px]"><SelectValue placeholder="プラットフォーム" /></SelectTrigger>
-                <SelectContent>{platformOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="flex gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">ステータス</Label>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="ステータス" /></SelectTrigger>
+                  <SelectContent>{statusFilterOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">媒体</Label>
+                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                  <SelectTrigger className="w-[140px]"><SelectValue placeholder="プラットフォーム" /></SelectTrigger>
+                  <SelectContent>{platformOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent></Card>
+        </CardContent>
+      </Card>
       <Tabs defaultValue="open">
         <TabsList><TabsTrigger value="open">進行中 ({openCampaigns.length})</TabsTrigger><TabsTrigger value="closed">終了 ({closedCampaigns.length})</TabsTrigger></TabsList>
         <TabsContent value="open" className="mt-4">
