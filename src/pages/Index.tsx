@@ -78,6 +78,24 @@ const Index = () => {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
+
+          <div className="border-t pt-4 mt-4">
+            <p className="text-sm font-medium mb-3">デモ用配布URL</p>
+            <div className="space-y-2">
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link to="/i/demo-campaign" target="_blank">
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  可否確認用URL（デモ）
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full justify-start">
+                <Link to="/c/demo-campaign" target="_blank">
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  詳細配布用URL（デモ）
+                </Link>
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

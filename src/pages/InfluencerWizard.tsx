@@ -7,6 +7,7 @@ import BranchButtons from "@/components/wizard/BranchButtons";
 import SubmissionFormEnhanced from "@/components/wizard/SubmissionFormEnhanced";
 import OptInForm from "@/components/wizard/OptInForm";
 import ThanksPane from "@/components/wizard/ThanksPane";
+import CampaignClosedMessage from "@/components/wizard/CampaignClosedMessage";
 import { campaignApi, Campaign } from "@/lib/api";
 import { Loader2, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ interface CampaignDisplay {
   editingOnly?: boolean;
   shootingAndEditing?: boolean;
   tieupPostProduction?: boolean;
+  isClosed?: boolean;
 }
 
 const InfluencerWizard = () => {
@@ -98,6 +100,7 @@ const InfluencerWizard = () => {
           editingOnly: foundCampaign.editing_only === true,
           shootingAndEditing: foundCampaign.shooting_and_editing === true,
           tieupPostProduction: foundCampaign.tieup_post_production === true,
+          isClosed: (foundCampaign as any).is_closed === true,
         };
 
         setCampaign(displayCampaign);
@@ -225,6 +228,11 @@ const InfluencerWizard = () => {
         </div>
       </div>
     );
+  }
+
+  // 募集終了チェック（プレビューモードでは表示しない）
+  if (campaign.isClosed && !isPreview) {
+    return <CampaignClosedMessage />;
   }
 
   return (
