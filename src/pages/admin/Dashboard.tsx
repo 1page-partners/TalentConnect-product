@@ -87,45 +87,53 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">募集中</CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">{activeCampaigns.length}</div>
-          </CardContent>
-        </Card>
+        <Link to="/admin/list?status=active">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-emerald-500/50 transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">募集中</CardTitle>
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-600">{activeCampaigns.length}</div>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">提案中</CardTitle>
-            <Clock className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{proposalCampaigns.length}</div>
-          </CardContent>
-        </Card>
+        <Link to="/admin/list?status=proposal">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-blue-500/50 transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">提案中</CardTitle>
+              <Clock className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{proposalCampaigns.length}</div>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">制作中</CardTitle>
-            <Cog className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{productionCampaigns.length}</div>
-          </CardContent>
-        </Card>
+        <Link to="/admin/list?status=production">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-amber-500/50 transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">制作中</CardTitle>
+              <Cog className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-600">{productionCampaigns.length}</div>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">終了</CardTitle>
-            <CheckCircle className="h-4 w-4 text-slate-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{completedCampaigns.length}</div>
-          </CardContent>
-        </Card>
+        <Link to="/admin/list?status=completed">
+          <Card className="cursor-pointer hover:shadow-lg hover:border-slate-500/50 transition-all">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">終了</CardTitle>
+              <CheckCircle className="h-4 w-4 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-600">{completedCampaigns.length}</div>
+            </CardContent>
+          </Card>
+        </Link>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
