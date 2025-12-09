@@ -15,9 +15,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { FileUpload } from "@/components/ui/file-upload";
 import { campaignApi, Campaign } from "@/lib/api";
-import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions, statusOptions } from "@/lib/mock-data";
+import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Eye, ArrowLeft, X, Copy, Check } from "lucide-react";
+import { Loader2, Eye, ArrowLeft, X, Copy, Check, AlertTriangle } from "lucide-react";
+import { EditableStatusBadge } from "@/components/ui/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -377,7 +380,56 @@ const EditCampaign = () => {
             </div>
           </div>
 
-          {/* 基本情報 */}
+          {/* ステータス・募集状況 */}
+          <Card className="shadow-card border-primary/20">
+            <CardHeader>
+              <CardTitle>ステータス・募集状況</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">案件ステータス</Label>
+                  <div className="flex items-center gap-2">
+                    <EditableStatusBadge 
+                      status={status} 
+                      onStatusChange={(newStatus) => {
+                        setStatus(newStatus);
+                        if (newStatus === 'completed') {
+                          setIsClosed(true);
+                        }
+                      }} 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">募集状況</Label>
+                  <div className="flex items-center gap-3">
+                    <Switch 
+                      id="is-closed" 
+                      checked={isClosed} 
+                      onCheckedChange={setIsClosed}
+                    />
+                    <Label htmlFor="is-closed" className="cursor-pointer">
+                      {isClosed ? (
+                        <Badge variant="destructive">募集停止中</Badge>
+                      ) : (
+                        <Badge variant="outline">募集中</Badge>
+                      )}
+                    </Label>
+                  </div>
+                </div>
+              </div>
+              {isClosed && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-sm text-destructive">
+                    募集停止中は配布用URLからの応募ができません
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle>基本情報</CardTitle>
@@ -775,40 +827,17 @@ const EditCampaign = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium">
-                    ステータス
-                  </Label>
-                  <Select
-                    value={status}
-                    onValueChange={(value: string) => setStatus(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact-email" className="text-sm font-medium">
-                    連絡窓口メール
-                  </Label>
-                  <Input
-                    id="contact-email"
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="contact@example.com"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-email" className="text-sm font-medium">
+                  連絡窓口メール
+                </Label>
+                <Input
+                  id="contact-email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="contact@example.com"
+                />
               </div>
             </CardContent>
           </Card>
