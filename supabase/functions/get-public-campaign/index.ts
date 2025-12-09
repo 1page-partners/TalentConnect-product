@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // 本番DBスキーマに対応したカラム名
     const { data, error } = await supabase
       .from('campaigns')
       .select(`
@@ -64,27 +65,27 @@ Deno.serve(async (req) => {
         requirements
       `)
       .eq('slug', slug)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        console.log(`Campaign not found: ${slug}`)
-        return new Response(
-          JSON.stringify({ error: 'Campaign not found' }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
       console.error('Database error:', error)
       throw error
+    }
+
+    if (!data) {
+      console.log(`Campaign not found: ${slug}`)
+      return new Response(
+        JSON.stringify({ error: 'Campaign not found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     console.log(`Successfully fetched campaign: ${data.title}`)
 
     // 機密フィールドを除外して返す
-    // contact_email, nda_url, management_sheet_url, report_url, client_name は含まない
     return new Response(
       JSON.stringify(data),
       { 
