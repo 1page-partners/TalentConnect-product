@@ -79,20 +79,22 @@ const InfluencerWizard = () => {
           createdAt: foundCampaign.created_at,
           clientName: foundCampaign.client_name || undefined,
           isTH: false,
-          isVideoProductionOnly: foundCampaign.video_production_only || false,
-          secondaryUsage: foundCampaign.secondary_usage 
+          isVideoProductionOnly: foundCampaign.video_production_only === true,
+          secondaryUsage: foundCampaign.secondary_usage === true
             ? { hasUsage: true, duration: foundCampaign.secondary_usage_period || undefined, purpose: foundCampaign.secondary_usage_purpose || undefined }
             : { hasUsage: false },
-          hasAdvertisementAppearance: foundCampaign.ad_appearance || false,
+          hasAdvertisementAppearance: foundCampaign.ad_appearance === true,
           plannedPostDate: foundCampaign.posting_date || undefined,
-          platformDeliverables: foundCampaign.deliverables as Record<string, string[]>,
+          platformDeliverables: (foundCampaign.deliverables && typeof foundCampaign.deliverables === 'object') 
+            ? foundCampaign.deliverables as Record<string, string[]>
+            : undefined,
           imageMaterials: foundCampaign.image_materials || [],
           attachments: foundCampaign.attachments || [],
           // 納品物条件
-          shootingOnly: foundCampaign.shooting_only || false,
-          editingOnly: foundCampaign.editing_only || false,
-          shootingAndEditing: foundCampaign.shooting_and_editing || false,
-          tieupPostProduction: foundCampaign.tieup_post_production || false,
+          shootingOnly: foundCampaign.shooting_only === true,
+          editingOnly: foundCampaign.editing_only === true,
+          shootingAndEditing: foundCampaign.shooting_and_editing === true,
+          tieupPostProduction: foundCampaign.tieup_post_production === true,
         };
 
         setCampaign(displayCampaign);

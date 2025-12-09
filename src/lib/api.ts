@@ -188,13 +188,25 @@ export interface CreatorListItem {
 // クリエイターリスト関連のAPI
 export const creatorListApi = {
   async getAll(): Promise<CreatorList[]> {
-    const { data, error } = await supabase
-      .from('creator_lists')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await supabase
+        .from('creator_lists')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        // テーブルが存在しない場合は空配列を返す
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.warn('creator_lists テーブルが存在しません');
+          return [];
+        }
+        throw error;
+      }
+      return data || [];
+    } catch (error) {
+      console.error('creatorListApi.getAll エラー:', error);
+      return [];
+    }
   },
 
   async create(name: string, userId: string): Promise<CreatorList> {
@@ -230,13 +242,25 @@ export const creatorListApi = {
   },
 
   async getItems(listId: string): Promise<string[]> {
-    const { data, error } = await supabase
-      .from('creator_list_items')
-      .select('submission_id')
-      .eq('list_id', listId);
-    
-    if (error) throw error;
-    return data?.map(item => item.submission_id) || [];
+    try {
+      const { data, error } = await supabase
+        .from('creator_list_items')
+        .select('submission_id')
+        .eq('list_id', listId);
+      
+      if (error) {
+        // テーブルが存在しない場合は空配列を返す
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.warn('creator_list_items テーブルが存在しません');
+          return [];
+        }
+        throw error;
+      }
+      return data?.map(item => item.submission_id) || [];
+    } catch (error) {
+      console.error('creatorListApi.getItems エラー:', error);
+      return [];
+    }
   },
 
   async addItem(listId: string, submissionId: string): Promise<CreatorListItem> {
@@ -263,24 +287,34 @@ export const creatorListApi = {
 
 // 全応募者取得（キャンペーン情報付き）
 export const getAllSubmissionsWithCampaign = async (): Promise<(InfluencerSubmission & { campaign_title: string; campaign_slug: string })[]> => {
-  const { data: submissions, error: subError } = await supabase
-    .from('influencer_submissions')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (subError) throw subError;
-  
-  const { data: campaigns, error: campError } = await supabase
-    .from('campaigns')
-    .select('id, title, slug');
-  
-  if (campError) throw campError;
-  
-  const campaignMap = new Map(campaigns?.map(c => [c.id, { title: c.title, slug: c.slug }]) || []);
-  
-  return (submissions || []).map(s => ({
-    ...s,
-    campaign_title: campaignMap.get(s.campaign_id)?.title || '不明',
-    campaign_slug: campaignMap.get(s.campaign_id)?.slug || ''
-  }));
+  try {
+    const { data: submissions, error: subError } = await supabase
+      .from('influencer_submissions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (subError) {
+      console.error('応募者取得エラー:', subError);
+      return [];
+    }
+    
+    const { data: campaigns, error: campError } = await supabase
+      .from('campaigns')
+      .select('id, title, slug');
+    
+    if (campError) {
+      console.error('キャンペーン取得エラー:', campError);
+    }
+    
+    const campaignMap = new Map(campaigns?.map(c => [c.id, { title: c.title, slug: c.slug }]) || []);
+    
+    return (submissions || []).map(s => ({
+      ...s,
+      campaign_title: campaignMap.get(s.campaign_id)?.title || '不明',
+      campaign_slug: campaignMap.get(s.campaign_id)?.slug || ''
+    }));
+  } catch (error) {
+    console.error('getAllSubmissionsWithCampaign エラー:', error);
+    return [];
+  }
 };

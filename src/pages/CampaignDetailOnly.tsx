@@ -97,8 +97,10 @@ const CampaignDetailOnly = () => {
   };
 
   const platforms = campaign.target_platforms || [];
-  const platformDeliverables = campaign.deliverables as Record<string, string[]> | null;
-  const secondaryUsage = campaign.secondary_usage 
+  const platformDeliverables = (campaign.deliverables && typeof campaign.deliverables === 'object') 
+    ? campaign.deliverables as Record<string, string[]> 
+    : null;
+  const secondaryUsage = campaign.secondary_usage === true
     ? { hasUsage: true, duration: campaign.secondary_usage_period || undefined, purpose: campaign.secondary_usage_purpose || undefined }
     : null;
 
@@ -143,7 +145,7 @@ const CampaignDetailOnly = () => {
                   ))}
                 </div>
                 
-                {platformDeliverables && Object.keys(platformDeliverables).length > 0 && (
+                {platformDeliverables && typeof platformDeliverables === 'object' && Object.keys(platformDeliverables).length > 0 && (
                   <div className="mt-3 space-y-2">
                     {Object.entries(platformDeliverables).map(([platform, deliverables]) => (
                       deliverables && deliverables.length > 0 && (
@@ -185,22 +187,22 @@ const CampaignDetailOnly = () => {
             <div className="space-y-2">
               <h3 className="font-semibold mb-2">納品物条件</h3>
               <div className="flex flex-wrap gap-2">
-                {campaign.shooting_only && (
+                {campaign.shooting_only === true && (
                   <Badge variant="outline">撮影のみ</Badge>
                 )}
-                {campaign.editing_only && (
+                {campaign.editing_only === true && (
                   <Badge variant="outline">編集のみ</Badge>
                 )}
-                {campaign.shooting_and_editing && (
+                {campaign.shooting_and_editing === true && (
                   <Badge variant="outline">撮影＆編集の制作のみ</Badge>
                 )}
-                {campaign.tieup_post_production && (
+                {campaign.tieup_post_production === true && (
                   <Badge variant="outline">タイアップ投稿の制作</Badge>
                 )}
-                {campaign.video_production_only && (
+                {campaign.video_production_only === true && (
                   <Badge variant="outline">納品動画の制作のみ</Badge>
                 )}
-                {campaign.ad_appearance && (
+                {campaign.ad_appearance === true && (
                   <Badge variant="outline">広告出演あり</Badge>
                 )}
               </div>

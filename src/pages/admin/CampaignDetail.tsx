@@ -159,7 +159,7 @@ const CampaignDetail = () => {
                 <div className="text-sm font-medium text-muted-foreground mb-1">想定媒体</div>
                 <SocialIconsList platforms={campaign.target_platforms || []} />
               </div>
-              {campaign.deliverables && Object.keys(campaign.deliverables).length > 0 && (
+              {campaign.deliverables && typeof campaign.deliverables === 'object' && Object.keys(campaign.deliverables).length > 0 && (
                 <div>
                   <div className="text-sm font-medium text-muted-foreground mb-2">各媒体の成果物</div>
                   <div className="space-y-2">
@@ -198,11 +198,11 @@ const CampaignDetail = () => {
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-2">納品物条件</div>
                 <div className="flex flex-wrap gap-2">
-                  {campaign.shooting_only && <Badge variant="secondary">撮影のみ</Badge>}
-                  {campaign.editing_only && <Badge variant="secondary">編集のみ</Badge>}
-                  {campaign.shooting_and_editing && <Badge variant="secondary">撮影・編集両方</Badge>}
-                  {campaign.video_production_only && <Badge variant="secondary">動画制作のみ</Badge>}
-                  {campaign.tieup_post_production && <Badge variant="secondary">タイアップ投稿後の制作</Badge>}
+                  {campaign.shooting_only === true && <Badge variant="secondary">撮影のみ</Badge>}
+                  {campaign.editing_only === true && <Badge variant="secondary">編集のみ</Badge>}
+                  {campaign.shooting_and_editing === true && <Badge variant="secondary">撮影・編集両方</Badge>}
+                  {campaign.video_production_only === true && <Badge variant="secondary">動画制作のみ</Badge>}
+                  {campaign.tieup_post_production === true && <Badge variant="secondary">タイアップ投稿後の制作</Badge>}
                   {!campaign.shooting_only && !campaign.editing_only && !campaign.shooting_and_editing && !campaign.video_production_only && !campaign.tieup_post_production && (
                     <span className="text-muted-foreground text-sm">条件なし</span>
                   )}
@@ -212,7 +212,7 @@ const CampaignDetail = () => {
               {/* 二次利用 */}
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">二次利用</div>
-                {campaign.secondary_usage ? (
+                {campaign.secondary_usage === true ? (
                   <div className="space-y-1">
                     <Badge>あり</Badge>
                     {campaign.secondary_usage_period && (
@@ -230,8 +230,8 @@ const CampaignDetail = () => {
               {/* 広告出演 */}
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">広告出演</div>
-                <Badge variant={campaign.ad_appearance ? 'default' : 'outline'}>
-                  {campaign.ad_appearance ? 'あり' : 'なし'}
+                <Badge variant={campaign.ad_appearance === true ? 'default' : 'outline'}>
+                  {campaign.ad_appearance === true ? 'あり' : 'なし'}
                 </Badge>
               </div>
             </CardContent>

@@ -49,17 +49,33 @@ const CreatorListPage = () => {
 
   const fetchData = async () => {
     try {
-      const [submissionsData, listsData] = await Promise.all([
-        getAllSubmissionsWithCampaign(),
-        creatorListApi.getAll()
-      ]);
+      // 応募者データを取得
+      let submissionsData: SubmissionWithCampaign[] = [];
+      try {
+        submissionsData = await getAllSubmissionsWithCampaign();
+      } catch (error) {
+        console.error('応募者データ取得エラー:', error);
+      }
       setSubmissions(submissionsData);
+
+      // リストデータを取得（テーブルが存在しない場合はスキップ）
+      let listsData: CreatorListType[] = [];
+      try {
+        listsData = await creatorListApi.getAll();
+      } catch (error) {
+        console.error('リストデータ取得エラー（テーブルが存在しない可能性）:', error);
+      }
       setMyLists(listsData);
 
       const itemsMap: Record<string, string[]> = {};
       for (const list of listsData) {
-        const items = await creatorListApi.getItems(list.id);
-        itemsMap[list.id] = items;
+        try {
+          const items = await creatorListApi.getItems(list.id);
+          itemsMap[list.id] = items;
+        } catch (error) {
+          console.error(`リストアイテム取得エラー（list_id: ${list.id}）:`, error);
+          itemsMap[list.id] = [];
+        }
       }
       setListItemsMap(itemsMap);
     } catch (error) {
@@ -148,13 +164,13 @@ const CreatorListPage = () => {
 
   const getPlatforms = (submission: SubmissionWithCampaign): string[] => {
     const platforms: string[] = [];
-    if (submission.instagram) platforms.push('Instagram');
-    if (submission.tiktok) platforms.push('TikTok');
-    if (submission.youtube) platforms.push('YouTube');
-    if (submission.red) platforms.push('RED');
-    if (submission.x_twitter) platforms.push('X');
+    if (submission?.instagram) platforms.push('Instagram');
+    if (submission?.tiktok) platforms.push('TikTok');
+    if (submission?.youtube) platforms.push('YouTube');
+    if (submission?.red) platforms.push('RED');
+    if (submission?.x_twitter) platforms.push('X');
     // other_sns から他のプラットフォームを取得
-    if (submission.other_sns) {
+    if (submission?.other_sns) {
       try {
         const others = submission.other_sns as Array<{platform: string; url: string}>;
         if (Array.isArray(others)) {

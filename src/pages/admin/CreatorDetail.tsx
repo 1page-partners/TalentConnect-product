@@ -60,20 +60,34 @@ const CreatorDetail = () => {
       for (const sub of allSubs || []) {
         let campaign: Campaign | null = null;
         if (sub.campaign_id) {
-          campaign = await campaignApi.getById(sub.campaign_id);
+          try {
+            campaign = await campaignApi.getById(sub.campaign_id);
+          } catch (e) {
+            console.error('キャンペーン取得エラー:', e);
+          }
         }
         subsWithCampaigns.push({ ...sub, campaign });
       }
       setAllSubmissions(subsWithCampaigns);
 
-      // リスト情報を取得
-      const listsData = await creatorListApi.getAll();
+      // リスト情報を取得（テーブルが存在しない場合はスキップ）
+      let listsData: CreatorList[] = [];
+      try {
+        listsData = await creatorListApi.getAll();
+      } catch (error) {
+        console.error('リストデータ取得エラー（テーブルが存在しない可能性）:', error);
+      }
       setMyLists(listsData);
 
       const itemsMap: Record<string, string[]> = {};
       for (const list of listsData) {
-        const items = await creatorListApi.getItems(list.id);
-        itemsMap[list.id] = items;
+        try {
+          const items = await creatorListApi.getItems(list.id);
+          itemsMap[list.id] = items;
+        } catch (error) {
+          console.error(`リストアイテム取得エラー（list_id: ${list.id}）:`, error);
+          itemsMap[list.id] = [];
+        }
       }
       setListItemsMap(itemsMap);
     } catch (error) {
@@ -391,7 +405,7 @@ const CreatorDetail = () => {
                         <SocialIconsList platforms={sub.campaign.target_platforms} />
                       )}
                     </div>
-                    {getStatusBadge(sub.status)}
+                    {getStatusBadge(sub.status || 'pending')}
                   </div>
                 ))}
               </div>
