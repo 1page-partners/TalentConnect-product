@@ -1,16 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { campaignApi, Campaign } from '@/lib/api';
-import { Plus, Search, Calendar, Copy, Eye, Filter, Loader2, FileText, Link2, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar, Copy, Eye, Loader2, FileText, Link2, Trash2 } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 import { StatusBadge } from '@/components/ui/status-badge';
 
@@ -27,15 +28,17 @@ const statusFilterOptions = [
   { value: 'active', label: '募集中' },
   { value: 'proposal', label: '提案中' },
   { value: 'production', label: '制作中' },
-  { value: 'completed', label: '終了' },
 ];
 
 const CampaignList = () => {
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get('status') || 'all';
+  
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState(initialStatus);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { toast } = useToast();
   const { isAdmin } = useAuth();
@@ -170,18 +173,23 @@ const CampaignList = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="キーワードで検索..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="pl-10" />
+            <Input placeholder="案件名で検索..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="pl-10" />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-[120px]"><SelectValue placeholder="ステータス" /></SelectTrigger>
-              <SelectContent>{statusFilterOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-              <SelectTrigger className="w-[150px]"><SelectValue placeholder="プラットフォーム" /></SelectTrigger>
-              <SelectContent>{platformOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
-            </Select>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">ステータス</Label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-[120px]"><SelectValue placeholder="ステータス" /></SelectTrigger>
+                <SelectContent>{statusFilterOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs text-muted-foreground">媒体</Label>
+              <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                <SelectTrigger className="w-[150px]"><SelectValue placeholder="プラットフォーム" /></SelectTrigger>
+                <SelectContent>{platformOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </CardContent></Card>
