@@ -69,7 +69,7 @@ const EditCampaign = () => {
   const [hasAdvertisementAppearance, setHasAdvertisementAppearance] = useState(false);
   const [plannedPostDate, setPlannedPostDate] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
-  const [status, setStatus] = useState<'open' | 'closed'>('open');
+  const [status, setStatus] = useState<string>('active');
   const [contactEmail, setContactEmail] = useState("");
   // 納品物条件
   const [shootingOnly, setShootingOnly] = useState(false);
@@ -144,7 +144,7 @@ const EditCampaign = () => {
         
         setHasAdvertisementAppearance(campaign.ad_appearance || false);
         setAttachments(campaign.attachments || []);
-        setStatus(campaign.status as 'open' | 'closed' || 'open');
+        setStatus(campaign.status || 'active');
         setContactEmail(campaign.contact_email || "");
         // 納品物条件
         setShootingOnly(campaign.shooting_only || false);
@@ -320,7 +320,7 @@ const EditCampaign = () => {
     deadline,
     restrictions,
     ndaUrl: ndaTemplate === 'custom' ? ndaUrl : `https://example.com/nda-${ndaTemplate.toLowerCase()}.pdf`,
-    status,
+    status: status as 'open' | 'closed',
     contactEmail,
     createdAt: new Date().toISOString(),
     isTH,
@@ -777,7 +777,7 @@ const EditCampaign = () => {
                   </Label>
                   <Select
                     value={status}
-                    onValueChange={(value: 'open' | 'closed') => setStatus(value)}
+                    onValueChange={(value: string) => setStatus(value)}
                   >
                     <SelectTrigger>
                       <SelectValue />

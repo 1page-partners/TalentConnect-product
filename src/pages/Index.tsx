@@ -65,36 +65,26 @@ const Index = () => {
             <div className="p-2 bg-primary/10 rounded-md">
               <Users className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-xl font-semibold">配布URLプレビュー</h2>
+            <h2 className="text-xl font-semibold">配布URLデモ</h2>
           </div>
           
           <p className="text-sm text-muted-foreground">
-            案件一覧から配布URLをプレビューできます
+            デモ用の配布URLで機能を確認できます
           </p>
-          
-          <Button asChild variant="secondary" className="w-full">
-            <Link to="/admin/list">
-              案件一覧でプレビュー
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
 
-          <div className="border-t pt-4 mt-4">
-            <p className="text-sm font-medium mb-3">デモ用配布URL</p>
-            <div className="space-y-2">
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/i/demo-campaign" target="_blank">
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  可否確認用URL（デモ）
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link to="/c/demo-campaign" target="_blank">
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  詳細配布用URL（デモ）
-                </Link>
-              </Button>
-            </div>
+          <div className="space-y-2">
+            <Button asChild variant="outline" className="w-full justify-start">
+              <Link to="/i/demo-campaign" target="_blank">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                可否確認用URL（デモ）
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full justify-start">
+              <Link to="/c/demo-campaign" target="_blank">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                詳細配布用URL（デモ）
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
