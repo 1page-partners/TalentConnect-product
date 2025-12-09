@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { FileUpload } from "@/components/ui/file-upload";
 import { campaignApi, generateDistributionUrl } from "@/lib/api";
-import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions, statusOptions } from "@/lib/mock-data";
+import { platformOptions, platformDeliverables, ndaTemplateOptions, secondaryUsageDurationOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
 import { Loader2, Eye, ArrowLeft, X, Copy, Check } from "lucide-react";
 
@@ -65,7 +65,6 @@ const NewCampaignEnhanced = () => {
   const [hasAdvertisementAppearance, setHasAdvertisementAppearance] = useState(false);
   const [plannedPostDate, setPlannedPostDate] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
-  const [status, setStatus] = useState<'open' | 'closed'>('open');
   // 納品物条件
   const [shootingOnly, setShootingOnly] = useState(false);
   const [editingOnly, setEditingOnly] = useState(false);
@@ -181,7 +180,7 @@ const NewCampaignEnhanced = () => {
         restrictions: restrictions.trim() || null,
         nda_url: ndaTemplate === 'custom' ? ndaUrl.trim() : null,
         nda_template: ndaTemplate,
-        status: status === 'open' ? 'active' : 'closed',
+        status: 'active',
         contact_email: contactEmail.trim() || null,
         image_materials: imageMaterials.length > 0 ? imageMaterials : [],
         video_production_only: isVideoProductionOnly,
@@ -277,7 +276,7 @@ const NewCampaignEnhanced = () => {
     deadline,
     restrictions,
     ndaUrl: ndaTemplate === 'custom' ? ndaUrl : `https://example.com/nda-${ndaTemplate.toLowerCase()}.pdf`,
-    status,
+    status: 'open' as const,
     contactEmail,
     createdAt: new Date().toISOString(),
     // Enhanced fields
@@ -797,28 +796,7 @@ const NewCampaignEnhanced = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium">
-                    ステータス
-                  </Label>
-                  <Select
-                    value={status}
-                    onValueChange={(value: 'open' | 'closed') => setStatus(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contact-email" className="text-sm font-medium">
                     連絡窓口メール
