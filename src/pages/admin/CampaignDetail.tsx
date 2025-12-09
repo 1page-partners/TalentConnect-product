@@ -64,10 +64,16 @@ const CampaignDetail = () => {
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
 
-  const copyDistributionUrl = () => {
+  const copyConsentUrl = () => {
     if (!campaign) return;
     navigator.clipboard.writeText(`${window.location.origin}/i/${campaign.slug}`);
-    toast({ title: 'URLをコピーしました' });
+    toast({ title: '可否確認用URLをコピーしました' });
+  };
+
+  const copyDetailOnlyUrl = () => {
+    if (!campaign) return;
+    navigator.clipboard.writeText(`${window.location.origin}/c/${campaign.slug}`);
+    toast({ title: '詳細配布用URLをコピーしました' });
   };
 
   const openPreview = (url: string) => {
@@ -128,7 +134,8 @@ const CampaignDetail = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="default" asChild><Link to={`/admin/campaign/${id}/edit`}><Pencil className="h-4 w-4 mr-2" />編集</Link></Button>
-          <Button variant="outline" onClick={copyDistributionUrl}><Copy className="h-4 w-4 mr-2" />URLコピー</Button>
+          <Button variant="outline" onClick={copyConsentUrl}><Copy className="h-4 w-4 mr-2" />可否確認用URL</Button>
+          <Button variant="outline" onClick={copyDetailOnlyUrl}><Copy className="h-4 w-4 mr-2" />詳細配布用URL</Button>
           <Button variant="outline" asChild><Link to={`/preview/i/${campaign.slug}`} target="_blank"><ExternalLink className="h-4 w-4 mr-2" />プレビュー</Link></Button>
         </div>
       </div>
