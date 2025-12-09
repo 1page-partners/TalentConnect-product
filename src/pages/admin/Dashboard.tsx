@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { campaignApi, submissionApi, Campaign } from '@/lib/api';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { 
   LayoutDashboard, 
   Users, 
@@ -11,7 +11,10 @@ import {
   TrendingUp,
   Plus,
   ArrowRight,
-  Loader2
+  Loader2,
+  Clock,
+  Cog,
+  CheckCircle
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -45,7 +48,9 @@ const Dashboard = () => {
   }, []);
 
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
-  const otherCampaigns = campaigns.filter(c => c.status !== 'active');
+  const proposalCampaigns = campaigns.filter(c => c.status === 'proposal');
+  const productionCampaigns = campaigns.filter(c => c.status === 'production');
+  const completedCampaigns = campaigns.filter(c => c.status === 'completed');
 
   if (loading) {
     return (
@@ -71,7 +76,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">全案件数</CardTitle>
@@ -85,20 +90,40 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">募集中</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeCampaigns.length}</div>
+            <div className="text-2xl font-bold text-emerald-600">{activeCampaigns.length}</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">その他</CardTitle>
-            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">提案中</CardTitle>
+            <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">{otherCampaigns.length}</div>
+            <div className="text-2xl font-bold text-blue-600">{proposalCampaigns.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">制作中</CardTitle>
+            <Cog className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{productionCampaigns.length}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">終了</CardTitle>
+            <CheckCircle className="h-4 w-4 text-slate-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-600">{completedCampaigns.length}</div>
           </CardContent>
         </Card>
         
@@ -145,9 +170,7 @@ const Dashboard = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{campaign.title}</span>
-                      <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                        {campaign.status === 'active' ? '募集中' : '終了'}
-                      </Badge>
+                      <StatusBadge status={campaign.status} />
                     </div>
                     {campaign.posting_date && (
                       <div className="text-sm text-muted-foreground">

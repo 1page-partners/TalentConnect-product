@@ -22,11 +22,20 @@ const platformOptions = [
   { value: 'RED', label: 'RED' },
 ];
 
+const statusFilterOptions = [
+  { value: 'all', label: 'すべて' },
+  { value: 'active', label: '募集中' },
+  { value: 'proposal', label: '提案中' },
+  { value: 'production', label: '制作中' },
+  { value: 'completed', label: '終了' },
+];
+
 const CampaignList = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { toast } = useToast();
   const { isAdmin } = useAuth();
@@ -80,12 +89,14 @@ const CampaignList = () => {
       if (campaign.slug === 'demo-campaign') return false;
       const matchesKeyword = searchKeyword === '' || campaign.title.toLowerCase().includes(searchKeyword.toLowerCase());
       const matchesPlatform = selectedPlatform === 'all' || (campaign.platforms || []).includes(selectedPlatform);
-      return matchesKeyword && matchesPlatform;
+      const matchesStatus = selectedStatus === 'all' || campaign.status === selectedStatus;
+      return matchesKeyword && matchesPlatform && matchesStatus;
     });
-  }, [campaigns, searchKeyword, selectedPlatform]);
+  }, [campaigns, searchKeyword, selectedPlatform, selectedStatus]);
 
-  const openCampaigns = filteredCampaigns.filter(c => c.status === 'active');
-  const closedCampaigns = filteredCampaigns.filter(c => c.status !== 'active');
+  // 終了タブはステータスが「completed」の案件のみ
+  const openCampaigns = filteredCampaigns.filter(c => c.status !== 'completed');
+  const closedCampaigns = filteredCampaigns.filter(c => c.status === 'completed');
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -163,6 +174,10 @@ const CampaignList = () => {
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-[120px]"><SelectValue placeholder="ステータス" /></SelectTrigger>
+              <SelectContent>{statusFilterOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+            </Select>
             <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
               <SelectTrigger className="w-[150px]"><SelectValue placeholder="プラットフォーム" /></SelectTrigger>
               <SelectContent>{platformOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
@@ -171,9 +186,9 @@ const CampaignList = () => {
         </div>
       </CardContent></Card>
       <Tabs defaultValue="open">
-        <TabsList><TabsTrigger value="open">募集中 ({openCampaigns.length})</TabsTrigger><TabsTrigger value="closed">終了 ({closedCampaigns.length})</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="open">進行中 ({openCampaigns.length})</TabsTrigger><TabsTrigger value="closed">終了 ({closedCampaigns.length})</TabsTrigger></TabsList>
         <TabsContent value="open" className="mt-4">
-          {openCampaigns.length === 0 ? <div className="text-center py-12"><FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">募集中の案件はありません</p></div> : <div className="grid gap-4 md:grid-cols-2">{openCampaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}</div>}
+          {openCampaigns.length === 0 ? <div className="text-center py-12"><FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">進行中の案件はありません</p></div> : <div className="grid gap-4 md:grid-cols-2">{openCampaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}</div>}
         </TabsContent>
         <TabsContent value="closed" className="mt-4">
           {closedCampaigns.length === 0 ? <div className="text-center py-12"><FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" /><p className="text-muted-foreground">終了した案件はありません</p></div> : <div className="grid gap-4 md:grid-cols-2">{closedCampaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}</div>}
