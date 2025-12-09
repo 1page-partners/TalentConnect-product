@@ -10,7 +10,7 @@ import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, 
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 import PdfThumbnail from '@/components/ui/pdf-thumbnail';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, EditableStatusBadge } from '@/components/ui/status-badge';
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -76,6 +76,18 @@ const CampaignDetail = () => {
     toast({ title: '詳細配布用URLをコピーしました' });
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!campaign || !id) return;
+    try {
+      await campaignApi.update(id, { status: newStatus });
+      setCampaign({ ...campaign, status: newStatus, is_closed: newStatus === 'completed' ? true : false });
+      toast({ title: 'ステータスを変更しました' });
+    } catch (error) {
+      console.error('ステータス変更エラー:', error);
+      toast({ title: 'エラー', description: 'ステータスの変更に失敗しました', variant: 'destructive' });
+    }
+  };
+
   const openPreview = (url: string) => {
     const fileType = getFileType(url);
     const fileName = getFileName(url);
@@ -126,7 +138,7 @@ const CampaignDetail = () => {
           <div>
             <h1 className="text-2xl font-bold">{campaign.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <StatusBadge status={campaign.status} />
+              <EditableStatusBadge status={campaign.status} onStatusChange={handleStatusChange} />
               {campaign.posting_date && <span className="text-sm text-muted-foreground">投稿予定: {campaign.posting_date}</span>}
               {campaign.is_closed && <Badge variant="destructive">募集停止</Badge>}
             </div>

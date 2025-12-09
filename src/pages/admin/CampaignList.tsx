@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { campaignApi, Campaign } from '@/lib/api';
 import { Plus, Search, Calendar, Copy, Eye, Loader2, FileText, Link2, Trash2 } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, EditableStatusBadge } from '@/components/ui/status-badge';
 
 const platformOptions = [
   { value: 'all', label: 'すべて' },
@@ -84,6 +84,21 @@ const CampaignList = () => {
     }
   };
 
+  const handleStatusChange = async (campaignId: string, newStatus: string) => {
+    try {
+      await campaignApi.update(campaignId, { status: newStatus });
+      setCampaigns(prev => prev.map(c => 
+        c.id === campaignId 
+          ? { ...c, status: newStatus, is_closed: newStatus === 'completed' ? true : false }
+          : c
+      ));
+      toast({ title: 'ステータスを変更しました' });
+    } catch (error) {
+      console.error('ステータス変更エラー:', error);
+      toast({ title: 'エラー', description: 'ステータスの変更に失敗しました', variant: 'destructive' });
+    }
+  };
+
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
 
   const filteredCampaigns = useMemo(() => {
@@ -119,7 +134,10 @@ const CampaignList = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <StatusBadge status={campaign.status} />
+            <EditableStatusBadge 
+              status={campaign.status} 
+              onStatusChange={(newStatus) => handleStatusChange(campaign.id, newStatus)} 
+            />
             {campaign.is_closed && <Badge variant="destructive">募集停止</Badge>}
           </div>
         </div>

@@ -377,41 +377,6 @@ const EditCampaign = () => {
             </div>
           </div>
 
-          {/* 募集停止・ステータス設定 */}
-          <Card className="shadow-card border-amber-500/50">
-            <CardHeader>
-              <CardTitle>案件ステータス</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-                <Checkbox
-                  id="is-closed"
-                  checked={isClosed}
-                  onCheckedChange={(checked) => setIsClosed(checked === true)}
-                />
-                <Label htmlFor="is-closed" className="text-sm font-medium cursor-pointer text-destructive">
-                  募集停止（配布URLで「募集終了しました」と表示されます）
-                </Label>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">ステータス</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-full max-w-xs">
-                    <SelectValue placeholder="ステータスを選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* 基本情報 */}
           <Card className="shadow-card">
             <CardHeader>
