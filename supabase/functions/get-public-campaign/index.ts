@@ -39,18 +39,16 @@ Deno.serve(async (req) => {
         id,
         title,
         slug,
-        description,
-        target_platforms,
+        summary,
+        platforms,
         deliverables,
         deadline,
         posting_date,
-        ng_items,
+        restrictions,
         status,
         created_at,
         video_production_only,
         secondary_usage,
-        secondary_usage_period,
-        secondary_usage_purpose,
         ad_appearance,
         image_materials,
         attachments,
@@ -60,7 +58,10 @@ Deno.serve(async (req) => {
         shooting_only,
         editing_only,
         shooting_and_editing,
-        tieup_post_production
+        tieup_post_production,
+        is_th,
+        planned_post_date,
+        requirements
       `)
       .eq('slug', slug)
       .single()
