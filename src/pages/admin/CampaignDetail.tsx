@@ -10,9 +10,6 @@ import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, 
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 import PdfThumbnail from '@/components/ui/pdf-thumbnail';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 
 const statusOptions = [
   { value: 'active', label: '募集中' },
@@ -75,29 +72,6 @@ const CampaignDetail = () => {
     fetchData();
   }, [id, toast]);
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!campaign) return;
-    try {
-      await campaignApi.update(campaign.id, { status: newStatus });
-      setCampaign(prev => prev ? { ...prev, status: newStatus } : prev);
-      toast({ title: 'ステータスを変更しました', description: `${campaign.title} → ${getStatusLabel(newStatus)}` });
-    } catch (error) {
-      console.error('ステータス変更エラー:', error);
-      toast({ title: 'エラー', description: 'ステータスの変更に失敗しました', variant: 'destructive' });
-    }
-  };
-
-  const handleClosedChange = async (checked: boolean) => {
-    if (!campaign) return;
-    try {
-      await campaignApi.update(campaign.id, { is_closed: checked });
-      setCampaign(prev => prev ? { ...prev, is_closed: checked } : prev);
-      toast({ title: checked ? '募集を終了しました' : '募集を再開しました' });
-    } catch (error) {
-      console.error('募集終了フラグ変更エラー:', error);
-      toast({ title: 'エラー', description: '変更に失敗しました', variant: 'destructive' });
-    }
-  };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -157,39 +131,13 @@ const CampaignDetail = () => {
           <div>
             <h1 className="text-2xl font-bold">{campaign.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Badge 
-                    variant={campaign.status === 'active' ? 'default' : 'secondary'} 
-                    className="cursor-pointer hover:opacity-80"
-                  >
-                    {getStatusLabel(campaign.status)}
-                  </Badge>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {statusOptions.map(option => (
-                    <DropdownMenuItem 
-                      key={option.value} 
-                      onClick={() => handleStatusChange(option.value)}
-                      className={campaign.status === option.value ? 'bg-accent' : ''}
-                    >
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Badge 
+                variant={campaign.status === 'active' ? 'default' : 'secondary'}
+              >
+                {getStatusLabel(campaign.status)}
+              </Badge>
               {campaign.posting_date && <span className="text-sm text-muted-foreground">投稿予定: {campaign.posting_date}</span>}
               {campaign.is_closed && <Badge variant="destructive">募集終了</Badge>}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="is_closed" 
-                checked={campaign.is_closed === true}
-                onCheckedChange={(checked) => handleClosedChange(checked === true)}
-              />
-              <Label htmlFor="is_closed" className="text-sm cursor-pointer">募集終了</Label>
             </div>
           </div>
         </div>

@@ -77,6 +77,9 @@ const EditCampaign = () => {
   const [shootingAndEditing, setShootingAndEditing] = useState(false);
   const [tieupPostProduction, setTieupPostProduction] = useState(false);
   
+  // 募集停止フラグ
+  const [isClosed, setIsClosed] = useState(false);
+  
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -151,6 +154,7 @@ const EditCampaign = () => {
         setEditingOnly(campaign.editing_only || false);
         setShootingAndEditing(campaign.shooting_and_editing || false);
         setTieupPostProduction(campaign.tieup_post_production || false);
+        setIsClosed(campaign.is_closed || false);
       } catch (error) {
         console.error('Campaign load error:', error);
         toast({ title: "エラー", description: "案件の読み込みに失敗しました", variant: "destructive" });
@@ -248,6 +252,7 @@ const EditCampaign = () => {
         editing_only: editingOnly,
         shooting_and_editing: shootingAndEditing,
         tieup_post_production: tieupPostProduction,
+        is_closed: isClosed,
       };
 
       await campaignApi.update(id, campaignData);
@@ -371,6 +376,41 @@ const EditCampaign = () => {
               <p className="text-muted-foreground">案件情報を編集します</p>
             </div>
           </div>
+
+          {/* 募集停止・ステータス設定 */}
+          <Card className="shadow-card border-amber-500/50">
+            <CardHeader>
+              <CardTitle>案件ステータス</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                <Checkbox
+                  id="is-closed"
+                  checked={isClosed}
+                  onCheckedChange={(checked) => setIsClosed(checked === true)}
+                />
+                <Label htmlFor="is-closed" className="text-sm font-medium cursor-pointer text-destructive">
+                  募集停止（配布URLで「募集終了しました」と表示されます）
+                </Label>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">ステータス</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="ステータスを選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* 基本情報 */}
           <Card className="shadow-card">
