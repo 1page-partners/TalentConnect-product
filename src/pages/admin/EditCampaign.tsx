@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Header from "@/components/Header";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
 import FilePreviewModal from "@/components/ui/file-preview-modal";
@@ -88,6 +89,7 @@ const EditCampaign = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
+  const [showResumeConfirmDialog, setShowResumeConfirmDialog] = useState(false);
 
   const openFilePreview = (url: string) => {
     const fileType = getFileType(url);
@@ -407,7 +409,14 @@ const EditCampaign = () => {
                     <Switch 
                       id="is-closed" 
                       checked={isClosed} 
-                      onCheckedChange={setIsClosed}
+                      onCheckedChange={(checked) => {
+                        if (!checked && isClosed) {
+                          // 募集停止を解除しようとしている場合は確認ダイアログを表示
+                          setShowResumeConfirmDialog(true);
+                        } else {
+                          setIsClosed(checked);
+                        }
+                      }}
                     />
                     <Label htmlFor="is-closed" className="cursor-pointer">
                       {isClosed ? (
@@ -887,6 +896,28 @@ const EditCampaign = () => {
         fileType={previewFile?.type || 'other'}
         fileName={previewFile?.name}
       />
+
+      {/* 募集再開確認ダイアログ */}
+      <AlertDialog open={showResumeConfirmDialog} onOpenChange={setShowResumeConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              募集を再開しますか？
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left space-y-2">
+              <p>募集停止を解除すると、配布用URLから応募ができるようになります。</p>
+              <p className="text-amber-600 font-medium">本当に募集を再開してもよろしいですか？</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setIsClosed(false)}>
+              募集を再開する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
