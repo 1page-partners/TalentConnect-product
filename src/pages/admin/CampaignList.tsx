@@ -11,9 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { campaignApi, Campaign } from '@/lib/api';
-import { Plus, Search, Calendar, Copy, Eye, Loader2, FileText, Link2, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar, Copy, Eye, Loader2, FileText, Link2, Trash2, Pencil } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
-import { StatusBadge, EditableStatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 
 const platformOptions = [
   { value: 'all', label: 'すべて' },
@@ -80,22 +80,7 @@ const CampaignList = () => {
       console.error('削除エラー:', error);
       toast({ title: 'エラー', description: '案件の削除に失敗しました', variant: 'destructive' });
     } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const handleStatusChange = async (campaignId: string, newStatus: string) => {
-    try {
-      await campaignApi.update(campaignId, { status: newStatus });
-      setCampaigns(prev => prev.map(c => 
-        c.id === campaignId 
-          ? { ...c, status: newStatus, is_closed: newStatus === 'completed' ? true : false }
-          : c
-      ));
-      toast({ title: 'ステータスを変更しました' });
-    } catch (error) {
-      console.error('ステータス変更エラー:', error);
-      toast({ title: 'エラー', description: 'ステータスの変更に失敗しました', variant: 'destructive' });
+    setDeletingId(null);
     }
   };
 
@@ -134,10 +119,7 @@ const CampaignList = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <EditableStatusBadge 
-              status={campaign.status} 
-              onStatusChange={(newStatus) => handleStatusChange(campaign.id, newStatus)} 
-            />
+            <StatusBadge status={campaign.status} />
             {campaign.is_closed && <Badge variant="destructive">募集停止</Badge>}
           </div>
         </div>
@@ -145,6 +127,9 @@ const CampaignList = () => {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to={`/admin/campaign/${campaign.id}`}><Eye className="h-4 w-4 mr-1" />詳細</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/admin/campaign/${campaign.id}/edit`}><Pencil className="h-4 w-4 mr-1" />編集</Link>
           </Button>
           <Button variant="outline" size="sm" onClick={() => copyConsentUrl(campaign.slug, campaign.title)}>
             <Copy className="h-4 w-4 mr-1" />可否確認用URLコピー
