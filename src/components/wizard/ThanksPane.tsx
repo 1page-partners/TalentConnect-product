@@ -55,15 +55,8 @@ const ThanksPane = ({ isAccepted }: ThanksPaneProps) => {
           </div>
 
           <div className="border-t pt-6">
-            <Button 
-              variant="outline"
-              onClick={handleClose}
-              className="px-8"
-            >
-              ウィンドウを閉じる
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              ※ブラウザの設定によっては閉じられない場合があります
+            <p className="text-sm text-muted-foreground">
+              このタブを閉じてください
             </p>
           </div>
 

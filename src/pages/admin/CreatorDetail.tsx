@@ -341,7 +341,7 @@ const CreatorDetail = () => {
               <div className="text-sm font-medium text-muted-foreground mb-1">名前</div>
               <p>{submission.influencer_name}</p>
             </div>
-            {submission.email && (
+            {submission.email && submission.email.trim() !== '' && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">メールアドレス</div>
                 <p className="flex items-center gap-2"><Mail className="h-4 w-4" />{submission.email}</p>

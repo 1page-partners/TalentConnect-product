@@ -10,8 +10,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { campaignApi, Campaign } from '@/lib/api';
-import { Plus, Search, Calendar, Copy, ExternalLink, Eye, Filter, Loader2, FileText, Link2, Trash2 } from 'lucide-react';
+import { Plus, Search, Calendar, Copy, ExternalLink, Eye, Filter, Loader2, FileText, Link2, Trash2, Settings } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+const statusOptions = [
+  { value: 'active', label: '募集中' },
+  { value: 'proposal', label: '提案中' },
+  { value: 'production', label: '制作中' },
+  { value: 'completed', label: '終了' },
+];
+
+const getStatusLabel = (status: string) => {
+  const found = statusOptions.find(s => s.value === status);
+  return found?.label || status;
+};
 
 const platformOptions = [
   { value: 'all', label: 'すべて' },
@@ -71,6 +84,17 @@ const CampaignList = () => {
     }
   };
 
+  const handleStatusChange = async (campaignId: string, newStatus: string, campaignTitle: string) => {
+    try {
+      await campaignApi.update(campaignId, { status: newStatus });
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: newStatus } : c));
+      toast({ title: 'ステータスを変更しました', description: `${campaignTitle} → ${getStatusLabel(newStatus)}` });
+    } catch (error) {
+      console.error('ステータス変更エラー:', error);
+      toast({ title: 'エラー', description: 'ステータスの変更に失敗しました', variant: 'destructive' });
+    }
+  };
+
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
 
   const filteredCampaigns = useMemo(() => {
@@ -101,7 +125,27 @@ const CampaignList = () => {
               </div>
             )}
           </div>
-          <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>{campaign.status === 'active' ? '募集中' : '終了'}</Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Badge 
+                variant={campaign.status === 'active' ? 'default' : 'secondary'} 
+                className="cursor-pointer hover:opacity-80"
+              >
+                {getStatusLabel(campaign.status)}
+              </Badge>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {statusOptions.map(option => (
+                <DropdownMenuItem 
+                  key={option.value} 
+                  onClick={() => handleStatusChange(campaign.id, option.value, campaign.title)}
+                  className={campaign.status === option.value ? 'bg-accent' : ''}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="flex items-center gap-2 mb-4"><SocialIconsList platforms={campaign.platforms || []} /></div>
         <div className="flex flex-wrap gap-2">

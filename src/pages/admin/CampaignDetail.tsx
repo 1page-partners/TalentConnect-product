@@ -10,6 +10,19 @@ import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, 
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 import PdfThumbnail from '@/components/ui/pdf-thumbnail';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+const statusOptions = [
+  { value: 'active', label: '募集中' },
+  { value: 'proposal', label: '提案中' },
+  { value: 'production', label: '制作中' },
+  { value: 'completed', label: '終了' },
+];
+
+const getStatusLabel = (status: string) => {
+  const found = statusOptions.find(s => s.value === status);
+  return found?.label || status;
+};
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -59,6 +72,18 @@ const CampaignDetail = () => {
     };
     fetchData();
   }, [id, toast]);
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!campaign) return;
+    try {
+      await campaignApi.update(campaign.id, { status: newStatus });
+      setCampaign(prev => prev ? { ...prev, status: newStatus } : prev);
+      toast({ title: 'ステータスを変更しました', description: `${campaign.title} → ${getStatusLabel(newStatus)}` });
+    } catch (error) {
+      console.error('ステータス変更エラー:', error);
+      toast({ title: 'エラー', description: 'ステータスの変更に失敗しました', variant: 'destructive' });
+    }
+  };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -118,7 +143,27 @@ const CampaignDetail = () => {
           <div>
             <h1 className="text-2xl font-bold">{campaign.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>{campaign.status === 'active' ? '募集中' : '終了'}</Badge>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Badge 
+                    variant={campaign.status === 'active' ? 'default' : 'secondary'} 
+                    className="cursor-pointer hover:opacity-80"
+                  >
+                    {getStatusLabel(campaign.status)}
+                  </Badge>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {statusOptions.map(option => (
+                    <DropdownMenuItem 
+                      key={option.value} 
+                      onClick={() => handleStatusChange(option.value)}
+                      className={campaign.status === option.value ? 'bg-accent' : ''}
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               {campaign.posting_date && <span className="text-sm text-muted-foreground">投稿予定: {campaign.posting_date}</span>}
             </div>
           </div>
