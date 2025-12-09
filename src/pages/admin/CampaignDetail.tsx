@@ -10,18 +10,7 @@ import { ArrowLeft, Copy, ExternalLink, Download, FileSpreadsheet, Users, Mail, 
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 import PdfThumbnail from '@/components/ui/pdf-thumbnail';
-
-const statusOptions = [
-  { value: 'active', label: '募集中' },
-  { value: 'proposal', label: '提案中' },
-  { value: 'production', label: '制作中' },
-  { value: 'completed', label: '終了' },
-];
-
-const getStatusLabel = (status: string) => {
-  const found = statusOptions.find(s => s.value === status);
-  return found?.label || status;
-};
+import { StatusBadge } from '@/components/ui/status-badge';
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -131,13 +120,9 @@ const CampaignDetail = () => {
           <div>
             <h1 className="text-2xl font-bold">{campaign.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge 
-                variant={campaign.status === 'active' ? 'default' : 'secondary'}
-              >
-                {getStatusLabel(campaign.status)}
-              </Badge>
+              <StatusBadge status={campaign.status} />
               {campaign.posting_date && <span className="text-sm text-muted-foreground">投稿予定: {campaign.posting_date}</span>}
-              {campaign.is_closed && <Badge variant="destructive">募集終了</Badge>}
+              {campaign.is_closed && <Badge variant="destructive">募集停止</Badge>}
             </div>
           </div>
         </div>

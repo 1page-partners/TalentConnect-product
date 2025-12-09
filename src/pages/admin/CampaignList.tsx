@@ -12,18 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { campaignApi, Campaign } from '@/lib/api';
 import { Plus, Search, Calendar, Copy, Eye, Filter, Loader2, FileText, Link2, Trash2 } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
-
-const statusOptions = [
-  { value: 'active', label: '募集中' },
-  { value: 'proposal', label: '提案中' },
-  { value: 'production', label: '制作中' },
-  { value: 'completed', label: '終了' },
-];
-
-const getStatusLabel = (status: string) => {
-  const found = statusOptions.find(s => s.value === status);
-  return found?.label || status;
-};
+import { StatusBadge } from '@/components/ui/status-badge';
 
 const platformOptions = [
   { value: 'all', label: 'すべて' },
@@ -115,9 +104,10 @@ const CampaignList = () => {
               </div>
             )}
           </div>
-          <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-            {getStatusLabel(campaign.status)}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={campaign.status} />
+            {campaign.is_closed && <Badge variant="destructive">募集停止</Badge>}
+          </div>
         </div>
         <div className="flex items-center gap-2 mb-4"><SocialIconsList platforms={campaign.platforms || []} /></div>
         <div className="flex flex-wrap gap-2">
