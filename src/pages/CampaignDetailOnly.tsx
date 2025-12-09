@@ -160,12 +160,26 @@ const CampaignDetailOnly = () => {
 
 
             {/* スケジュール */}
-            {campaign.posting_date && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span>投稿予定日: {campaign.posting_date}</span>
+            <div className="space-y-2">
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                スケジュール
+              </h3>
+              <div className="space-y-1">
+                {campaign.deadline && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">締め切り日:</span>
+                    <span className="font-semibold text-destructive">{campaign.deadline}</span>
+                  </div>
+                )}
+                {campaign.posting_date && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">投稿予定日:</span>
+                    <span>{campaign.posting_date}</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* 納品物条件 */}
             <div className="space-y-2">
