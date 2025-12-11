@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -12,7 +15,7 @@ import { submissionApi } from "@/lib/api";
 import { fetchYouTubeSubs, fetchInstagramFollowers, fetchTikTokFollowers, fetchXFollowers } from "@/lib/api-stubs";
 import { platformOptions, contactMethodOptions } from "@/lib/mock-data";
 import { SocialIcon } from "@/components/SocialIcons";
-import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, ArrowLeft, Info } from "lucide-react";
+import { Loader2, Plus, Trash2, Download, AlertTriangle, Check, ArrowLeft, Info, ExternalLink } from "lucide-react";
 
 interface SubmissionFormEnhancedProps {
   onNext: () => void;
@@ -110,6 +113,8 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [insightScreenshot, setInsightScreenshot] = useState<string[]>([]);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const { toast } = useToast();
 
   // File upload hooks
@@ -204,6 +209,10 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
 
     if (!desiredPayment.trim()) {
       newErrors.desiredPayment = "ご希望の報酬金額は必須です";
+    }
+
+    if (!privacyAgreed) {
+      newErrors.privacyAgreed = "プライバシーポリシーに同意してください";
     }
 
     // 活動SNSアカウントのバリデーション
@@ -913,6 +922,40 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
         </CardContent>
       </Card>
 
+      {/* プライバシーポリシー同意 */}
+      <Card className="shadow-card">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="privacy-agreed"
+                checked={privacyAgreed}
+                onCheckedChange={(checked) => {
+                  setPrivacyAgreed(checked as boolean);
+                  if (errors.privacyAgreed) setErrors(prev => ({ ...prev, privacyAgreed: '' }));
+                }}
+                className={errors.privacyAgreed ? "border-destructive" : ""}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="privacy-agreed" className="text-sm font-medium cursor-pointer leading-relaxed">
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyModal(true)}
+                    className="text-primary underline hover:text-primary/80 transition-colors"
+                  >
+                    プライバシーポリシー
+                  </button>
+                  に同意します <span className="text-destructive">*</span>
+                </Label>
+                {errors.privacyAgreed && (
+                  <p className="text-xs text-destructive">{errors.privacyAgreed}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex justify-between">
         {onBack && (
           <Button variant="outline" onClick={onBack}>
@@ -923,7 +966,7 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
         
         <Button 
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !privacyAgreed}
           variant="wizard"
           className="ml-auto"
         >
@@ -937,6 +980,87 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
           )}
         </Button>
       </div>
+
+      {/* プライバシーポリシーモーダル */}
+      <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>プライバシーポリシー</DialogTitle>
+            <DialogDescription>
+              以下の内容をご確認ください
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-6 text-sm">
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">1. 個人情報の取得について</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  当社は、本フォームを通じて以下の個人情報を取得します。
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
+                  <li>氏名・活動名</li>
+                  <li>電話番号</li>
+                  <li>メールアドレス</li>
+                  <li>LINE ID</li>
+                  <li>SNSアカウント情報（フォロワー数等を含む）</li>
+                  <li>ポートフォリオ・実績資料</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">2. 個人情報の利用目的</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  取得した個人情報は、以下の目的で利用します。
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
+                  <li>タイアップ案件のご連絡・調整</li>
+                  <li>報酬のお支払いに関する手続き</li>
+                  <li>今後の案件のご案内</li>
+                  <li>サービス改善のための統計分析（個人を特定しない形式）</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">3. 個人情報の第三者提供</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  当社は、以下の場合を除き、取得した個人情報を第三者に提供することはありません。
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
+                  <li>ご本人の同意がある場合</li>
+                  <li>法令に基づく場合</li>
+                  <li>タイアップ案件の遂行に必要な範囲で、クライアント企業に提供する場合</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">4. 個人情報の管理</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  当社は、個人情報の漏洩、滅失又は毀損の防止その他の個人情報の安全管理のために必要かつ適切な措置を講じます。
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">5. 個人情報の開示・訂正・削除</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  ご本人から個人情報の開示、訂正、削除等のご請求があった場合は、適切に対応いたします。お問い合わせは下記連絡先までご連絡ください。
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">6. お問い合わせ</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  個人情報の取り扱いに関するお問い合わせは、本サービス運営者までご連絡ください。
+                </p>
+              </section>
+            </div>
+          </ScrollArea>
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={() => setShowPrivacyModal(false)}>
+              閉じる
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

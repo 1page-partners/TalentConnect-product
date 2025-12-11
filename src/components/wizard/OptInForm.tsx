@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { submissionApi } from "@/lib/api";
 import { Loader2 } from "lucide-react";
@@ -21,6 +23,8 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
   const [lineId, setLineId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const { toast } = useToast();
 
   const validateForm = () => {
@@ -32,6 +36,10 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = "有効なメールアドレスを入力してください";
+    }
+
+    if (wantsContact && !privacyAgreed) {
+      newErrors.privacyAgreed = "プライバシーポリシーに同意してください";
     }
 
     setErrors(newErrors);
@@ -110,6 +118,7 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
                   if (!checked) {
                     setEmail("");
                     setLineId("");
+                    setPrivacyAgreed(false);
                     setErrors({});
                   }
                 }}
@@ -179,6 +188,36 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
                     {errors.contact || errors.email}
                   </div>
                 )}
+
+                {/* プライバシーポリシー同意 */}
+                <div className="pt-2 border-t border-border/50">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="privacy-agreed-optin"
+                      checked={privacyAgreed}
+                      onCheckedChange={(checked) => {
+                        setPrivacyAgreed(checked as boolean);
+                        if (errors.privacyAgreed) setErrors(prev => ({ ...prev, privacyAgreed: '' }));
+                      }}
+                      className={errors.privacyAgreed ? "border-destructive" : ""}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="privacy-agreed-optin" className="text-sm font-medium cursor-pointer leading-relaxed">
+                        <button
+                          type="button"
+                          onClick={() => setShowPrivacyModal(true)}
+                          className="text-primary underline hover:text-primary/80 transition-colors"
+                        >
+                          プライバシーポリシー
+                        </button>
+                        に同意します <span className="text-destructive">*</span>
+                      </Label>
+                      {errors.privacyAgreed && (
+                        <p className="text-xs text-destructive">{errors.privacyAgreed}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -202,7 +241,7 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
           <Button 
             variant="wizard"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (wantsContact && !privacyAgreed)}
           >
             {isSubmitting ? (
               <>
@@ -215,6 +254,87 @@ const OptInForm = ({ onNext, onBack, campaignId, isPreview = false }: OptInFormP
           </Button>
         </div>
       </div>
+
+      {/* プライバシーポリシーモーダル */}
+      <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>プライバシーポリシー</DialogTitle>
+            <DialogDescription>
+              以下の内容をご確認ください
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-6 text-sm">
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">1. 個人情報の取得について</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  当社は、本フォームを通じて以下の個人情報を取得します。
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
+                  <li>氏名・活動名</li>
+                  <li>電話番号</li>
+                  <li>メールアドレス</li>
+                  <li>LINE ID</li>
+                  <li>SNSアカウント情報（フォロワー数等を含む）</li>
+                  <li>ポートフォリオ・実績資料</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">2. 個人情報の利用目的</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  取得した個人情報は、以下の目的で利用します。
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
+                  <li>タイアップ案件のご連絡・調整</li>
+                  <li>報酬のお支払いに関する手続き</li>
+                  <li>今後の案件のご案内</li>
+                  <li>サービス改善のための統計分析（個人を特定しない形式）</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">3. 個人情報の第三者提供</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  当社は、以下の場合を除き、取得した個人情報を第三者に提供することはありません。
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
+                  <li>ご本人の同意がある場合</li>
+                  <li>法令に基づく場合</li>
+                  <li>タイアップ案件の遂行に必要な範囲で、クライアント企業に提供する場合</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">4. 個人情報の管理</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  当社は、個人情報の漏洩、滅失又は毀損の防止その他の個人情報の安全管理のために必要かつ適切な措置を講じます。
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">5. 個人情報の開示・訂正・削除</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  ご本人から個人情報の開示、訂正、削除等のご請求があった場合は、適切に対応いたします。お問い合わせは下記連絡先までご連絡ください。
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-base">6. お問い合わせ</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  個人情報の取り扱いに関するお問い合わせは、本サービス運営者までご連絡ください。
+                </p>
+              </section>
+            </div>
+          </ScrollArea>
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={() => setShowPrivacyModal(false)}>
+              閉じる
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
