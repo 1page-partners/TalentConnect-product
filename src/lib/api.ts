@@ -119,6 +119,32 @@ export const submissionApi = {
       .eq('id', id);
     
     if (error) throw error;
+  },
+
+  async update(id: string, updates: Partial<SubmissionInsert>): Promise<InfluencerSubmission> {
+    const { data, error } = await supabase
+      .from('influencer_submissions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getById(id: string): Promise<InfluencerSubmission | null> {
+    const { data, error } = await supabase
+      .from('influencer_submissions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data;
   }
 };
 

@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { submissionApi, creatorListApi, CreatorList, InfluencerSubmission, campaignApi, Campaign } from '@/lib/api';
-import { ArrowLeft, Mail, Phone, Loader2, ExternalLink, ListPlus, Image, FileText, Download, Trash2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Loader2, ExternalLink, ListPlus, Image, FileText, Download, Trash2, Pencil, User, BarChart3 } from 'lucide-react';
 import { SocialIconsList } from '@/components/SocialIcons';
 import FilePreviewModal from '@/components/ui/file-preview-modal';
 
@@ -286,6 +286,12 @@ const CreatorDetail = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/admin/creator/${id}/edit`}>
+              <Pencil className="h-4 w-4 mr-2" />
+              編集
+            </Link>
+          </Button>
           {myLists.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -333,10 +339,26 @@ const CreatorDetail = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* 基本情報 */}
+        {/* プロフィール画像と基本情報 */}
         <Card>
           <CardHeader><CardTitle>基本情報</CardTitle></CardHeader>
           <CardContent className="space-y-4">
+            {/* プロフィール画像 */}
+            {(submission as any).profile_image_url ? (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={(submission as any).profile_image_url} 
+                  alt={submission.influencer_name}
+                  className="w-24 h-24 rounded-full object-cover border-2 border-border"
+                />
+              </div>
+            ) : (
+              <div className="flex justify-center mb-4">
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+                  <User className="h-10 w-10 text-muted-foreground" />
+                </div>
+              </div>
+            )}
             <div>
               <div className="text-sm font-medium text-muted-foreground mb-1">名前</div>
               <p>{submission.influencer_name}</p>
@@ -375,6 +397,70 @@ const CreatorDetail = () => {
               <div>
                 <div className="text-sm font-medium text-muted-foreground mb-1">備考</div>
                 <p className="whitespace-pre-wrap">{submission.notes}</p>
+              </div>
+            )}
+            {/* タグ */}
+            {(submission as any).tags && (submission as any).tags.length > 0 && (
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">タグ</div>
+                <div className="flex flex-wrap gap-1">
+                  {((submission as any).tags as string[]).map((tag, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* パフォーマンス指標 */}
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" />パフォーマンス指標</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {(submission as any).average_views ? (
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">平均再生数</div>
+                <p className="text-2xl font-bold text-primary">{((submission as any).average_views as number).toLocaleString()} 回</p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">平均再生数のデータがありません</p>
+            )}
+            {(submission as any).follower_demographics && Object.keys((submission as any).follower_demographics).length > 0 && (
+              <div>
+                <div className="text-sm font-medium text-muted-foreground mb-2">フォロワー属性</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {(submission as any).follower_demographics.male !== undefined && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-xs text-muted-foreground">男性</div>
+                      <div className="text-lg font-semibold">{(submission as any).follower_demographics.male}%</div>
+                    </div>
+                  )}
+                  {(submission as any).follower_demographics.female !== undefined && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <div className="text-xs text-muted-foreground">女性</div>
+                      <div className="text-lg font-semibold">{(submission as any).follower_demographics.female}%</div>
+                    </div>
+                  )}
+                </div>
+                {((submission as any).follower_demographics.age_18_24 || (submission as any).follower_demographics.age_25_34 || (submission as any).follower_demographics.age_35_44 || (submission as any).follower_demographics.age_45_plus) && (
+                  <div className="mt-3">
+                    <div className="text-xs text-muted-foreground mb-2">年齢層</div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {(submission as any).follower_demographics.age_18_24 > 0 && (
+                        <div>18-24歳: {(submission as any).follower_demographics.age_18_24}%</div>
+                      )}
+                      {(submission as any).follower_demographics.age_25_34 > 0 && (
+                        <div>25-34歳: {(submission as any).follower_demographics.age_25_34}%</div>
+                      )}
+                      {(submission as any).follower_demographics.age_35_44 > 0 && (
+                        <div>35-44歳: {(submission as any).follower_demographics.age_35_44}%</div>
+                      )}
+                      {(submission as any).follower_demographics.age_45_plus > 0 && (
+                        <div>45歳以上: {(submission as any).follower_demographics.age_45_plus}%</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
