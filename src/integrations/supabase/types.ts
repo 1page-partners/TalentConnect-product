@@ -243,11 +243,13 @@ export type Database = {
       }
       influencer_submissions: {
         Row: {
+          average_views: number | null
           campaign_id: string
           contact_email: string | null
           contact_methods: string[] | null
           desired_fee: string | null
           email: string | null
+          follower_demographics: Json | null
           follower_insight_screenshot: string | null
           id: string
           influencer_name: string
@@ -264,18 +266,22 @@ export type Database = {
           portfolio_urls: string[] | null
           preferred_contact: string | null
           preferred_fee: string | null
+          profile_image_url: string | null
           red: Json | null
           status: string
           submitted_at: string
+          tags: string[] | null
           tiktok: Json | null
           youtube: Json | null
         }
         Insert: {
+          average_views?: number | null
           campaign_id: string
           contact_email?: string | null
           contact_methods?: string[] | null
           desired_fee?: string | null
           email?: string | null
+          follower_demographics?: Json | null
           follower_insight_screenshot?: string | null
           id?: string
           influencer_name: string
@@ -292,18 +298,22 @@ export type Database = {
           portfolio_urls?: string[] | null
           preferred_contact?: string | null
           preferred_fee?: string | null
+          profile_image_url?: string | null
           red?: Json | null
           status?: string
           submitted_at?: string
+          tags?: string[] | null
           tiktok?: Json | null
           youtube?: Json | null
         }
         Update: {
+          average_views?: number | null
           campaign_id?: string
           contact_email?: string | null
           contact_methods?: string[] | null
           desired_fee?: string | null
           email?: string | null
+          follower_demographics?: Json | null
           follower_insight_screenshot?: string | null
           id?: string
           influencer_name?: string
@@ -320,9 +330,11 @@ export type Database = {
           portfolio_urls?: string[] | null
           preferred_contact?: string | null
           preferred_fee?: string | null
+          profile_image_url?: string | null
           red?: Json | null
           status?: string
           submitted_at?: string
+          tags?: string[] | null
           tiktok?: Json | null
           youtube?: Json | null
         }
