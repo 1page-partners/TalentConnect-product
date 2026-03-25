@@ -541,7 +541,7 @@ export default function AnalyticsReportDetail() {
       {/* === Exportable content start === */}
       <div ref={reportContentRef} className="space-y-6">
       {/* ===== OVERVIEW: YouTube Studio style KPI row ===== */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div ref={kpiSectionRef} className="space-y-3">
         <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
         <KpiTile label="インプレッション" value={fmt(report.impressions)} color={YT_GREEN} />
         <KpiTile
@@ -564,7 +564,7 @@ export default function AnalyticsReportDetail() {
       <Separator />
 
       {/* ===== TABS: YouTube Studio style ===== */}
-      <Tabs defaultValue="reach" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="reach">リーチ</TabsTrigger>
           <TabsTrigger value="engagement">エンゲージメント</TabsTrigger>
