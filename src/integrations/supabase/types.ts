@@ -56,9 +56,11 @@ export type Database = {
           impressions: number | null
           like_rate: number | null
           likes: number | null
+          manager_comment: string | null
           raw_text: string | null
           retention_rate: number | null
           search_terms: Json | null
+          share_token: string | null
           source_images: string[] | null
           submission_id: string | null
           title: string
@@ -84,9 +86,11 @@ export type Database = {
           impressions?: number | null
           like_rate?: number | null
           likes?: number | null
+          manager_comment?: string | null
           raw_text?: string | null
           retention_rate?: number | null
           search_terms?: Json | null
+          share_token?: string | null
           source_images?: string[] | null
           submission_id?: string | null
           title?: string
@@ -112,9 +116,11 @@ export type Database = {
           impressions?: number | null
           like_rate?: number | null
           likes?: number | null
+          manager_comment?: string | null
           raw_text?: string | null
           retention_rate?: number | null
           search_terms?: Json | null
+          share_token?: string | null
           source_images?: string[] | null
           submission_id?: string | null
           title?: string
