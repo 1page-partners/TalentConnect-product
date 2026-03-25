@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Eye, Clock, ThumbsUp, TrendingUp, Users, Globe, Monitor, MessageSquare } from "lucide-react";
+import { Loader2, Eye, Clock, ThumbsUp, TrendingUp, Users, Globe, Monitor, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
   PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid,
