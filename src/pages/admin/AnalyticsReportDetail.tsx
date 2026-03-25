@@ -210,6 +210,10 @@ export default function AnalyticsReportDetail() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<AnalyticsReport>>({});
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [managerComment, setManagerComment] = useState<string | null>(null);
+  const [savingComment, setSavingComment] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   const { data: report, isLoading } = useQuery({
     queryKey: ["analytics-report", id],
