@@ -282,26 +282,29 @@ export default function PublicReport() {
 
           {/* Comments */}
           <TabsContent value="comments" className="space-y-6">
-            {report.comment_texts && report.comment_texts.length > 0 ? (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" />コメント</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {report.comment_texts.map((comment: { body: string }, i: number) => (
-                      <div key={i} className="p-3 rounded-lg border bg-gray-50 text-sm leading-relaxed">
-                        {comment.body}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
-                コメントなし
-              </div>
-            )}
+            {(() => {
+              const visibleComments = (report.comment_texts || []).filter((c: any) => !c.hidden);
+              return visibleComments.length > 0 ? (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" />コメント</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {visibleComments.map((comment: { body: string }, i: number) => (
+                        <div key={i} className="p-3 rounded-lg border bg-gray-50 text-sm leading-relaxed">
+                          {comment.body}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
+                  コメントなし
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
 

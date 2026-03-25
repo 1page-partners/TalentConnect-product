@@ -394,7 +394,7 @@ export default function AnalyticsReportDetail() {
       zip.file("04_視聴者.png", await renderSlide(audHtml));
 
       // 5. Comment slides (5 per page)
-      const comments: { body: string }[] = (report as any).comment_texts || [];
+      const comments: { body: string; hidden?: boolean }[] = ((report as any).comment_texts || []).filter((c: any) => !c.hidden);
       if (comments.length > 0) {
         const commentPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
         for (let p = 0; p < commentPages; p++) {
@@ -836,41 +836,40 @@ export default function AnalyticsReportDetail() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                コメント・レビュー
+                コメント
               </CardTitle>
-              <CardDescription>画像から抽出されたコメント本文</CardDescription>
             </CardHeader>
             <CardContent>
               {(report as any).comment_texts && (report as any).comment_texts.length > 0 ? (() => {
-                const allComments: { body: string }[] = (report as any).comment_texts;
+                const allComments: { body: string; hidden?: boolean }[] = (report as any).comment_texts;
                 const totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
                 const currentComments = allComments.slice(commentPage * COMMENTS_PER_PAGE, (commentPage + 1) * COMMENTS_PER_PAGE);
                 return (
                   <div className="space-y-3">
                     {currentComments.map((comment, i) => {
                       const realIdx = commentPage * COMMENTS_PER_PAGE + i;
+                      const isHidden = !!comment.hidden;
                       return (
-                        <div key={realIdx} className="group flex items-start gap-2 p-3 rounded-lg border bg-muted/30 text-sm leading-relaxed">
+                        <div key={realIdx} className={`group flex items-start gap-2 p-3 rounded-lg border text-sm leading-relaxed ${isHidden ? "bg-muted/10 opacity-50" : "bg-muted/30"}`}>
                           <span className="flex-1">{comment.body}</span>
                           <button
                             type="button"
-                            title="このコメントを削除"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                            title={isHidden ? "提出時に表示する" : "提出時に非表示にする"}
+                            className="shrink-0 p-1 rounded transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={async () => {
-                              const updated = allComments.filter((_, idx) => idx !== realIdx);
+                              const updated = allComments.map((c, idx) =>
+                                idx === realIdx ? { ...c, hidden: !c.hidden } : c
+                              );
                               try {
                                 await analyticsApi.update(report.id, { comment_texts: updated } as any);
                                 queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
-                                toast({ title: "コメントを削除しました" });
-                                if (commentPage >= Math.ceil(updated.length / COMMENTS_PER_PAGE)) {
-                                  setCommentPage(Math.max(0, commentPage - 1));
-                                }
+                                toast({ title: isHidden ? "表示に変更しました" : "非表示に変更しました" });
                               } catch {
-                                toast({ title: "削除に失敗しました", variant: "destructive" });
+                                toast({ title: "更新に失敗しました", variant: "destructive" });
                               }
                             }}
                           >
-                            <X className="h-4 w-4" />
+                            {isHidden ? <Eye className="h-4 w-4" /> : <X className="h-4 w-4" />}
                           </button>
                         </div>
                       );
