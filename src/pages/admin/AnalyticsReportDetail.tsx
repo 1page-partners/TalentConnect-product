@@ -257,13 +257,14 @@ export default function AnalyticsReportDetail() {
     if (!report.source_images?.length) return;
     setReanalyzing(true);
     try {
-      const result = await analyticsApi.analyzeImages({
+      await analyticsApi.analyzeImages({
         imageUrls: report.source_images,
         campaignId: report.campaign_id || undefined,
         title: report.title,
+        reportId: report.id,
       });
+      queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
       toast({ title: "再解析完了" });
-      navigate(`/admin/analytics/${result.report.id}`);
     } catch {
       toast({ title: "再解析エラー", variant: "destructive" });
     } finally {

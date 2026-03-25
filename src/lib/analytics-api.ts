@@ -41,12 +41,13 @@ export const analyticsApi = {
     campaignId?: string;
     submissionId?: string;
     title?: string;
+    reportId?: string;
   }): Promise<{ report: AnalyticsReport; extracted: Record<string, unknown> }> {
-    // Support both old (flat imageUrls) and new (categoryImages) format
     const body: Record<string, unknown> = {
       campaignId: params.campaignId,
       submissionId: params.submissionId,
       title: params.title,
+      reportId: params.reportId,
     };
 
     if (params.categoryImages) {
