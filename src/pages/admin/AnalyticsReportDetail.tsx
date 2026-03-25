@@ -467,7 +467,14 @@ export default function AnalyticsReportDetail() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
+      {/* Export overlay to hide tab switching */}
+      {exporting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <p className="text-lg font-medium">{exportProgress}</p>
+          <p className="text-sm text-muted-foreground mt-1">画像を生成しています...</p>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/analytics")}>
