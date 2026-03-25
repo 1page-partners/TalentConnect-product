@@ -192,21 +192,45 @@ function structureOverviewFromOcr(apiKey: string, ocrText: string) {
   );
 }
 
-function structureEngagementFromOcr(apiKey: string, ocrText: string) {
-  return callStructure(apiKey,
-    `OCRテキストからYouTubeのエンゲージメント指標を抽出してJSONで返してください。
-出力形式（厳守）：
-{
-  "like_rate": number|null,
-  "retention_rate": number|null,
-  "complete_view_rate": number|null
-}
-ルール：
-- パーセンテージは小数に変換（45.3%→0.453）
-- 高評価「率」のみ抽出（高評価「数」は無視）
-- 見つからない項目はnull`,
-    `以下のOCRテキストから指標を抽出してください:\n\n${ocrText}`
-  );
+function structureEngagementFromOcr(_apiKey: string, ocrText: string): Promise<Record<string, unknown>> {
+  // Pure regex extraction — no AI structuring, no graph estimation
+  const result: Record<string, unknown> = {
+    like_rate: null,
+    retention_rate: null,
+    complete_view_rate: null,
+  };
+
+  // Normalize full-width characters for matching
+  const normalized = ocrText
+    .replace(/％/g, "%")
+    .replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFF10 + 0x30))
+    .replace(/．/g, ".");
+
+  // 高評価率: extract percentage value
+  const likeRateMatch = normalized.match(/高評価率[^\d]*?(\d+(?:\.\d+)?)%/);
+  if (likeRateMatch) {
+    result.like_rate = parseFloat(likeRateMatch[1]) / 100;
+    console.log(`[engagement] Regex extracted like_rate: ${likeRateMatch[1]}% → ${result.like_rate}`);
+  }
+
+  // 平均視聴率 (retention_rate): extract percentage value
+  const retentionMatch = normalized.match(/平均視聴率[^\d]*?(\d+(?:\.\d+)?)%/);
+  if (retentionMatch) {
+    result.retention_rate = parseFloat(retentionMatch[1]) / 100;
+    console.log(`[engagement] Regex extracted retention_rate: ${retentionMatch[1]}% → ${result.retention_rate}`);
+  }
+
+  // Also try 視聴維持率 as alternative label
+  if (result.retention_rate === null) {
+    const retentionAlt = normalized.match(/視聴維持率[^\d]*?(\d+(?:\.\d+)?)%/);
+    if (retentionAlt) {
+      result.retention_rate = parseFloat(retentionAlt[1]) / 100;
+      console.log(`[engagement] Regex extracted retention_rate (alt): ${retentionAlt[1]}% → ${result.retention_rate}`);
+    }
+  }
+
+  console.log(`[engagement] Final regex result:`, JSON.stringify(result));
+  return Promise.resolve(result);
 }
 
 function structureAudienceFromOcr(apiKey: string, ocrText: string) {
