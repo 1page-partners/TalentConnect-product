@@ -832,7 +832,6 @@ export default function AnalyticsReportDetail() {
 
         {/* === COMMENTS TAB === */}
         <TabsContent value="comments" className="space-y-6">
-          {/* Extracted comment texts */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -842,46 +841,59 @@ export default function AnalyticsReportDetail() {
               <CardDescription>画像から抽出されたコメント本文</CardDescription>
             </CardHeader>
             <CardContent>
-              {(report as any).comment_texts && (report as any).comment_texts.length > 0 ? (
-                <div className="space-y-3">
-                  {(report as any).comment_texts.map((comment: { body: string }, i: number) => (
-                    <div
-                      key={i}
-                      className="group flex items-start gap-2 p-3 rounded-lg border bg-muted/30 text-sm leading-relaxed"
-                    >
-                      <span className="flex-1">{comment.body}</span>
-                      <button
-                        type="button"
-                        title="このコメントを削除"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-                        onClick={async () => {
-                          const updated = (report as any).comment_texts.filter((_: any, idx: number) => idx !== i);
-                          try {
-                            await analyticsApi.update(report.id, { comment_texts: updated } as any);
-                            queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
-                            toast({ title: "コメントを削除しました" });
-                          } catch {
-                            toast({ title: "削除に失敗しました", variant: "destructive" });
-                          }
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : report.comment_images && report.comment_images.length > 0 ? (
+              {(report as any).comment_texts && (report as any).comment_texts.length > 0 ? (() => {
+                const allComments: { body: string }[] = (report as any).comment_texts;
+                const totalPages = Math.ceil(allComments.length / COMMENTS_PER_PAGE);
+                const currentComments = allComments.slice(commentPage * COMMENTS_PER_PAGE, (commentPage + 1) * COMMENTS_PER_PAGE);
+                return (
+                  <div className="space-y-3">
+                    {currentComments.map((comment, i) => {
+                      const realIdx = commentPage * COMMENTS_PER_PAGE + i;
+                      return (
+                        <div key={realIdx} className="group flex items-start gap-2 p-3 rounded-lg border bg-muted/30 text-sm leading-relaxed">
+                          <span className="flex-1">{comment.body}</span>
+                          <button
+                            type="button"
+                            title="このコメントを削除"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                            onClick={async () => {
+                              const updated = allComments.filter((_, idx) => idx !== realIdx);
+                              try {
+                                await analyticsApi.update(report.id, { comment_texts: updated } as any);
+                                queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
+                                toast({ title: "コメントを削除しました" });
+                                if (commentPage >= Math.ceil(updated.length / COMMENTS_PER_PAGE)) {
+                                  setCommentPage(Math.max(0, commentPage - 1));
+                                }
+                              } catch {
+                                toast({ title: "削除に失敗しました", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 pt-2">
+                        <Button variant="outline" size="sm" disabled={commentPage === 0} onClick={() => setCommentPage(p => p - 1)}>
+                          前へ
+                        </Button>
+                        <span className="text-sm text-muted-foreground">{commentPage + 1} / {totalPages}</span>
+                        <Button variant="outline" size="sm" disabled={commentPage >= totalPages - 1} onClick={() => setCommentPage(p => p + 1)}>
+                          次へ
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })() : report.comment_images && report.comment_images.length > 0 ? (
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">テキスト抽出されていません。元画像を表示しています。</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {report.comment_images.map((url, i) => (
-                      <a
-                        key={i}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
-                      >
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow">
                         <img src={url} alt={`Comment ${i + 1}`} className="w-full h-auto" />
                       </a>
                     ))}
