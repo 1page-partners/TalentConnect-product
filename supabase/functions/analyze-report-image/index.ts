@@ -761,6 +761,7 @@ serve(async (req) => {
     let commentTexts: Array<{ body: string }> = [];
     const categoryResults: Record<string, CategoryResult> = {};
     const ocrTexts: string[] = [];
+    const processedCategories = new Set<string>();
 
     if (categoryImages && typeof categoryImages === "object") {
       commentImages = (categoryImages as CategoryImages).comments || [];
@@ -776,6 +777,7 @@ serve(async (req) => {
       for (const [category, urls] of categoryEntries) {
         try {
           console.log(`Processing category: ${category} (${(urls as string[]).length} images)`);
+          processedCategories.add(category);
           const result = await processCategory(LOVABLE_API_KEY, category, urls as string[]);
           categoryResults[category] = result;
 
@@ -803,6 +805,7 @@ serve(async (req) => {
 
       // Process comments separately
       if (commentImages.length > 0) {
+        processedCategories.add("comments");
         try {
           console.log(`Processing comments (${commentImages.length} images)`);
           commentTexts = await structureCommentsFromImages(LOVABLE_API_KEY, commentImages);
@@ -814,6 +817,7 @@ serve(async (req) => {
         }
       }
     } else if (allImageUrls.length > 0) {
+      processedCategories.add("overview");
       try {
         const ocrText = await extractOcrText(LOVABLE_API_KEY, allImageUrls, "全体");
         if (ocrText) {
@@ -833,10 +837,12 @@ serve(async (req) => {
     // Normalize
     extracted = normalizeAllExtracted(extracted);
 
+    console.log("Processed categories:", [...processedCategories].join(", "));
+
     // ─── Merge with previous data (safe re-analysis) ───
     let mergeStatuses: MergeStatus[] = [];
     if (previousData) {
-      const mergeResult = mergeWithPreviousData(previousData, extracted);
+      const mergeResult = mergeWithPreviousData(previousData, extracted, processedCategories);
       extracted = mergeResult.merged;
       mergeStatuses = mergeResult.mergeStatuses;
       console.log("Merge statuses:", JSON.stringify(mergeStatuses));
