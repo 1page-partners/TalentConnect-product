@@ -15,6 +15,7 @@ import {
   ArrowLeft, Loader2, BarChart3, Eye, MousePointerClick,
   Users, Globe, Monitor, ThumbsUp,
 } from "lucide-react";
+import SampleImagesHelpModal from "@/components/analytics/SampleImagesHelpModal";
 
 const IMAGE_CATEGORIES = [
   {
@@ -161,6 +162,7 @@ export default function AnalyticsReportNew() {
           <p className="text-muted-foreground text-sm">
             カテゴリごとにスクリーンショットをアップロードして精度の高い解析を実現
           </p>
+          <SampleImagesHelpModal triggerClassName="mt-2" />
         </div>
       </div>
 

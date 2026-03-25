@@ -614,6 +614,7 @@ serve(async (req) => {
       source_images: allImageUrls,
       comment_images: commentImages,
       comment_texts: commentTexts,
+      category_images: categoryImages || {},
       updated_at: new Date().toISOString(),
     };
 
