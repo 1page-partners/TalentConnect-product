@@ -18,436 +18,456 @@ interface CategoryImages {
   comments?: string[];
 }
 
-const CATEGORY_PROMPTS: Record<string, { system: string; user: string; fields: string[] }> = {
-  overview: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract REACH/OVERVIEW metrics with high precision.
-
-CRITICAL EXTRACTION RULES:
-1. Japanese number conversion:
-   - 万 = ×10,000: "74.1万" → 741000, "1.2万" → 12000, "3万" → 30000
-   - 億 = ×100,000,000: "1.2億" → 120000000
-   - Plain numbers: "1,234" → 1234, "567" → 567
-2. Percentage → decimal: "3.4%" → 0.034, "45.3%" → 0.453
-3. Time durations stay as strings: "4:32", "1:05:30"
-4. Look for these EXACT labels in the screenshot:
-   - インプレッション数 / Impressions → impressions
-   - 視聴回数 / Views → views  
-   - インプレッションのクリック率 / CTR → ctr (as decimal)
-   - 平均視聴時間 / Average view duration → avg_watch_time (string)
-   - 総再生時間 / Watch time → total_watch_time (string, e.g. "123.4時間" or "5,678分")
-5. Numbers next to these labels are the values. Read them carefully.
-6. If a value is not visible, return null.`,
-    user: `この YouTube アナリティクスのスクリーンショットから以下の指標を正確に読み取って抽出してください：
-- インプレッション数（impressions）
-- 視聴回数（views）
-- インプレッションのクリック率 CTR（ctr）→ 小数で返す
-- 平均視聴時間（avg_watch_time）→ 文字列で返す
-- 総再生時間（total_watch_time）→ 文字列で返す
-
-数値は正確に読み取り、万・億などの単位を適切に変換してください。`,
-    fields: ["impressions", "views", "ctr", "avg_watch_time", "total_watch_time"],
-  },
-  engagement: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract ENGAGEMENT metrics with high precision.
-
-CRITICAL EXTRACTION RULES:
-1. Japanese number conversion:
-   - 万 = ×10,000: "1.2万" → 12000
-   - Plain numbers with commas: "1,234" → 1234
-2. Percentage → decimal: "45.3%" → 0.453, "3.4%" → 0.034
-3. Look for these labels:
-   - 高評価率 / Like rate → like_rate (decimal, e.g. 0.034)
-   - 視聴者維持率 / Audience retention → retention_rate (decimal, e.g. 0.453)
-   - If you see a retention percentage graph, extract the average value shown
-   - 完全視聴率 / Complete view rate → complete_view_rate (decimal)
-4. Do NOT extract raw like count; only extract the RATE.
-5. If a value is not visible, return null.`,
-    user: `この YouTube アナリティクスのスクリーンショットから以下の指標を正確に読み取ってください：
-- 高評価率（like_rate）→ 小数で返す
-- 視聴者維持率（retention_rate）→ 小数で返す（グラフに表示されている平均値）
-- 完全視聴率（complete_view_rate）→ 小数で返す
-
-パーセンテージは全て小数に変換してください（例: 45.3% → 0.453）。`,
-    fields: ["like_rate", "retention_rate", "complete_view_rate"],
-  },
-  traffic: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract TRAFFIC SOURCE breakdown data with EXACT precision.
-
-The screenshot shows "視聴者がこの動画を見つけた方法" (How viewers found this video) section.
-It typically has a donut/pie chart on the left and a list of sources with percentages on the right.
-
-CRITICAL EXTRACTION RULES:
-1. Read the EXACT percentage shown next to each traffic source label:
-   - ブラウジング機能 → key: "ブラウジング機能"
-   - 関連動画 → key: "関連動画"  
-   - YouTube検索 → key: "YouTube検索"
-   - 外部 → key: "外部"
-   - 直接入力または不明 → key: "直接入力または不明"
-   - チャンネルページ → key: "チャンネルページ"
-   - その他のYouTube機能 → key: "その他のYouTube機能"
-   - 通知 → key: "通知"
-   - その他 → key: "その他"
-2. Convert percentage to decimal: "91.2%" → 0.912, "2.4%" → 0.024
-3. Include ALL sources listed, even small ones (0.8% etc.)
-4. Use the EXACT Japanese label as shown in the screenshot.
-5. Values should sum to approximately 1.0.`,
-    user: `この YouTube アナリティクスの「トラフィックソース」スクリーンショットを正確に読み取ってください。
-
-重要: 各トラフィックソースの右側に表示されているパーセンテージの数値を正確に読み取り、小数に変換してください。
-例: ブラウジング機能 91.2% → 0.912
-
-キー名はスクリーンショットに表示されている日本語ラベルをそのまま使ってください。`,
-    fields: ["traffic_sources"],
-  },
-  search_terms: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract SEARCH TERMS / KEYWORDS data.
-
-CRITICAL EXTRACTION RULES:
-1. Extract each search term/keyword shown in the screenshot.
-2. For each term, extract the associated number (impressions, views, or clicks).
-3. Japanese number conversion: "1.2万" → 12000, "567" → 567
-4. Return as object: {"keyword1": number1, "keyword2": number2, ...}
-5. Include ALL visible search terms, not just the top ones.`,
-    user: `この YouTube アナリティクスのスクリーンショットから YouTube 検索語句（検索キーワード）とその数値を全て抽出してください。`,
-    fields: ["search_terms"],
-  },
-  audience: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract AUDIENCE DEMOGRAPHICS (age + gender) with EXACT precision.
-
-The screenshot shows a "年齢と性別" (Age and Gender) section from YouTube Studio.
-It has a layout like this:
-- Gender section at top with horizontal bars showing "女性 XX.X%" and "男性 XX.X%"
-- Age section below with horizontal bars for each age range showing percentages on the right
-
-CRITICAL EXTRACTION RULES:
-1. Age distribution - Read the EXACT percentage number shown to the RIGHT of each age range bar:
-   - "13〜17歳" or "13～17歳" → key: "13-17"
-   - "18〜24歳" or "18～24歳" → key: "18-24"  
-   - "25〜34歳" or "25～34歳" → key: "25-34"
-   - "35〜44歳" or "35～44歳" → key: "35-44"
-   - "45〜54歳" or "45～54歳" → key: "45-54"
-   - "55〜64歳" or "55～64歳" → key: "55-64"
-   - "65歳以上" → key: "65+"
-   - Convert percentage to decimal: "47.7%" → 0.477, "1.3%" → 0.013, "0%" → 0
-2. Gender distribution:
-   - Read the EXACT percentage shown next to "女性" and "男性"
-   - Use keys: "男性", "女性"
-   - Convert: "86.6%" → 0.866, "13.4%" → 0.134
-   - If "ユーザーによる設定" is shown with a percentage, include as key "その他"
-3. Values should sum to approximately 1.0 for each group.
-4. Do NOT estimate from bar lengths - read the ACTUAL numbers printed in the screenshot.`,
-    user: `この YouTube アナリティクスの「年齢と性別」スクリーンショットを正確に読み取ってください。
-
-重要: バーの長さではなく、右側に表示されている数値（パーセンテージ）を正確に読み取ってください。
-
-返却形式を厳守してください:
-- audience_age は {"13-17":0, "18-24":0, "25-34":0.013, ... } のように年齢キーのみ
-- audience_gender は {"女性":0.134, "男性":0.866, "その他":0} のように性別キーのみ
-- 年齢キーに性別を混ぜないでください
-- 画面上で 0% と見える項目は 0 を返してください
-
-- audience_age: 各年齢層の右側に表示されている割合を小数で返す（例: 47.7% → 0.477）
-- audience_gender: 男性・女性の横に表示されている割合を小数で返す（例: 86.6% → 0.866）`,
-    fields: ["audience_age", "audience_gender"],
-  },
-  geography: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract GEOGRAPHIC distribution of viewers.
-
-CRITICAL EXTRACTION RULES:
-1. Extract country/region names and their percentage values.
-2. Convert percentages to decimals: "85.3%" → 0.853
-3. Use the exact region name shown (Japanese or English).
-4. Common regions: 日本, アメリカ合衆国, 韓国, 台湾, etc.
-5. Values should sum to approximately 1.0 (or close, if only top regions shown).`,
-    user: `この YouTube アナリティクスのスクリーンショットから視聴者の地域分布を抽出してください。
-国/地域名をキー、割合を小数で返してください。`,
-    fields: ["audience_region"],
-  },
-  devices: {
-    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract DEVICE TYPE distribution with EXACT precision.
-
-The screenshot shows "デバイスの種類" (Device types) section from YouTube Studio.
-It has a horizontal stacked bar at the top and a list of devices with percentages below.
-
-CRITICAL EXTRACTION RULES:
-1. Read the EXACT percentage shown next to each device type:
-   - テレビ → key: "テレビ" (e.g., 35.3%)
-   - パソコン → key: "パソコン" (e.g., 26.7%)
-   - 携帯電話 → key: "携帯電話" (e.g., 25.8%)
-   - タブレット → key: "タブレット" (e.g., 11.8%)
-   - ゲーム機 → key: "ゲーム機"
-   - 不明 → key: "不明"
-2. Convert percentage to decimal: "35.3%" → 0.353, "11.8%" → 0.118
-3. Use the EXACT Japanese label shown in the screenshot.
-4. Values should sum to approximately 1.0.
-5. Do NOT confuse "携帯電話" (mobile phone) with "モバイル". Use the exact label shown.`,
-    user: `この YouTube アナリティクスの「デバイスの種類」スクリーンショットを正確に読み取ってください。
-
-重要: 各デバイスの右側に表示されているパーセンテージを正確に読み取り、小数に変換してください。
-例: テレビ 35.3% → 0.353
-
-返却形式を厳守してください:
-- devices は {"テレビ":0.353, "パソコン":0.267, "携帯電話":0.258, "タブレット":0.118} のように日本語ラベルのみ
-- モバイル/スマホ系は「携帯電話」に正規化してください
-- 0% の項目が見える場合は 0 を返してください`,
-    fields: ["devices"],
-  },
-};
-
-const TOOL_SCHEMA = {
-  type: "function" as const,
-  function: {
-    name: "extract_metrics",
-    description: "Extract YouTube analytics metrics from screenshots",
-    parameters: {
-      type: "object",
-      properties: {
-        impressions: { type: "number" },
-        views: { type: "number" },
-        ctr: { type: "number" },
-        avg_watch_time: { type: "string" },
-        total_watch_time: { type: "string" },
-        retention_rate: { type: "number" },
-        complete_view_rate: { type: "number" },
-        like_rate: { type: "number" },
-        traffic_sources: { type: "object", additionalProperties: { type: "number" } },
-        search_terms: { type: "object", additionalProperties: { type: "number" } },
-        audience_age: { type: "object", additionalProperties: { type: "number" } },
-        audience_gender: { type: "object", additionalProperties: { type: "number" } },
-        audience_region: { type: "object", additionalProperties: { type: "number" } },
-        devices: { type: "object", additionalProperties: { type: "number" } },
-        raw_text: { type: "string" },
-      },
-      required: [],
-      additionalProperties: false,
-    },
-  },
-};
-
-type NumericRecord = Record<string, number>;
+// ─── Key normalization maps ───
 
 const AGE_KEY_MAP: Record<string, string> = {
-  "13-17歳": "13-17",
-  "13-17": "13-17",
-  "13〜17歳": "13-17",
-  "13～17歳": "13-17",
-  "18-24歳": "18-24",
-  "18-24": "18-24",
-  "18〜24歳": "18-24",
-  "18～24歳": "18-24",
-  "25-34歳": "25-34",
-  "25-34": "25-34",
-  "25〜34歳": "25-34",
-  "25～34歳": "25-34",
-  "35-44歳": "35-44",
-  "35-44": "35-44",
-  "35〜44歳": "35-44",
-  "35～44歳": "35-44",
-  "45-54歳": "45-54",
-  "45-54": "45-54",
-  "45〜54歳": "45-54",
-  "45～54歳": "45-54",
-  "55-64歳": "55-64",
-  "55-64": "55-64",
-  "55〜64歳": "55-64",
-  "55～64歳": "55-64",
-  "65歳以上": "65+",
-  "65才以上": "65+",
-  "65以上": "65+",
-  "65+": "65+",
+  "13-17歳": "13-17", "13-17": "13-17", "13〜17歳": "13-17", "13～17歳": "13-17",
+  "18-24歳": "18-24", "18-24": "18-24", "18〜24歳": "18-24", "18～24歳": "18-24",
+  "25-34歳": "25-34", "25-34": "25-34", "25〜34歳": "25-34", "25～34歳": "25-34",
+  "35-44歳": "35-44", "35-44": "35-44", "35〜44歳": "35-44", "35～44歳": "35-44",
+  "45-54歳": "45-54", "45-54": "45-54", "45〜54歳": "45-54", "45～54歳": "45-54",
+  "55-64歳": "55-64", "55-64": "55-64", "55〜64歳": "55-64", "55～64歳": "55-64",
+  "65歳以上": "65+", "65才以上": "65+", "65以上": "65+", "65+": "65+",
 };
 
 const GENDER_KEY_MAP: Record<string, string> = {
-  "男性": "男性",
-  "男": "男性",
-  "male": "男性",
-  "女性": "女性",
-  "女": "女性",
-  "female": "女性",
-  "ユーザーによる設定": "その他",
-  "その他": "その他",
-  "other": "その他",
-  "不明": "その他",
+  "男性": "男性", "男": "男性", "male": "男性",
+  "女性": "女性", "女": "女性", "female": "女性",
+  "ユーザーによる設定": "その他", "その他": "その他", "other": "その他", "不明": "その他",
 };
 
 const DEVICE_KEY_MAP: Record<string, string> = {
-  "テレビ": "テレビ",
-  "tv": "テレビ",
-  "パソコン": "パソコン",
-  "pc": "パソコン",
-  "desktop": "パソコン",
-  "computer": "パソコン",
-  "携帯電話": "携帯電話",
-  "スマートフォン": "携帯電話",
-  "モバイル": "携帯電話",
-  "mobile": "携帯電話",
-  "タブレット": "タブレット",
-  "tablet": "タブレット",
-  "ゲーム機": "ゲーム機",
-  "gameconsole": "ゲーム機",
+  "テレビ": "テレビ", "tv": "テレビ",
+  "パソコン": "パソコン", "pc": "パソコン", "desktop": "パソコン", "computer": "パソコン",
+  "携帯電話": "携帯電話", "スマートフォン": "携帯電話", "モバイル": "携帯電話", "mobile": "携帯電話",
+  "タブレット": "タブレット", "tablet": "タブレット",
+  "ゲーム機": "ゲーム機", "gameconsole": "ゲーム機",
   "不明": "不明",
 };
 
 const TRAFFIC_KEY_MAP: Record<string, string> = {
   "ブラウジング機能": "ブラウジング機能",
   "関連動画": "関連動画",
-  "youtube検索": "YouTube検索",
-  "you tube検索": "YouTube検索",
+  "youtube検索": "YouTube検索", "you tube検索": "YouTube検索",
   "外部": "外部",
-  "直接入力または不明": "直接入力または不明",
-  "直接または不明": "直接入力または不明",
+  "直接入力または不明": "直接入力または不明", "直接または不明": "直接入力または不明",
   "チャンネルページ": "チャンネルページ",
-  "その他のyoutube機能": "その他のYouTube機能",
-  "その他のyou tube機能": "その他のYouTube機能",
+  "その他のyoutube機能": "その他のYouTube機能", "その他のyou tube機能": "その他のYouTube機能",
   "通知": "通知",
   "その他": "その他",
 };
 
 function normalizeLabelKey(value: string) {
-  return value
-    .trim()
-    .replace(/\s+/g, "")
-    .replace(/[％]/g, "%")
-    .replace(/[〜～–—−]/g, "-")
-    .replace(/[：:]/g, "")
-    .toLowerCase();
+  return value.trim().replace(/\s+/g, "").replace(/[％]/g, "%").replace(/[〜～–—−]/g, "-").replace(/[：:]/g, "").toLowerCase();
 }
 
 function toDecimalNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
+  if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
     const normalized = value.replace(/,/g, "").replace(/[％]/g, "%").trim();
     const match = normalized.match(/-?\d+(?:\.\d+)?/);
     if (!match) return null;
-
     let parsed = Number(match[0]);
     if (!Number.isFinite(parsed)) return null;
     if (normalized.includes("%")) parsed = parsed / 100;
     return parsed;
   }
-
   return null;
 }
 
-function normalizeDistribution(
-  input: unknown,
-  keyMap: Record<string, string>,
-  options: { forceUnitInterval?: boolean } = {},
-): NumericRecord {
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return {};
-  }
-
-  const normalized: NumericRecord = {};
-
+function normalizeDistribution(input: unknown, keyMap: Record<string, string>): Record<string, number> {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+  const normalized: Record<string, number> = {};
   for (const [rawKey, rawValue] of Object.entries(input as Record<string, unknown>)) {
     const canonicalKey = keyMap[normalizeLabelKey(rawKey)] ?? rawKey.trim();
     const parsedValue = toDecimalNumber(rawValue);
-
     if (parsedValue === null || parsedValue < 0) continue;
     normalized[canonicalKey] = (normalized[canonicalKey] ?? 0) + parsedValue;
   }
-
-  let entries = Object.entries(normalized).filter(([, value]) => Number.isFinite(value));
-  let sum = entries.reduce((total, [, value]) => total + value, 0);
-
+  let entries = Object.entries(normalized).filter(([, v]) => Number.isFinite(v));
+  const sum = entries.reduce((t, [, v]) => t + v, 0);
   if (sum > 1.5 && sum <= 100.5) {
-    entries = entries.map(([key, value]) => [key, value / 100]);
-    sum = entries.reduce((total, [, value]) => total + value, 0);
+    entries = entries.map(([k, v]) => [k, v / 100]);
   }
-
-  if (options.forceUnitInterval && sum >= 0.95 && sum <= 1.05) {
-    entries = entries.map(([key, value]) => [key, value / sum]);
-  }
-
-  return Object.fromEntries(entries.map(([key, value]) => [key, Number(value.toFixed(6))]));
+  return Object.fromEntries(entries.map(([k, v]) => [k, Number(v.toFixed(6))]));
 }
 
-function normalizeExtractedData(data: Record<string, unknown>, category?: string) {
-  const normalized = { ...data };
+// ─── Phase 1: OCR text extraction ───
 
-  if (!category || category === "audience") {
-    normalized.audience_age = normalizeDistribution(data.audience_age, AGE_KEY_MAP, { forceUnitInterval: true });
-    normalized.audience_gender = normalizeDistribution(data.audience_gender, GENDER_KEY_MAP, { forceUnitInterval: true });
-  }
+const OCR_SYSTEM_PROMPT = `あなたはOCR専門のテキスト抽出エンジンです。
+画像に表示されているテキスト・数値・ラベル・パーセンテージをすべてそのまま書き起こしてください。
 
-  if (!category || category === "devices") {
-    normalized.devices = normalizeDistribution(data.devices, DEVICE_KEY_MAP, { forceUnitInterval: true });
-  }
+ルール：
+- 意味の解釈は一切しない
+- 数値、%、ラベルをそのまま保持する
+- レイアウトの位置関係が分かるように行ごとに出力する
+- 不明な文字は [不明] とする
+- グラフのタイトル、凡例、軸ラベルもすべて書き起こす
+- 日本語と英語が混在していてもそのまま出力する`;
 
-  if (!category || category === "traffic") {
-    normalized.traffic_sources = normalizeDistribution(data.traffic_sources, TRAFFIC_KEY_MAP, { forceUnitInterval: true });
-  }
-
-  return normalized;
-}
-
-async function analyzeCategory(
-  apiKey: string,
-  imageUrls: string[],
-  category: string,
-): Promise<Record<string, unknown>> {
-  const prompt = CATEGORY_PROMPTS[category];
-  if (!prompt || imageUrls.length === 0) return {};
-
-  const imageContent = imageUrls.map((url) => ({
-    type: "image_url",
-    image_url: { url },
-  }));
+async function extractOcrText(apiKey: string, imageUrls: string[], categoryHint: string): Promise<string> {
+  const imageContent = imageUrls.map((url) => ({ type: "image_url", image_url: { url } }));
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: prompt.system },
+        { role: "system", content: OCR_SYSTEM_PROMPT },
         {
           role: "user",
           content: [
-            { type: "text", text: prompt.user },
+            { type: "text", text: `以下のYouTube Studio「${categoryHint}」セクションのスクリーンショットから、表示されているテキストと数値をすべてそのまま書き起こしてください。` },
             ...imageContent,
           ],
         },
       ],
-      tools: [TOOL_SCHEMA],
-      tool_choice: { type: "function", function: { name: "extract_metrics" } },
     }),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    console.error(`AI error for category ${category}:`, response.status, text);
-    if (response.status === 429 || response.status === 402) {
-      throw new Error(response.status === 429 ? "Rate limit exceeded" : "Credits exhausted");
-    }
+    console.error(`OCR error for ${categoryHint}:`, response.status, text);
+    if (response.status === 429) throw new Error("RATE_LIMIT");
+    if (response.status === 402) throw new Error("CREDITS_EXHAUSTED");
+    return "";
+  }
+
+  const result = await response.json();
+  return result.choices?.[0]?.message?.content ?? "";
+}
+
+// ─── Phase 2: Structure from OCR text ───
+
+async function callStructure(apiKey: string, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("Structure error:", response.status, text);
+    if (response.status === 429) throw new Error("RATE_LIMIT");
+    if (response.status === 402) throw new Error("CREDITS_EXHAUSTED");
     return {};
   }
 
   const result = await response.json();
+  const content = result.choices?.[0]?.message?.content ?? "{}";
   try {
-    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      return JSON.parse(toolCall.function.arguments);
-    }
-  } catch (e) {
-    console.error(`Parse error for category ${category}:`, e);
+    return JSON.parse(content);
+  } catch {
+    console.error("JSON parse failed:", content.substring(0, 200));
+    return {};
   }
-  return {};
 }
+
+function structureOverviewFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeの概要指標を抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "impressions": number|null,
+  "views": number|null,
+  "ctr": number|null,
+  "avg_watch_time": string|null,
+  "total_watch_time": string|null
+}
+ルール：
+- 万=×10000（74.1万→741000）、億=×100000000
+- CTRは小数（3.4%→0.034）
+- 時間はそのまま文字列（"4:32"）
+- 見つからない項目はnull`,
+    `以下のOCRテキストから指標を抽出してください:\n\n${ocrText}`
+  );
+}
+
+function structureEngagementFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeのエンゲージメント指標を抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "like_rate": number|null,
+  "retention_rate": number|null,
+  "complete_view_rate": number|null
+}
+ルール：
+- パーセンテージは小数に変換（45.3%→0.453）
+- 高評価「率」のみ抽出（高評価「数」は無視）
+- 見つからない項目はnull`,
+    `以下のOCRテキストから指標を抽出してください:\n\n${ocrText}`
+  );
+}
+
+function structureAudienceFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeの視聴者属性（年齢・性別）を抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "audience_gender": {
+    "女性": number,
+    "男性": number,
+    "その他": number
+  },
+  "audience_age": {
+    "13-17": number,
+    "18-24": number,
+    "25-34": number,
+    "35-44": number,
+    "45-54": number,
+    "55-64": number,
+    "65+": number
+  }
+}
+ルール：
+- パーセンテージの数値のみ（%記号は除去）→ 例: 47.7% → 47.7
+- ラベルと数値をセットで抽出する
+- バーの長さは無視し、テキストの%数値を読む
+- 合計が約100になるはず
+- 見つからない項目は0`,
+    `以下のOCRテキストから視聴者の年齢・性別データを抽出してください:\n\n${ocrText}`
+  );
+}
+
+function structureTrafficFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeのトラフィックソースを抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "traffic_sources": {
+    "ソース名": number,
+    ...
+  }
+}
+ルール：
+- ラベル名は原文そのまま保持（日本語）
+- 円グラフの色は無視し、テキスト一覧の%数値を読む
+- パーセンテージの数値のみ（%記号は除去）→ 例: 91.2% → 91.2
+- 合計が約100になるはず
+- すべてのソースを含める（小さい値も）`,
+    `以下のOCRテキストからトラフィックソースを抽出してください:\n\n${ocrText}`
+  );
+}
+
+function structureDevicesFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeのデバイス種類を抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "devices": {
+    "デバイス名": number,
+    ...
+  }
+}
+ルール：
+- ラベル名は原文そのまま（テレビ、パソコン、携帯電話、タブレット等）
+- パーセンテージの数値のみ（%記号は除去）→ 例: 35.3% → 35.3
+- 合計が約100になるはず
+- 順序は原文どおり`,
+    `以下のOCRテキストからデバイス分布を抽出してください:\n\n${ocrText}`
+  );
+}
+
+function structureSearchTermsFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeの検索語句とその数値を抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "search_terms": {
+    "キーワード": number,
+    ...
+  }
+}
+ルール：
+- 各キーワードと対応するインプレッション数/クリック数を抽出
+- 万=×10000、億=×100000000で変換
+- すべての検索語句を含める`,
+    `以下のOCRテキストから検索語句を抽出してください:\n\n${ocrText}`
+  );
+}
+
+function structureGeographyFromOcr(apiKey: string, ocrText: string) {
+  return callStructure(apiKey,
+    `OCRテキストからYouTubeの視聴者地域分布を抽出してJSONで返してください。
+出力形式（厳守）：
+{
+  "audience_region": {
+    "国名": number,
+    ...
+  }
+}
+ルール：
+- パーセンテージの数値のみ（%記号は除去）→ 例: 85.3% → 85.3
+- 国/地域名はそのまま保持`,
+    `以下のOCRテキストから地域分布を抽出してください:\n\n${ocrText}`
+  );
+}
+
+async function structureCommentsFromImages(apiKey: string, imageUrls: string[]): Promise<Array<{ body: string }>> {
+  const imageContent = imageUrls.map((url) => ({ type: "image_url", image_url: { url } }));
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content: `あなたはYouTubeコメント欄のスクリーンショットからコメント本文のみを抽出するエキスパートです。
+
+ルール（厳守）：
+- コメント本文のテキストのみ抽出する
+- 以下は絶対に除外する：
+  - ユーザー名（@付きのIDも含む）
+  - アイコン/プロフィール画像
+  - 投稿日時（○日前、○か月前等）
+  - いいね数（👍数値）
+  - 返信ボタン等のUI要素
+- 各コメントは個別のオブジェクトにする
+- 返信コメントも本文のみ抽出する
+- 絵文字はそのまま保持する
+
+出力形式（厳守）：
+{
+  "comments": [
+    { "body": "コメント本文1" },
+    { "body": "コメント本文2" }
+  ]
+}`,
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "以下のYouTubeコメント欄のスクリーンショットから、コメント本文のみを抽出してください。ユーザー名・アイコン・日時・いいね数は除外してください。" },
+            ...imageContent,
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("Comment extraction error:", response.status, text);
+    if (response.status === 429) throw new Error("RATE_LIMIT");
+    if (response.status === 402) throw new Error("CREDITS_EXHAUSTED");
+    return [];
+  }
+
+  const result = await response.json();
+  const content = result.choices?.[0]?.message?.content ?? "{}";
+  try {
+    const parsed = JSON.parse(content);
+    return Array.isArray(parsed.comments) ? parsed.comments : [];
+  } catch {
+    console.error("Comment JSON parse failed");
+    return [];
+  }
+}
+
+// ─── Category processor ───
+
+interface CategoryResult {
+  status: "success" | "error";
+  data?: Record<string, unknown>;
+  ocrText?: string;
+  error?: string;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  overview: "概要（リーチ）",
+  engagement: "エンゲージメント",
+  traffic: "トラフィックソース",
+  search_terms: "YouTube検索語句",
+  audience: "視聴者属性（年齢・性別）",
+  geography: "地域",
+  devices: "デバイスの種類",
+};
+
+const STRUCTURE_FN_MAP: Record<string, (apiKey: string, ocrText: string) => Promise<Record<string, unknown>>> = {
+  overview: structureOverviewFromOcr,
+  engagement: structureEngagementFromOcr,
+  audience: structureAudienceFromOcr,
+  traffic: structureTrafficFromOcr,
+  devices: structureDevicesFromOcr,
+  search_terms: structureSearchTermsFromOcr,
+  geography: structureGeographyFromOcr,
+};
+
+async function processCategory(
+  apiKey: string,
+  category: string,
+  imageUrls: string[],
+): Promise<CategoryResult> {
+  if (!imageUrls || imageUrls.length === 0) {
+    return { status: "error", error: "No images" };
+  }
+
+  try {
+    // Phase 1: OCR
+    console.log(`[${category}] Phase 1: OCR extraction...`);
+    const ocrText = await extractOcrText(apiKey, imageUrls, CATEGORY_LABELS[category] ?? category);
+    if (!ocrText) {
+      return { status: "error", error: "OCR returned empty", ocrText: "" };
+    }
+    console.log(`[${category}] OCR extracted ${ocrText.length} chars`);
+
+    // Phase 2: Structure
+    console.log(`[${category}] Phase 2: Structuring...`);
+    const structureFn = STRUCTURE_FN_MAP[category];
+    if (!structureFn) {
+      return { status: "error", error: `No structure function for ${category}`, ocrText };
+    }
+
+    const structured = await structureFn(apiKey, ocrText);
+    console.log(`[${category}] Structured:`, JSON.stringify(structured).substring(0, 200));
+
+    return { status: "success", data: structured, ocrText };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    if (msg === "RATE_LIMIT" || msg === "CREDITS_EXHAUSTED") throw e;
+    console.error(`[${category}] Error:`, msg);
+    return { status: "error", error: msg };
+  }
+}
+
+// ─── Normalize final data ───
+
+function normalizeAllExtracted(extracted: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...extracted };
+
+  if (result.audience_age) {
+    result.audience_age = normalizeDistribution(result.audience_age, AGE_KEY_MAP);
+  }
+  if (result.audience_gender) {
+    result.audience_gender = normalizeDistribution(result.audience_gender, GENDER_KEY_MAP);
+  }
+  if (result.devices) {
+    result.devices = normalizeDistribution(result.devices, DEVICE_KEY_MAP);
+  }
+  if (result.traffic_sources) {
+    result.traffic_sources = normalizeDistribution(result.traffic_sources, TRAFFIC_KEY_MAP);
+  }
+  if (result.audience_region) {
+    result.audience_region = normalizeDistribution(result.audience_region, {});
+  }
+
+  return result;
+}
+
+// ─── Main handler ───
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -458,8 +478,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -473,8 +492,7 @@ serve(async (req) => {
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -484,124 +502,89 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "AI service not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     let extracted: Record<string, unknown> = {};
     let allImageUrls: string[] = imageUrls || [];
     let commentImages: string[] = [];
+    let commentTexts: Array<{ body: string }> = [];
+    const categoryResults: Record<string, CategoryResult> = {};
+    const ocrTexts: string[] = [];
 
     if (categoryImages && typeof categoryImages === "object") {
-      // Separate comment images (not analyzed, just stored)
       commentImages = (categoryImages as CategoryImages).comments || [];
 
-      // Collect all non-comment images for source_images
       const analyzeCategories = { ...categoryImages } as Record<string, string[]>;
       delete analyzeCategories.comments;
 
-      allImageUrls = Object.values(analyzeCategories)
-        .flat()
-        .filter(Boolean) as string[];
+      allImageUrls = Object.values(analyzeCategories).flat().filter(Boolean) as string[];
 
-      const categories = Object.entries(analyzeCategories)
+      // Sequential processing (no parallel to avoid WORKER_LIMIT)
+      const categoryEntries = Object.entries(analyzeCategories)
         .filter(([_, urls]) => urls && urls.length > 0);
 
-      // Process categories in parallel to avoid CPU timeout
-      const results = await Promise.allSettled(
-        categories.map(async ([category, urls]) => {
-          const categoryResult = await analyzeCategory(LOVABLE_API_KEY, urls as string[], category);
-          return { category, result: categoryResult };
-        })
-      );
+      for (const [category, urls] of categoryEntries) {
+        try {
+          console.log(`Processing category: ${category} (${(urls as string[]).length} images)`);
+          const result = await processCategory(LOVABLE_API_KEY, category, urls as string[]);
+          categoryResults[category] = result;
 
-      for (const r of results) {
-        if (r.status === "fulfilled") {
-          extracted = { ...extracted, ...r.value.result };
-        } else {
-          const errorMsg = r.reason instanceof Error ? r.reason.message : "Unknown error";
-          if (errorMsg.includes("Rate limit") || errorMsg.includes("Credits")) {
-            return new Response(JSON.stringify({ error: errorMsg }), {
-              status: errorMsg.includes("Rate limit") ? 429 : 402,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
+          if (result.ocrText) ocrTexts.push(`--- ${category} ---\n${result.ocrText}`);
+
+          if (result.status === "success" && result.data) {
+            extracted = { ...extracted, ...result.data };
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Unknown";
+          if (msg === "RATE_LIMIT") {
+            return new Response(JSON.stringify({ error: "Rate limit exceeded", categoryResults }), {
+              status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          console.error(`Category analysis failed:`, r.reason);
+          if (msg === "CREDITS_EXHAUSTED") {
+            return new Response(JSON.stringify({ error: "Credits exhausted", categoryResults }), {
+              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          categoryResults[category] = { status: "error", error: msg };
+          continue;
+        }
+      }
+
+      // Process comments separately (image→text, not OCR→structure)
+      if (commentImages.length > 0) {
+        try {
+          console.log(`Processing comments (${commentImages.length} images)`);
+          commentTexts = await structureCommentsFromImages(LOVABLE_API_KEY, commentImages);
+          categoryResults.comments = { status: "success", data: { count: commentTexts.length } };
+          console.log(`Extracted ${commentTexts.length} comments`);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Unknown";
+          categoryResults.comments = { status: "error", error: msg };
         }
       }
     } else if (allImageUrls.length > 0) {
-      const imageContent = allImageUrls.map((url: string) => ({
-        type: "image_url",
-        image_url: { url },
-      }));
-
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: `You are an expert data extractor for YouTube Studio Analytics screenshots.
-
-CRITICAL RULES:
-- Japanese numbers: 万 = ×10,000 (74.1万→741000), 億 = ×100,000,000
-- Percentages → decimals: 3.4% → 0.034, 45.3% → 0.453
-- Time durations as strings: "4:32", "1:05:30"
-- Distribution objects: keys are Japanese labels, values are decimals summing to ~1.0
-- If a value is not visible, use null
-- Read numbers very carefully from the screenshot`,
-            },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "以下のYouTubeアナリティクスのスクリーンショットから、すべての指標を正確に読み取って抽出してください。数値の単位（万、億）に注意して正しく変換してください。" },
-                ...imageContent,
-              ],
-            },
-          ],
-          tools: [TOOL_SCHEMA],
-          tool_choice: { type: "function", function: { name: "extract_metrics" } },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("AI gateway error:", response.status, errorText);
-        if (response.status === 429) {
-          return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+      // Legacy: flat image list — do OCR then structure for overview
+      try {
+        const ocrText = await extractOcrText(LOVABLE_API_KEY, allImageUrls, "全体");
+        if (ocrText) {
+          ocrTexts.push(ocrText);
+          const overviewData = await structureOverviewFromOcr(LOVABLE_API_KEY, ocrText);
+          extracted = { ...extracted, ...overviewData };
         }
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "Credits exhausted" }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      } else {
-        const aiResult = await response.json();
-        try {
-          const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
-          if (toolCall?.function?.arguments) {
-            extracted = normalizeExtractedData(JSON.parse(toolCall.function.arguments));
-          }
-        } catch (e) {
-          console.error("Failed to parse AI response:", e);
-        }
+      } catch (e) {
+        console.error("Legacy analysis error:", e);
       }
     } else {
       return new Response(JSON.stringify({ error: "No images provided" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    extracted = normalizeExtractedData(extracted);
+    // Normalize
+    extracted = normalizeAllExtracted(extracted);
 
     // Save to DB
     const serviceClient = createClient(
@@ -627,9 +610,10 @@ CRITICAL RULES:
       audience_gender: extracted.audience_gender ?? {},
       audience_region: extracted.audience_region ?? {},
       devices: extracted.devices ?? {},
-      raw_text: (extracted.raw_text as string) ?? null,
+      raw_text: ocrTexts.join("\n\n") || null,
       source_images: allImageUrls,
       comment_images: commentImages,
+      comment_texts: commentTexts,
       updated_at: new Date().toISOString(),
     };
 
@@ -657,13 +641,18 @@ CRITICAL RULES:
 
     if (dbError) {
       console.error("DB error:", dbError);
-      return new Response(JSON.stringify({ error: "Failed to save report" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Failed to save report", categoryResults }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ report, extracted }), {
+    return new Response(JSON.stringify({
+      success: true,
+      report,
+      extracted,
+      reportId: report.id,
+      categoryResults,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
