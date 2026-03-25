@@ -1,0 +1,1 @@
+ALTER TABLE public.analytics_reports ADD COLUMN IF NOT EXISTS category_images jsonb DEFAULT '{}'::jsonb;

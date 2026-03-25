@@ -45,6 +45,7 @@ export type Database = {
           audience_region: Json | null
           avg_watch_time: string | null
           campaign_id: string | null
+          category_images: Json | null
           comment_images: string[] | null
           comment_texts: Json | null
           complete_view_rate: number | null
@@ -76,6 +77,7 @@ export type Database = {
           audience_region?: Json | null
           avg_watch_time?: string | null
           campaign_id?: string | null
+          category_images?: Json | null
           comment_images?: string[] | null
           comment_texts?: Json | null
           complete_view_rate?: number | null
@@ -107,6 +109,7 @@ export type Database = {
           audience_region?: Json | null
           avg_watch_time?: string | null
           campaign_id?: string | null
+          category_images?: Json | null
           comment_images?: string[] | null
           comment_texts?: Json | null
           complete_view_rate?: number | null
