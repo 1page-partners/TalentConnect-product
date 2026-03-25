@@ -324,20 +324,36 @@ export default function SourceImageManager({
                         {urls.length}枚
                       </Badge>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs"
-                      disabled={replacingCategory === category || isUploading}
-                      onClick={() => triggerMultiFileInput(category)}
-                    >
-                      {replacingCategory === category ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                      )}
-                      一括差し替え
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        disabled={addingToCategory === category || isUploading}
+                        onClick={() => triggerAddFileInput(category)}
+                      >
+                        {addingToCategory === category ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <Plus className="h-3 w-3 mr-1" />
+                        )}
+                        追加
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        disabled={replacingCategory === category || isUploading}
+                        onClick={() => triggerMultiFileInput(category)}
+                      >
+                        {replacingCategory === category ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                        )}
+                        一括差し替え
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {urls.map((url, i) => (
