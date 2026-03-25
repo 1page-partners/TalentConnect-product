@@ -27,7 +27,7 @@ const IMAGE_CATEGORIES = [
   {
     key: "engagement",
     label: "エンゲージメント",
-    description: "高評価数・高評価率・視聴維持率・総再生時間",
+    description: "高評価率・視聴維持率・完全視聴率・総再生時間",
     icon: ThumbsUp,
     color: "#34a853",
   },
@@ -37,6 +37,13 @@ const IMAGE_CATEGORIES = [
     description: "ブラウジング・関連動画・直接流入・検索など",
     icon: Globe,
     color: "#fa7b17",
+  },
+  {
+    key: "search_terms",
+    label: "YouTube検索語句",
+    description: "検索キーワードとそのインプレッション・クリック数",
+    icon: MousePointerClick,
+    color: "#1a73e8",
   },
   {
     key: "audience",
@@ -59,6 +66,13 @@ const IMAGE_CATEGORIES = [
     icon: Monitor,
     color: "#ea4335",
   },
+  {
+    key: "comments",
+    label: "コメント・レビュー",
+    description: "コメント欄のスクリーンショット（複数可）",
+    icon: BarChart3,
+    color: "#f538a0",
+  },
 ] as const;
 
 type CategoryKey = (typeof IMAGE_CATEGORIES)[number]["key"];
@@ -74,9 +88,11 @@ export default function AnalyticsReportNew() {
     overview: [],
     engagement: [],
     traffic: [],
+    search_terms: [],
     audience: [],
     geography: [],
     devices: [],
+    comments: [],
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
