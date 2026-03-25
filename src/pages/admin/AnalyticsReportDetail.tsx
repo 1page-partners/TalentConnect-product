@@ -451,6 +451,67 @@ export default function AnalyticsReportDetail() {
         </Card>
       </div>
 
+      {/* Traffic Sources & Devices - always visible */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Traffic Sources donut */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              トラフィックソース
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {trafficData.length > 0 ? (
+              <>
+                <DonutChart data={trafficDonut} centerLabel="流入" height={200} />
+                <ChartLegend
+                  data={trafficDonut.map((d) => ({
+                    name: d.name,
+                    value: d.value,
+                    color: d.color,
+                    display: `${(d.value * 100).toFixed(1)}%`,
+                  }))}
+                />
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                データなし
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Device donut */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Monitor className="h-4 w-4" />
+              デバイス
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {deviceData.length > 0 ? (
+              <>
+                <DonutChart data={deviceDonut} centerLabel="デバイス" height={200} />
+                <ChartLegend
+                  data={deviceDonut.map((d) => ({
+                    name: d.name,
+                    value: d.value,
+                    color: d.color,
+                    display: `${(d.value * 100).toFixed(1)}%`,
+                  }))}
+                />
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                データなし
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Separator />
 
       {/* ===== TABS: YouTube Studio style ===== */}

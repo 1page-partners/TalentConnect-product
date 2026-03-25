@@ -25,20 +25,40 @@ export interface AnalyticsReport {
   created_by: string | null;
 }
 
+export interface CategoryImages {
+  overview: string[];
+  engagement: string[];
+  traffic: string[];
+  audience: string[];
+  geography: string[];
+  devices: string[];
+}
+
 export const analyticsApi = {
   async analyzeImages(params: {
-    imageUrls: string[];
+    categoryImages?: CategoryImages;
+    imageUrls?: string[];
     campaignId?: string;
     submissionId?: string;
     title?: string;
   }): Promise<{ report: AnalyticsReport; extracted: Record<string, unknown> }> {
+    // Support both old (flat imageUrls) and new (categoryImages) format
+    const body: Record<string, unknown> = {
+      campaignId: params.campaignId,
+      submissionId: params.submissionId,
+      title: params.title,
+    };
+
+    if (params.categoryImages) {
+      body.categoryImages = params.categoryImages;
+      // Also send flat list for source_images storage
+      body.imageUrls = Object.values(params.categoryImages).flat();
+    } else if (params.imageUrls) {
+      body.imageUrls = params.imageUrls;
+    }
+
     const { data, error } = await supabase.functions.invoke("analyze-report-image", {
-      body: {
-        imageUrls: params.imageUrls,
-        campaignId: params.campaignId,
-        submissionId: params.submissionId,
-        title: params.title,
-      },
+      body,
     });
 
     if (error) throw error;
