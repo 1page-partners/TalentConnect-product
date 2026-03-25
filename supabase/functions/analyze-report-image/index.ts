@@ -467,6 +467,158 @@ function normalizeAllExtracted(extracted: Record<string, unknown>): Record<strin
   return result;
 }
 
+// ─── Anomaly detection ───
+
+function isDistributionValid(dist: unknown): boolean {
+  if (!dist || typeof dist !== "object" || Array.isArray(dist)) return false;
+  const entries = Object.entries(dist as Record<string, number>);
+  return entries.length > 0;
+}
+
+function isPercentDistributionValid(dist: unknown): boolean {
+  if (!isDistributionValid(dist)) return false;
+  const entries = Object.entries(dist as Record<string, number>);
+  const sum = entries.reduce((t, [, v]) => t + (typeof v === "number" ? v : 0), 0);
+  // Values could be 0-1 decimals or 0-100. Normalize check.
+  const normalizedSum = sum <= 1.5 ? sum * 100 : sum;
+  return normalizedSum >= 80 && normalizedSum <= 120;
+}
+
+function isAudienceAgeValid(dist: unknown): boolean {
+  if (!isDistributionValid(dist)) return false;
+  const entries = Object.entries(dist as Record<string, number>);
+  const allZero = entries.every(([, v]) => v === 0);
+  if (allZero) return false;
+  return isPercentDistributionValid(dist);
+}
+
+function isTrafficSourcesValid(dist: unknown): boolean {
+  if (!isDistributionValid(dist)) return false;
+  return true;
+}
+
+function isDevicesValid(dist: unknown): boolean {
+  if (!isDistributionValid(dist)) return false;
+  const entries = Object.entries(dist as Record<string, number>);
+  return entries.length >= 2;
+}
+
+function isScalarValid(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") return value.trim().length > 0;
+  return true;
+}
+
+// ─── Merge with previous data ───
+
+interface MergeStatus {
+  category: string;
+  status: "success" | "used_previous" | "no_data";
+  usedPrevious: boolean;
+  improved: boolean;
+}
+
+function mergeWithPreviousData(
+  previous: Record<string, unknown>,
+  next: Record<string, unknown>,
+): { merged: Record<string, unknown>; mergeStatuses: MergeStatus[] } {
+  const merged: Record<string, unknown> = {};
+  const mergeStatuses: MergeStatus[] = [];
+
+  // Scalar KPI fields
+  const scalarFields = [
+    "impressions", "views", "ctr", "avg_watch_time", "total_watch_time",
+    "retention_rate", "complete_view_rate", "like_rate",
+  ];
+  for (const field of scalarFields) {
+    if (isScalarValid(next[field])) {
+      merged[field] = next[field];
+    } else {
+      merged[field] = previous[field] ?? null;
+    }
+  }
+
+  // Distribution fields with specific validators
+  const distFields: Array<{
+    key: string;
+    category: string;
+    validator: (d: unknown) => boolean;
+  }> = [
+    { key: "audience_age", category: "audience", validator: isAudienceAgeValid },
+    { key: "audience_gender", category: "audience", validator: isPercentDistributionValid },
+    { key: "audience_region", category: "geography", validator: isDistributionValid },
+    { key: "traffic_sources", category: "traffic", validator: isTrafficSourcesValid },
+    { key: "devices", category: "devices", validator: isDevicesValid },
+    { key: "search_terms", category: "search_terms", validator: isDistributionValid },
+  ];
+
+  // Group by category for status reporting
+  const categoryFieldMap: Record<string, string[]> = {};
+  for (const df of distFields) {
+    if (!categoryFieldMap[df.category]) categoryFieldMap[df.category] = [];
+    categoryFieldMap[df.category].push(df.key);
+  }
+
+  for (const df of distFields) {
+    const newVal = next[df.key];
+    const prevVal = previous[df.key];
+    const newValid = df.validator(newVal);
+    const prevValid = df.validator(prevVal);
+
+    if (newValid) {
+      merged[df.key] = newVal;
+    } else if (prevValid) {
+      merged[df.key] = prevVal;
+    } else {
+      merged[df.key] = newVal ?? prevVal ?? {};
+    }
+  }
+
+  // Build category-level statuses
+  for (const [category, fields] of Object.entries(categoryFieldMap)) {
+    const anyNewValid = fields.some(f => {
+      const df = distFields.find(d => d.key === f)!;
+      return df.validator(next[f]);
+    });
+    const anyUsedPrev = fields.some(f => {
+      const df = distFields.find(d => d.key === f)!;
+      return !df.validator(next[f]) && df.validator(previous[f]);
+    });
+
+    mergeStatuses.push({
+      category,
+      status: anyNewValid ? "success" : (anyUsedPrev ? "used_previous" : "no_data"),
+      usedPrevious: anyUsedPrev,
+      improved: anyNewValid,
+    });
+  }
+
+  // Overview scalars status
+  const overviewFields = ["impressions", "views", "ctr", "avg_watch_time", "total_watch_time"];
+  const overviewNewValid = overviewFields.some(f => isScalarValid(next[f]));
+  const overviewUsedPrev = overviewFields.some(f => !isScalarValid(next[f]) && isScalarValid(previous[f]));
+  mergeStatuses.push({
+    category: "overview",
+    status: overviewNewValid ? "success" : (overviewUsedPrev ? "used_previous" : "no_data"),
+    usedPrevious: overviewUsedPrev,
+    improved: overviewNewValid,
+  });
+
+  // Engagement scalars status
+  const engagementFields = ["retention_rate", "complete_view_rate", "like_rate"];
+  const engNewValid = engagementFields.some(f => isScalarValid(next[f]));
+  const engUsedPrev = engagementFields.some(f => !isScalarValid(next[f]) && isScalarValid(previous[f]));
+  mergeStatuses.push({
+    category: "engagement",
+    status: engNewValid ? "success" : (engUsedPrev ? "used_previous" : "no_data"),
+    usedPrevious: engUsedPrev,
+    improved: engNewValid,
+  });
+
+  return { merged, mergeStatuses };
+}
+
 // ─── Main handler ───
 
 serve(async (req) => {
@@ -506,6 +658,44 @@ serve(async (req) => {
       });
     }
 
+    // ─── Fetch previous data for merge (re-analysis only) ───
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    let previousData: Record<string, unknown> | null = null;
+    let previousCommentTexts: Array<{ body: string }> = [];
+    if (reportId) {
+      const { data: prevReport } = await serviceClient
+        .from("analytics_reports")
+        .select("*")
+        .eq("id", reportId)
+        .single();
+      if (prevReport) {
+        previousData = {
+          impressions: prevReport.impressions,
+          views: prevReport.views,
+          ctr: prevReport.ctr,
+          avg_watch_time: prevReport.avg_watch_time,
+          total_watch_time: prevReport.total_watch_time,
+          retention_rate: prevReport.retention_rate,
+          complete_view_rate: prevReport.complete_view_rate,
+          like_rate: prevReport.like_rate,
+          traffic_sources: prevReport.traffic_sources,
+          search_terms: prevReport.search_terms,
+          audience_age: prevReport.audience_age,
+          audience_gender: prevReport.audience_gender,
+          audience_region: prevReport.audience_region,
+          devices: prevReport.devices,
+        };
+        previousCommentTexts = Array.isArray(prevReport.comment_texts)
+          ? prevReport.comment_texts as Array<{ body: string }>
+          : [];
+        console.log("Loaded previous data for merge protection");
+      }
+    }
+
     let extracted: Record<string, unknown> = {};
     let allImageUrls: string[] = imageUrls || [];
     let commentImages: string[] = [];
@@ -521,7 +711,6 @@ serve(async (req) => {
 
       allImageUrls = Object.values(analyzeCategories).flat().filter(Boolean) as string[];
 
-      // Sequential processing (no parallel to avoid WORKER_LIMIT)
       const categoryEntries = Object.entries(analyzeCategories)
         .filter(([_, urls]) => urls && urls.length > 0);
 
@@ -553,7 +742,7 @@ serve(async (req) => {
         }
       }
 
-      // Process comments separately (image→text, not OCR→structure)
+      // Process comments separately
       if (commentImages.length > 0) {
         try {
           console.log(`Processing comments (${commentImages.length} images)`);
@@ -566,7 +755,6 @@ serve(async (req) => {
         }
       }
     } else if (allImageUrls.length > 0) {
-      // Legacy: flat image list — do OCR then structure for overview
       try {
         const ocrText = await extractOcrText(LOVABLE_API_KEY, allImageUrls, "全体");
         if (ocrText) {
@@ -586,12 +774,35 @@ serve(async (req) => {
     // Normalize
     extracted = normalizeAllExtracted(extracted);
 
-    // Save to DB
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // ─── Merge with previous data (safe re-analysis) ───
+    let mergeStatuses: MergeStatus[] = [];
+    if (previousData) {
+      const mergeResult = mergeWithPreviousData(previousData, extracted);
+      extracted = mergeResult.merged;
+      mergeStatuses = mergeResult.mergeStatuses;
+      console.log("Merge statuses:", JSON.stringify(mergeStatuses));
+    }
 
+    // ─── Comments: protect previous if new is empty ───
+    if (previousCommentTexts.length > 0 && commentTexts.length === 0) {
+      commentTexts = previousCommentTexts;
+      mergeStatuses.push({
+        category: "comments",
+        status: "used_previous",
+        usedPrevious: true,
+        improved: false,
+      });
+      console.log("Comments: kept previous data (new extraction was empty)");
+    } else if (commentTexts.length > 0) {
+      mergeStatuses.push({
+        category: "comments",
+        status: "success",
+        usedPrevious: false,
+        improved: true,
+      });
+    }
+
+    // Save to DB
     const reportData = {
       campaign_id: campaignId || null,
       submission_id: submissionId || null,
@@ -653,6 +864,7 @@ serve(async (req) => {
       extracted,
       reportId: report.id,
       categoryResults,
+      mergeStatuses,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
