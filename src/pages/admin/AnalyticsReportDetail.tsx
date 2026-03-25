@@ -527,8 +527,6 @@ export default function AnalyticsReportDetail() {
 
         {/* === REACH TAB === */}
         <TabsContent value="reach" className="space-y-6">
-          {/* Impression → View Funnel */}
-          <ImpressionFunnel impressions={report.impressions} views={report.views} ctr={report.ctr} />
 
           {/* Traffic Sources */}
           {trafficData.length > 0 && (
