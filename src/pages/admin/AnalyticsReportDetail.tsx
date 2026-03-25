@@ -355,7 +355,7 @@ export default function AnalyticsReportDetail() {
     }
   };
 
-  const [exportProgress, setExportProgress] = useState("");
+
 
   const exportAsImage = async () => {
     setExporting(true);
