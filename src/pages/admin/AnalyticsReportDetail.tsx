@@ -13,7 +13,7 @@ import { formatDate } from "@/lib/api";
 import {
   ArrowLeft, Edit2, Save, X, RefreshCw, Loader2,
   Eye, MousePointerClick, Clock, ThumbsUp, TrendingUp,
-  Users, Globe, Monitor, Image as ImageIcon,
+  Users, Globe, Monitor, Image as ImageIcon, Search, MessageSquare,
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -280,6 +280,7 @@ export default function AnalyticsReportDetail() {
   const genderData = toChartData(report.audience_gender);
   const regionData = toChartData(report.audience_region);
   const deviceData = toChartData(report.devices);
+  const searchTermsData = toChartData(report.search_terms);
 
   // Prepare donut data with colors
   const genderDonut = genderData.map((d, i) => ({
@@ -521,6 +522,8 @@ export default function AnalyticsReportDetail() {
           <TabsTrigger value="reach">リーチ</TabsTrigger>
           <TabsTrigger value="engagement">エンゲージメント</TabsTrigger>
           <TabsTrigger value="audience">視聴者</TabsTrigger>
+          <TabsTrigger value="search_terms">検索語句</TabsTrigger>
+          <TabsTrigger value="comments">コメント</TabsTrigger>
         </TabsList>
 
         {/* === REACH TAB === */}
@@ -727,6 +730,86 @@ export default function AnalyticsReportDetail() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* === SEARCH TERMS TAB === */}
+        <TabsContent value="search_terms" className="space-y-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                YouTube 検索語句
+              </CardTitle>
+              <CardDescription>視聴者がこの動画を見つけるために使った検索キーワード</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {searchTermsData.length > 0 ? (
+                <div className="space-y-3">
+                  {searchTermsData.sort((a, b) => b.value - a.value).map((term, i) => {
+                    const maxVal = searchTermsData[0]?.value || 1;
+                    return (
+                      <div key={term.name} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
+                        <div className="flex-1">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium">{term.name}</span>
+                            <span className="text-muted-foreground">{term.value.toLocaleString()}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${(term.value / maxVal) * 100}%`,
+                                backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                  データなし
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === COMMENTS TAB === */}
+        <TabsContent value="comments" className="space-y-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                コメント・レビュー
+              </CardTitle>
+              <CardDescription>アップロードされたコメントのスクリーンショット</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {report.comment_images && report.comment_images.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {report.comment_images.map((url, i) => (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
+                    >
+                      <img src={url} alt={`Comment ${i + 1}`} className="w-full h-auto" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                  コメント画像なし
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
