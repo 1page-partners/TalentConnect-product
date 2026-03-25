@@ -277,8 +277,13 @@ export default function AnalyticsReportDetail() {
     if (!report.source_images?.length) return;
     setReanalyzing(true);
     try {
+      const catImages = (report as any).category_images as Record<string, string[]> | undefined;
+      const hasCategoryMapping = catImages && Object.values(catImages).some(arr => arr?.length > 0);
+
       await analyticsApi.analyzeImages({
-        imageUrls: report.source_images,
+        ...(hasCategoryMapping
+          ? { categoryImages: catImages as any }
+          : { imageUrls: report.source_images }),
         campaignId: report.campaign_id || undefined,
         title: report.title,
         reportId: report.id,
