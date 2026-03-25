@@ -217,9 +217,6 @@ export default function AnalyticsReportDetail() {
   const [commentPage, setCommentPage] = useState(0);
   const COMMENTS_PER_PAGE = 5;
   const reportContentRef = useRef<HTMLDivElement>(null);
-  const [savingComment, setSavingComment] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const reportContentRef = useRef<HTMLDivElement>(null);
 
   const { data: report, isLoading } = useQuery({
     queryKey: ["analytics-report", id],
