@@ -38,6 +38,96 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_reports: {
+        Row: {
+          audience_age: Json | null
+          audience_gender: Json | null
+          audience_region: Json | null
+          avg_watch_time: string | null
+          campaign_id: string | null
+          created_at: string
+          created_by: string | null
+          ctr: number | null
+          devices: Json | null
+          id: string
+          impressions: number | null
+          like_rate: number | null
+          likes: number | null
+          raw_text: string | null
+          retention_rate: number | null
+          source_images: string[] | null
+          submission_id: string | null
+          title: string
+          total_watch_time: string | null
+          traffic_sources: Json | null
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          audience_age?: Json | null
+          audience_gender?: Json | null
+          audience_region?: Json | null
+          avg_watch_time?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          ctr?: number | null
+          devices?: Json | null
+          id?: string
+          impressions?: number | null
+          like_rate?: number | null
+          likes?: number | null
+          raw_text?: string | null
+          retention_rate?: number | null
+          source_images?: string[] | null
+          submission_id?: string | null
+          title?: string
+          total_watch_time?: string | null
+          traffic_sources?: Json | null
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          audience_age?: Json | null
+          audience_gender?: Json | null
+          audience_region?: Json | null
+          avg_watch_time?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          ctr?: number | null
+          devices?: Json | null
+          id?: string
+          impressions?: number | null
+          like_rate?: number | null
+          likes?: number | null
+          raw_text?: string | null
+          retention_rate?: number | null
+          source_images?: string[] | null
+          submission_id?: string | null
+          title?: string
+          total_watch_time?: string | null
+          traffic_sources?: Json | null
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_reports_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_reports_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_creators: {
         Row: {
           account_url: string | null
