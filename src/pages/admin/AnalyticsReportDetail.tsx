@@ -443,6 +443,14 @@ export default function AnalyticsReportDetail() {
               <span className="hidden sm:inline">手動編集</span>
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={copyShareLink}>
+            <Link2 className="h-4 w-4" />
+            <span className="ml-1 hidden sm:inline">共有リンク</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportAsImage} disabled={exporting}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="ml-1 hidden sm:inline">画像出力</span>
+          </Button>
         </div>
       </div>
 
