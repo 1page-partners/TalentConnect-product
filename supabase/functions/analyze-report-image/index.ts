@@ -187,7 +187,7 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { imageUrls, categoryImages, campaignId, submissionId, title } = await req.json();
+    const { imageUrls, categoryImages, campaignId, submissionId, title, reportId } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -298,34 +298,54 @@ Use null for missing values. Distribution objects should have string keys and de
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: report, error: insertError } = await serviceClient
-      .from("analytics_reports")
-      .insert({
-        campaign_id: campaignId || null,
-        submission_id: submissionId || null,
-        title: title || "レポート",
-        impressions: extracted.impressions ?? null,
-        views: extracted.views ?? null,
-        ctr: extracted.ctr ?? null,
-        avg_watch_time: (extracted.avg_watch_time as string) ?? null,
-        total_watch_time: (extracted.total_watch_time as string) ?? null,
-        retention_rate: extracted.retention_rate ?? null,
-        likes: extracted.likes ?? null,
-        like_rate: extracted.like_rate ?? null,
-        traffic_sources: extracted.traffic_sources ?? {},
-        audience_age: extracted.audience_age ?? {},
-        audience_gender: extracted.audience_gender ?? {},
-        audience_region: extracted.audience_region ?? {},
-        devices: extracted.devices ?? {},
-        raw_text: (extracted.raw_text as string) ?? null,
-        source_images: allImageUrls,
-        created_by: userId,
-      })
-      .select()
-      .single();
+    const reportData = {
+      campaign_id: campaignId || null,
+      submission_id: submissionId || null,
+      title: title || "レポート",
+      impressions: extracted.impressions ?? null,
+      views: extracted.views ?? null,
+      ctr: extracted.ctr ?? null,
+      avg_watch_time: (extracted.avg_watch_time as string) ?? null,
+      total_watch_time: (extracted.total_watch_time as string) ?? null,
+      retention_rate: extracted.retention_rate ?? null,
+      likes: extracted.likes ?? null,
+      like_rate: extracted.like_rate ?? null,
+      traffic_sources: extracted.traffic_sources ?? {},
+      audience_age: extracted.audience_age ?? {},
+      audience_gender: extracted.audience_gender ?? {},
+      audience_region: extracted.audience_region ?? {},
+      devices: extracted.devices ?? {},
+      raw_text: (extracted.raw_text as string) ?? null,
+      source_images: allImageUrls,
+      updated_at: new Date().toISOString(),
+    };
 
-    if (insertError) {
-      console.error("DB insert error:", insertError);
+    let report;
+    let dbError;
+
+    if (reportId) {
+      // Update existing report
+      const { data, error } = await serviceClient
+        .from("analytics_reports")
+        .update(reportData)
+        .eq("id", reportId)
+        .select()
+        .single();
+      report = data;
+      dbError = error;
+    } else {
+      // Insert new report
+      const { data, error } = await serviceClient
+        .from("analytics_reports")
+        .insert({ ...reportData, created_by: userId })
+        .select()
+        .single();
+      report = data;
+      dbError = error;
+    }
+
+    if (dbError) {
+      console.error("DB error:", dbError);
       return new Response(JSON.stringify({ error: "Failed to save report" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
