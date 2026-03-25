@@ -461,6 +461,56 @@ export default function SourceImageManager({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Image Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Plus className="h-4 w-4" />
+              画像を追加
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">追加先カテゴリ</label>
+              <Select value={addTargetCategory} onValueChange={setAddTargetCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_META).map(([key, meta]) => {
+                    const Icon = meta.icon;
+                    return (
+                      <SelectItem key={key} value={key}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
+                          {meta.label}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              disabled={addingToCategory === addTargetCategory || isUploading}
+              onClick={() => triggerAddFileInput(addTargetCategory)}
+            >
+              {addingToCategory === addTargetCategory ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              画像を選択してアップロード
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              既存の画像はそのまま保持され、選択した画像が追加されます。
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
