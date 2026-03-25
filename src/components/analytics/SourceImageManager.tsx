@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import {
-  Image as ImageIcon, RefreshCw, Loader2, X,
+  Image as ImageIcon, RefreshCw, Loader2,
   Eye, ThumbsUp, Globe, Users, Monitor, BarChart3, MousePointerClick,
-  Upload,
+  Upload, Plus,
 } from "lucide-react";
 
 const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: string }> = {
