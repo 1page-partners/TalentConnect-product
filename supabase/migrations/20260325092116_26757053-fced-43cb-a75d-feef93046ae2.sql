@@ -1,0 +1,1 @@
+ALTER TABLE public.analytics_reports ADD COLUMN IF NOT EXISTS comment_texts jsonb DEFAULT '[]'::jsonb;

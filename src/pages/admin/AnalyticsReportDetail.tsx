@@ -798,32 +798,47 @@ export default function AnalyticsReportDetail() {
 
         {/* === COMMENTS TAB === */}
         <TabsContent value="comments" className="space-y-6">
+          {/* Extracted comment texts */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 コメント・レビュー
               </CardTitle>
-              <CardDescription>アップロードされたコメントのスクリーンショット</CardDescription>
+              <CardDescription>画像から抽出されたコメント本文</CardDescription>
             </CardHeader>
             <CardContent>
-              {report.comment_images && report.comment_images.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {report.comment_images.map((url, i) => (
-                    <a
+              {(report as any).comment_texts && (report as any).comment_texts.length > 0 ? (
+                <div className="space-y-3">
+                  {(report as any).comment_texts.map((comment: { body: string }, i: number) => (
+                    <div
                       key={i}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
+                      className="p-3 rounded-lg border bg-muted/30 text-sm leading-relaxed"
                     >
-                      <img src={url} alt={`Comment ${i + 1}`} className="w-full h-auto" />
-                    </a>
+                      {comment.body}
+                    </div>
                   ))}
+                </div>
+              ) : report.comment_images && report.comment_images.length > 0 ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">テキスト抽出されていません。元画像を表示しています。</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {report.comment_images.map((url, i) => (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
+                      >
+                        <img src={url} alt={`Comment ${i + 1}`} className="w-full h-auto" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
-                  コメント画像なし
+                  コメントなし
                 </div>
               )}
             </CardContent>
