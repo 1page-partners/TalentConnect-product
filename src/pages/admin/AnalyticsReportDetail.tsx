@@ -573,6 +573,7 @@ export default function AnalyticsReportDetail() {
           <TabsTrigger value="comments">コメント</TabsTrigger>
         </TabsList>
 
+        <div ref={tabContentAreaRef}>
         {/* === REACH TAB === */}
         <TabsContent value="reach" className="space-y-6">
 
