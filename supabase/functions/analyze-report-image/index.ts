@@ -336,18 +336,24 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-2.5-pro",
           messages: [
             {
               role: "system",
-              content: `You are a YouTube Analytics screenshot data extractor. Extract all metrics from the screenshots.
-Convert Japanese numbers (74.1万→741000), percentages to decimals (3.4%→0.034), keep time as strings.
-Use null for missing values. Distribution objects should have string keys and decimal values summing to ~1.0.`,
+              content: `You are an expert data extractor for YouTube Studio Analytics screenshots.
+
+CRITICAL RULES:
+- Japanese numbers: 万 = ×10,000 (74.1万→741000), 億 = ×100,000,000
+- Percentages → decimals: 3.4% → 0.034, 45.3% → 0.453
+- Time durations as strings: "4:32", "1:05:30"
+- Distribution objects: keys are Japanese labels, values are decimals summing to ~1.0
+- If a value is not visible, use null
+- Read numbers very carefully from the screenshot`,
             },
             {
               role: "user",
               content: [
-                { type: "text", text: "以下のYouTubeアナリティクスのスクリーンショットから、すべての指標を抽出してください。" },
+                { type: "text", text: "以下のYouTubeアナリティクスのスクリーンショットから、すべての指標を正確に読み取って抽出してください。数値の単位（万、億）に注意して正しく変換してください。" },
                 ...imageContent,
               ],
             },
