@@ -312,113 +312,113 @@ export default function AnalyticsReportDetail() {
     toast({ title: "共有リンクをコピーしました" });
   };
 
+  const renderSlide = async (html: string): Promise<Blob> => {
+    const container = document.createElement("div");
+    container.style.cssText = "position:fixed;left:-9999px;top:0;width:1920px;min-height:1080px;padding:60px 80px;background:#fff;font-family:system-ui,sans-serif;color:#1a1a1a;display:flex;flex-direction:column;justify-content:center;";
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    await new Promise((r) => setTimeout(r, 200));
+    const canvas = await html2canvas(container, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+    document.body.removeChild(container);
+    const targetW = 1920, targetH = 1080;
+    const outCanvas = document.createElement("canvas");
+    outCanvas.width = targetW;
+    outCanvas.height = targetH;
+    const ctx = outCanvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, targetW, targetH);
+    const s = Math.min(targetW / canvas.width, targetH / canvas.height);
+    ctx.drawImage(canvas, (targetW - canvas.width * s) / 2, (targetH - canvas.height * s) / 2, canvas.width * s, canvas.height * s);
+    return new Promise((resolve) => outCanvas.toBlob((b) => resolve(b!), "image/png"));
+  };
+
   const exportAsImage = async () => {
     setExporting(true);
     try {
-      // Create a hidden container with all content laid out flat (no tabs)
-      const container = document.createElement("div");
-      container.style.cssText = "position:fixed;left:-9999px;top:0;width:1920px;padding:60px 80px;background:#fff;font-family:system-ui,sans-serif;color:#1a1a1a;";
-      document.body.appendChild(container);
-
-      const section = (title: string, html: string) =>
-        `<div style="margin-bottom:32px;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#333;">${title}</div>${html}</div>`;
-
+      const zip = new JSZip();
       const kpi = (label: string, value: string, color: string) =>
-        `<div style="flex:1;padding:20px;border-radius:12px;border:1px solid #e5e7eb;text-align:center;">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:4px;">${label}</div>
-          <div style="font-size:28px;font-weight:800;color:${color};">${value}</div>
+        `<div style="flex:1;padding:24px;border-radius:12px;border:1px solid #e5e7eb;text-align:center;">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:6px;">${label}</div>
+          <div style="font-size:32px;font-weight:800;color:${color};">${value}</div>
         </div>`;
-
       const legendRow = (name: string, display: string, color: string) =>
-        `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:13px;">
-          <div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:${color};"></div><span style="color:#666;">${name}</span></div>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:15px;">
+          <div style="display:flex;align-items:center;gap:10px;"><div style="width:14px;height:14px;border-radius:50%;background:${color};"></div><span style="color:#555;">${name}</span></div>
           <span style="font-weight:600;">${display}</span>
         </div>`;
+      const slideTitle = (t: string) => `<div style="text-align:center;margin-bottom:40px;"><div style="font-size:28px;font-weight:800;">${report.title || "レポート"}</div><div style="font-size:14px;color:#999;margin-top:4px;">${t}</div></div>`;
 
-      // Title
-      container.innerHTML = `<div style="text-align:center;margin-bottom:40px;">
-        <div style="font-size:28px;font-weight:800;">${report.title || "レポート"}</div>
-        <div style="font-size:13px;color:#999;margin-top:4px;">Analytics Report</div>
-      </div>`;
+      // 1. Overview slide
+      const overviewHtml = `${slideTitle("概要")}
+        <div style="display:flex;gap:16px;margin-bottom:24px;">
+          ${kpi("視聴回数", fmt(report.views), YT_BLUE)}
+          ${kpi("インプレッション", fmt(report.impressions), YT_GREEN)}
+          ${kpi("CTR", pct(report.ctr), YT_PURPLE)}
+        </div>
+        <div style="display:flex;gap:16px;">
+          ${kpi("平均視聴時間", report.avg_watch_time || "-", YT_ORANGE)}
+          ${kpi("高評価率", pct(report.like_rate), YT_BLUE)}
+          ${kpi("視聴維持率", pct(report.retention_rate), YT_GREEN)}
+          ${kpi("総再生時間", report.total_watch_time || "-", YT_RED)}
+        </div>`;
+      zip.file("01_概要.png", await renderSlide(overviewHtml));
 
-      // KPI row
-      container.innerHTML += `<div style="display:flex;gap:16px;margin-bottom:32px;">
-        ${kpi("視聴回数", fmt(report.views), YT_BLUE)}
-        ${kpi("インプレッション", fmt(report.impressions), YT_GREEN)}
-        ${kpi("CTR", pct(report.ctr), YT_PURPLE)}
-        ${kpi("平均視聴時間", report.avg_watch_time || "-", YT_ORANGE)}
-        ${kpi("高評価", fmt(report.likes), YT_BLUE)}
-        ${kpi("視聴維持率", pct(report.retention_rate), YT_GREEN)}
-        ${kpi("総再生時間", report.total_watch_time || "-", YT_RED)}
-      </div>`;
-
-      // Traffic Sources
+      // 2. Reach slide (Traffic Sources)
       if (trafficData.length > 0) {
-        container.innerHTML += section("トラフィックソース",
-          `<div>${trafficDonut.map(d => legendRow(d.name, d.value <= 1 ? `${(d.value * 100).toFixed(1)}%` : d.value.toLocaleString(), d.color)).join("")}</div>`
-        );
+        const reachHtml = `${slideTitle("リーチ - トラフィックソース")}
+          <div style="max-width:600px;margin:0 auto;">
+            ${trafficDonut.map(d => legendRow(d.name, d.value <= 1 ? `${(d.value * 100).toFixed(1)}%` : d.value.toLocaleString(), d.color)).join("")}
+          </div>`;
+        zip.file("02_リーチ.png", await renderSlide(reachHtml));
       }
 
-      // Gender & Devices side by side
-      const genderHtml = genderData.length > 0
-        ? `<div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:8px;">性別</div>${genderDonut.map(d => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, d.color)).join("")}</div>` : "";
-      const deviceHtml = deviceData.length > 0
-        ? `<div style="flex:1;"><div style="font-size:15px;font-weight:700;margin-bottom:8px;">デバイス</div>${deviceDonut.map(d => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, d.color)).join("")}</div>` : "";
-      if (genderHtml || deviceHtml) {
-        container.innerHTML += `<div style="display:flex;gap:40px;margin-bottom:32px;">${genderHtml}${deviceHtml}</div>`;
-      }
+      // 3. Engagement slide
+      const engHtml = `${slideTitle("エンゲージメント")}
+        <div style="display:flex;gap:24px;justify-content:center;">
+          ${kpi("高評価率", pct(report.like_rate), YT_BLUE)}
+          ${kpi("視聴維持率", pct(report.retention_rate), YT_GREEN)}
+          ${kpi("総再生時間", report.total_watch_time || "-", YT_ORANGE)}
+        </div>`;
+      zip.file("03_エンゲージメント.png", await renderSlide(engHtml));
 
-      // Age
+      // 4. Audience slide
+      let audHtml = slideTitle("視聴者");
+      if (genderData.length > 0 || deviceData.length > 0) {
+        const gH = genderData.length > 0 ? `<div style="flex:1;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;">性別</div>${genderDonut.map(d => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, d.color)).join("")}</div>` : "";
+        const dH = deviceData.length > 0 ? `<div style="flex:1;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;">デバイス</div>${deviceDonut.map(d => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, d.color)).join("")}</div>` : "";
+        audHtml += `<div style="display:flex;gap:60px;margin-bottom:32px;">${gH}${dH}</div>`;
+      }
       if (ageData.length > 0) {
-        container.innerHTML += section("年齢層",
-          `<div>${ageData.map((d, i) => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, DONUT_COLORS[i % DONUT_COLORS.length])).join("")}</div>`
-        );
+        audHtml += `<div style="max-width:500px;margin:0 auto;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;">年齢層</div>${ageData.map((d, i) => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, DONUT_COLORS[i % DONUT_COLORS.length])).join("")}</div>`;
+      }
+      zip.file("04_視聴者.png", await renderSlide(audHtml));
+
+      // 5. Comment slides (5 per page)
+      const comments: { body: string }[] = (report as any).comment_texts || [];
+      if (comments.length > 0) {
+        const commentPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
+        for (let p = 0; p < commentPages; p++) {
+          const pageComments = comments.slice(p * COMMENTS_PER_PAGE, (p + 1) * COMMENTS_PER_PAGE);
+          const suffix = commentPages > 1 ? ` (${p + 1}/${commentPages})` : "";
+          const comHtml = `${slideTitle(`コメント${suffix}`)}
+            <div style="max-width:800px;margin:0 auto;">
+              ${pageComments.map(c => `<div style="padding:14px 18px;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;font-size:15px;margin-bottom:12px;line-height:1.7;">${c.body}</div>`).join("")}
+            </div>`;
+          const num = String(5 + p).padStart(2, "0");
+          zip.file(`${num}_コメント${commentPages > 1 ? `_${p + 1}` : ""}.png`, await renderSlide(comHtml));
+        }
       }
 
-      // Comments
-      const comments = (report as any).comment_texts;
-      if (comments && comments.length > 0) {
-        container.innerHTML += section("コメント",
-          `<div>${comments.map((c: {body:string}) => `<div style="padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;font-size:13px;margin-bottom:8px;line-height:1.6;">${c.body}</div>`).join("")}</div>`
-        );
-      }
-
-      // Manager comment
-      if ((report as any).manager_comment) {
-        container.innerHTML += section("担当者コメント",
-          `<div style="font-size:14px;line-height:1.7;white-space:pre-wrap;">${(report as any).manager_comment}</div>`
-        );
-      }
-
-      await new Promise((r) => setTimeout(r, 300));
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        logging: false,
-      });
-      document.body.removeChild(container);
-
-      // Fit into 16:9
-      const targetW = 1920;
-      const targetH = 1080;
-      const outCanvas = document.createElement("canvas");
-      outCanvas.width = targetW;
-      outCanvas.height = targetH;
-      const ctx = outCanvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, targetW, targetH);
-      const scale = Math.min(targetW / canvas.width, targetH / canvas.height);
-      const sw = canvas.width * scale;
-      const sh = canvas.height * scale;
-      ctx.drawImage(canvas, (targetW - sw) / 2, (targetH - sh) / 2, sw, sh);
-
+      // Generate ZIP
+      const blob = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
-      link.download = `${report.title || "report"}_16x9.png`;
-      link.href = outCanvas.toDataURL("image/png");
+      link.download = `${report.title || "report"}_slides.zip`;
+      link.href = URL.createObjectURL(blob);
       link.click();
-      toast({ title: "画像をダウンロードしました" });
-    } catch {
+      URL.revokeObjectURL(link.href);
+      toast({ title: "ZIPをダウンロードしました" });
+    } catch (e) {
+      console.error(e);
       toast({ title: "画像の書き出しに失敗しました", variant: "destructive" });
     } finally {
       setExporting(false);
