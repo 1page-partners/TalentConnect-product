@@ -29,6 +29,7 @@ export interface AnalyticsReport {
   created_by: string | null;
   manager_comment: string | null;
   share_token: string | null;
+  folder: string | null;
 }
 
 export interface CategoryImages {
