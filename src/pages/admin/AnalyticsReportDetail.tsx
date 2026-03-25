@@ -558,7 +558,7 @@ export default function AnalyticsReportDetail() {
           <TabsTrigger value="reach">リーチ</TabsTrigger>
           <TabsTrigger value="engagement">エンゲージメント</TabsTrigger>
           <TabsTrigger value="audience">視聴者</TabsTrigger>
-          <TabsTrigger value="search_terms">検索語句</TabsTrigger>
+          {/* <TabsTrigger value="search_terms">検索語句</TabsTrigger> */}
           <TabsTrigger value="comments">コメント</TabsTrigger>
         </TabsList>
 
@@ -750,7 +750,7 @@ export default function AnalyticsReportDetail() {
           )}
         </TabsContent>
 
-        {/* === SEARCH TERMS TAB === */}
+        {/* === SEARCH TERMS TAB (commented out) ===
         <TabsContent value="search_terms" className="space-y-6">
           <Card>
             <CardHeader className="pb-2">
@@ -795,6 +795,7 @@ export default function AnalyticsReportDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+        */}
 
         {/* === COMMENTS TAB === */}
         <TabsContent value="comments" className="space-y-6">
