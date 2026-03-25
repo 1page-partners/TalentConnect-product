@@ -13,7 +13,8 @@ import {
   Users,
   Shield,
   Home,
-  UserCircle
+  UserCircle,
+  BarChart3
 } from 'lucide-react';
 import {
   Sidebar,
@@ -39,6 +40,7 @@ const navItems = [
   { title: 'ダッシュボード', url: '/admin', icon: LayoutDashboard, adminOnly: false },
   { title: '案件一覧', url: '/admin/list', icon: List, adminOnly: false },
   { title: 'クリエイターリスト', url: '/admin/creators', icon: UserCircle, adminOnly: false },
+  { title: 'レポート', url: '/admin/analytics', icon: BarChart3, adminOnly: false },
   { title: 'メンバー管理', url: '/admin/members', icon: Users, adminOnly: true },
 ];
 
