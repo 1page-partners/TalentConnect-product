@@ -421,7 +421,7 @@ export default function AnalyticsReportDetail() {
           </CardContent>
         </Card>
 
-        {/* Age bar chart */}
+        {/* Age pie chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -431,19 +431,17 @@ export default function AnalyticsReportDetail() {
           </CardHeader>
           <CardContent>
             {ageData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={ageData} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={40} />
-                  <Tooltip formatter={(v: number) => `${(v * 100).toFixed(1)}%`} contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                    {ageData.map((_, i) => (
-                      <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <>
+                <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={200} />
+                <ChartLegend
+                  data={ageData.map((d, i) => ({
+                    name: d.name,
+                    value: d.value,
+                    color: DONUT_COLORS[i % DONUT_COLORS.length],
+                    display: `${(d.value * 100).toFixed(1)}%`,
+                  }))}
+                />
+              </>
             ) : (
               <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
                 データなし
@@ -651,7 +649,7 @@ export default function AnalyticsReportDetail() {
             )}
           </div>
 
-          {/* Age distribution bar */}
+          {/* Age pie chart */}
           {ageData.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
@@ -661,33 +659,15 @@ export default function AnalyticsReportDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={ageData} barCategoryGap="20%">
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
-                      tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={40}
-                    />
-                    <Tooltip
-                      formatter={(v: number) => `${(v * 100).toFixed(1)}%`}
-                      contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }}
-                    />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      {ageData.map((_, i) => (
-                        <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={220} />
+                <ChartLegend
+                  data={ageData.map((d, i) => ({
+                    name: d.name,
+                    value: d.value,
+                    color: DONUT_COLORS[i % DONUT_COLORS.length],
+                    display: `${(d.value * 100).toFixed(1)}%`,
+                  }))}
+                />
               </CardContent>
             </Card>
           )}

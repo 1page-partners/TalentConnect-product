@@ -74,25 +74,32 @@ CRITICAL EXTRACTION RULES:
   },
   traffic: {
     system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract TRAFFIC SOURCE breakdown data.
+Your task: extract TRAFFIC SOURCE breakdown data with EXACT precision.
+
+The screenshot shows "視聴者がこの動画を見つけた方法" (How viewers found this video) section.
+It typically has a donut/pie chart on the left and a list of sources with percentages on the right.
 
 CRITICAL EXTRACTION RULES:
-1. Look for traffic source categories such as:
-   - ブラウジング機能 / Browse features
-   - 関連動画 / Suggested videos
-   - YouTube検索 / YouTube search
-   - 外部 / External
-   - 直接または不明 / Direct or unknown
-   - チャンネルページ / Channel pages
-   - 通知 / Notifications
-   - その他 / Other
-2. Each source has a percentage. Convert to decimal: "45.3%" → 0.453
-3. If raw view counts are shown instead of percentages, calculate percentages from them.
-4. All values should sum to approximately 1.0.
-5. Use the JAPANESE label as the key name.`,
-    user: `この YouTube アナリティクスのスクリーンショットからトラフィックソース（流入経路）の内訳を抽出してください。
-各ソースの割合を小数で返してください（例: 45.3% → 0.453）。
-キー名は日本語のラベルをそのまま使ってください。`,
+1. Read the EXACT percentage shown next to each traffic source label:
+   - ブラウジング機能 → key: "ブラウジング機能"
+   - 関連動画 → key: "関連動画"  
+   - YouTube検索 → key: "YouTube検索"
+   - 外部 → key: "外部"
+   - 直接入力または不明 → key: "直接入力または不明"
+   - チャンネルページ → key: "チャンネルページ"
+   - その他のYouTube機能 → key: "その他のYouTube機能"
+   - 通知 → key: "通知"
+   - その他 → key: "その他"
+2. Convert percentage to decimal: "91.2%" → 0.912, "2.4%" → 0.024
+3. Include ALL sources listed, even small ones (0.8% etc.)
+4. Use the EXACT Japanese label as shown in the screenshot.
+5. Values should sum to approximately 1.0.`,
+    user: `この YouTube アナリティクスの「トラフィックソース」スクリーンショットを正確に読み取ってください。
+
+重要: 各トラフィックソースの右側に表示されているパーセンテージの数値を正確に読み取り、小数に変換してください。
+例: ブラウジング機能 91.2% → 0.912
+
+キー名はスクリーンショットに表示されている日本語ラベルをそのまま使ってください。`,
     fields: ["traffic_sources"],
   },
   search_terms: {
@@ -110,22 +117,36 @@ CRITICAL EXTRACTION RULES:
   },
   audience: {
     system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract AUDIENCE DEMOGRAPHICS (age + gender).
+Your task: extract AUDIENCE DEMOGRAPHICS (age + gender) with EXACT precision.
+
+The screenshot shows a "年齢と性別" (Age and Gender) section from YouTube Studio.
+It has a layout like this:
+- Gender section at top with horizontal bars showing "女性 XX.X%" and "男性 XX.X%"
+- Age section below with horizontal bars for each age range showing percentages on the right
 
 CRITICAL EXTRACTION RULES:
-1. Age distribution - look for bars/data with age ranges:
-   - "13-17歳", "18-24歳", "25-34歳", "35-44歳", "45-54歳", "55-64歳", "65歳以上"
-   - Use simplified keys: "13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"
-   - Values as decimals summing to ~1.0
-2. Gender distribution - look for:
-   - 男性 / Male, 女性 / Female
+1. Age distribution - Read the EXACT percentage number shown to the RIGHT of each age range bar:
+   - "13〜17歳" or "13～17歳" → key: "13-17"
+   - "18〜24歳" or "18～24歳" → key: "18-24"  
+   - "25〜34歳" or "25～34歳" → key: "25-34"
+   - "35〜44歳" or "35～44歳" → key: "35-44"
+   - "45〜54歳" or "45～54歳" → key: "45-54"
+   - "55〜64歳" or "55～64歳" → key: "55-64"
+   - "65歳以上" → key: "65+"
+   - Convert percentage to decimal: "47.7%" → 0.477, "1.3%" → 0.013, "0%" → 0
+2. Gender distribution:
+   - Read the EXACT percentage shown next to "女性" and "男性"
    - Use keys: "男性", "女性"
-   - Values as decimals summing to ~1.0
-3. Read the EXACT percentages from the chart bars or labels.
-4. YouTube often shows age+gender combined (stacked bars). Sum male+female per age group for audience_age.`,
-    user: `この YouTube アナリティクスのスクリーンショットから視聴者の年齢分布と性別比率を正確に読み取ってください。
-- audience_age: 年齢層ごとの割合（小数）
-- audience_gender: 性別ごとの割合（小数）`,
+   - Convert: "86.6%" → 0.866, "13.4%" → 0.134
+   - If "ユーザーによる設定" is shown with a percentage, include as key "その他"
+3. Values should sum to approximately 1.0 for each group.
+4. Do NOT estimate from bar lengths - read the ACTUAL numbers printed in the screenshot.`,
+    user: `この YouTube アナリティクスの「年齢と性別」スクリーンショットを正確に読み取ってください。
+
+重要: バーの長さではなく、右側に表示されている数値（パーセンテージ）を正確に読み取ってください。
+
+- audience_age: 各年齢層の右側に表示されている割合を小数で返す（例: 47.7% → 0.477）
+- audience_gender: 男性・女性の横に表示されている割合を小数で返す（例: 86.6% → 0.866）`,
     fields: ["audience_age", "audience_gender"],
   },
   geography: {
@@ -144,20 +165,29 @@ CRITICAL EXTRACTION RULES:
   },
   devices: {
     system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
-Your task: extract DEVICE TYPE distribution.
+Your task: extract DEVICE TYPE distribution with EXACT precision.
+
+The screenshot shows "デバイスの種類" (Device types) section from YouTube Studio.
+It has a horizontal stacked bar at the top and a list of devices with percentages below.
 
 CRITICAL EXTRACTION RULES:
-1. Look for device types:
-   - モバイル / Mobile
-   - パソコン / Computer/Desktop
-   - タブレット / Tablet  
-   - テレビ / TV
-   - ゲーム機 / Game console
-2. Convert percentages to decimals: "65.2%" → 0.652
-3. Use the JAPANESE label as key name.
-4. Values should sum to approximately 1.0.`,
-    user: `この YouTube アナリティクスのスクリーンショットからデバイス別の視聴割合を抽出してください。
-デバイス名をキー、割合を小数で返してください。`,
+1. Read the EXACT percentage shown next to each device type:
+   - テレビ → key: "テレビ" (e.g., 35.3%)
+   - パソコン → key: "パソコン" (e.g., 26.7%)
+   - 携帯電話 → key: "携帯電話" (e.g., 25.8%)
+   - タブレット → key: "タブレット" (e.g., 11.8%)
+   - ゲーム機 → key: "ゲーム機"
+   - 不明 → key: "不明"
+2. Convert percentage to decimal: "35.3%" → 0.353, "11.8%" → 0.118
+3. Use the EXACT Japanese label shown in the screenshot.
+4. Values should sum to approximately 1.0.
+5. Do NOT confuse "携帯電話" (mobile phone) with "モバイル". Use the exact label shown.`,
+    user: `この YouTube アナリティクスの「デバイスの種類」スクリーンショットを正確に読み取ってください。
+
+重要: 各デバイスの右側に表示されているパーセンテージを正確に読み取り、小数に変換してください。
+例: テレビ 35.3% → 0.353
+
+キー名はスクリーンショットに表示されている日本語ラベルをそのまま使ってください。`,
     fields: ["devices"],
   },
 };
