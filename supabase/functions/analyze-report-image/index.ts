@@ -817,16 +817,43 @@ serve(async (req) => {
         }
       }
     } else if (allImageUrls.length > 0) {
-      processedCategories.add("overview");
-      try {
-        const ocrText = await extractOcrText(LOVABLE_API_KEY, allImageUrls, "全体");
-        if (ocrText) {
-          ocrTexts.push(ocrText);
-          const overviewData = await structureOverviewFromOcr(LOVABLE_API_KEY, ocrText);
-          extracted = { ...extracted, ...overviewData };
+      // No category mapping — process all categories using the full image set
+      console.log(`No category_images mapping. Running all-category analysis on ${allImageUrls.length} source images.`);
+
+      const allCategories = ["overview", "engagement", "audience", "traffic", "devices", "search_terms", "geography"];
+      for (const category of allCategories) {
+        try {
+          processedCategories.add(category);
+          console.log(`Processing category: ${category} (${allImageUrls.length} images, fallback mode)`);
+          const result = await processCategory(LOVABLE_API_KEY, category, allImageUrls);
+          categoryResults[category] = result;
+
+          if (result.ocrText) ocrTexts.push(`--- ${category} ---\n${result.ocrText}`);
+
+          if (result.status === "success" && result.data) {
+            extracted = { ...extracted, ...result.data };
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Unknown";
+          if (msg === "RATE_LIMIT" || msg === "CREDITS_EXHAUSTED") {
+            console.log(`Stopping at ${category} due to ${msg}. Partial results will be saved.`);
+            break;
+          }
+          categoryResults[category] = { status: "error", error: msg };
+          continue;
         }
+      }
+
+      // Also try comment extraction from all images
+      try {
+        processedCategories.add("comments");
+        console.log(`Processing comments (${allImageUrls.length} images, fallback mode)`);
+        commentTexts = await structureCommentsFromImages(LOVABLE_API_KEY, allImageUrls);
+        categoryResults.comments = { status: "success", data: { count: commentTexts.length } };
+        console.log(`Extracted ${commentTexts.length} comments`);
       } catch (e) {
-        console.error("Legacy analysis error:", e);
+        const msg = e instanceof Error ? e.message : "Unknown";
+        categoryResults.comments = { status: "error", error: msg };
       }
     } else {
       return new Response(JSON.stringify({ error: "No images provided" }), {
