@@ -316,16 +316,43 @@ export default function AnalyticsReportDetail() {
   };
 
   const captureElement = async (el: HTMLElement): Promise<Blob> => {
-    const canvas = await html2canvas(el, {
+    // Add padding wrapper for export
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = "padding:40px;background:#ffffff;display:inline-block;min-width:100%;box-sizing:border-box;";
+    el.parentNode?.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
+
+    const canvas = await html2canvas(wrapper, {
       scale: 2,
       backgroundColor: "#ffffff",
       useCORS: true,
       logging: false,
+      windowWidth: 1200,
     });
+
+    // Restore DOM
+    wrapper.parentNode?.insertBefore(el, wrapper);
+    wrapper.remove();
+
     return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), "image/png"));
   };
 
-  const waitForRender = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+  const waitForRender = (ms = 1200) => new Promise((r) => setTimeout(r, ms));
+
+  const waitForCharts = async (el: HTMLElement, ms = 2000) => {
+    // Wait for Recharts SVGs to render
+    const start = Date.now();
+    while (Date.now() - start < ms) {
+      const svgs = el.querySelectorAll("svg");
+      const paths = el.querySelectorAll("svg path, svg rect, svg circle");
+      if (svgs.length > 0 && paths.length > 0) {
+        // Extra buffer for animation completion
+        await new Promise((r) => setTimeout(r, 500));
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  };
 
   const exportAsImage = async () => {
     setExporting(true);
@@ -336,7 +363,7 @@ export default function AnalyticsReportDetail() {
 
       // 1. KPI Overview
       if (kpiSectionRef.current) {
-        await waitForRender(200);
+        await waitForRender(400);
         zip.file("01_概要.png", await captureElement(kpiSectionRef.current));
       }
 
@@ -345,6 +372,7 @@ export default function AnalyticsReportDetail() {
         setActiveTab("reach");
         await waitForRender();
         if (tabContentAreaRef.current) {
+          await waitForCharts(tabContentAreaRef.current);
           zip.file("02_リーチ.png", await captureElement(tabContentAreaRef.current));
         }
       }
@@ -353,6 +381,7 @@ export default function AnalyticsReportDetail() {
       setActiveTab("engagement");
       await waitForRender();
       if (tabContentAreaRef.current) {
+        await waitForCharts(tabContentAreaRef.current);
         zip.file("03_エンゲージメント.png", await captureElement(tabContentAreaRef.current));
       }
 
@@ -360,6 +389,7 @@ export default function AnalyticsReportDetail() {
       setActiveTab("audience");
       await waitForRender();
       if (tabContentAreaRef.current) {
+        await waitForCharts(tabContentAreaRef.current);
         zip.file("04_視聴者.png", await captureElement(tabContentAreaRef.current));
       }
 
@@ -370,11 +400,9 @@ export default function AnalyticsReportDetail() {
         const totalPages = Math.ceil(visibleComments.length / COMMENTS_PER_PAGE);
         for (let p = 0; p < totalPages; p++) {
           setCommentPage(p);
-          await waitForRender(400);
+          await waitForRender(800);
           if (tabContentAreaRef.current) {
-            const suffix = totalPages > 1 ? `_${p + 1}` : "";
-            const num = String(5 + p).padStart(2, "0");
-            zip.file(`${num}_コメント${suffix}.png`, await captureElement(tabContentAreaRef.current));
+            zip.file(`${String(5 + p).padStart(2, "0")}_コメント${totalPages > 1 ? `_${p + 1}` : ""}.png`, await captureElement(tabContentAreaRef.current));
           }
         }
       }
