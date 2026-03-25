@@ -23,6 +23,7 @@ export interface AnalyticsReport {
   raw_text: string | null;
   source_images: string[];
   comment_images: string[];
+  comment_texts: Array<{ body: string }>;
   created_at: string;
   updated_at: string;
   created_by: string | null;
