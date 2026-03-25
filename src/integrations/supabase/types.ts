@@ -52,6 +52,7 @@ export type Database = {
           created_by: string | null
           ctr: number | null
           devices: Json | null
+          folder: string | null
           id: string
           impressions: number | null
           like_rate: number | null
@@ -82,6 +83,7 @@ export type Database = {
           created_by?: string | null
           ctr?: number | null
           devices?: Json | null
+          folder?: string | null
           id?: string
           impressions?: number | null
           like_rate?: number | null
@@ -112,6 +114,7 @@ export type Database = {
           created_by?: string | null
           ctr?: number | null
           devices?: Json | null
+          folder?: string | null
           id?: string
           impressions?: number | null
           like_rate?: number | null
