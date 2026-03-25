@@ -192,8 +192,8 @@ function RetentionChart({ retentionRate }: { retentionRate: number | null }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-            <XAxis dataKey="time" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-            <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={40} />
+            <XAxis dataKey="time" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} label={{ value: "動画の長さ", position: "insideBottom", offset: -5, fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+            <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={50} label={{ value: "視聴者", angle: -90, position: "insideLeft", offset: 10, fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
             <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
             <Area type="monotone" dataKey="retention" stroke={YT_BLUE} strokeWidth={2.5} fill="url(#retentionGrad)" dot={false} />
           </AreaChart>
@@ -633,18 +633,7 @@ export default function AnalyticsReportDetail() {
           <RetentionChart retentionRate={report.retention_rate} />
 
           {/* Engagement metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_BLUE}15` }}>
-                  <ThumbsUp className="h-6 w-6" style={{ color: YT_BLUE }} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">高評価数</p>
-                  <p className="text-2xl font-bold">{fmt(report.likes)}</p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardContent className="p-5 flex items-center gap-4">
                 <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_GREEN}15` }}>
@@ -672,115 +661,73 @@ export default function AnalyticsReportDetail() {
 
         {/* === AUDIENCE TAB === */}
         <TabsContent value="audience" className="space-y-6">
+          {/* Row 1: Gender + Device */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Gender donut */}
             {genderData.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    性別
-                  </CardTitle>
+                  <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" />性別</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <DonutChart data={genderDonut} centerLabel="性別" height={200} />
-                  <ChartLegend
-                    data={genderDonut.map((d) => ({
-                      name: d.name,
-                      value: d.value,
-                      color: d.color,
-                      display: `${(d.value * 100).toFixed(1)}%`,
-                    }))}
-                  />
+                  <ChartLegend data={genderDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
                 </CardContent>
               </Card>
             )}
-
-            {/* Device donut */}
             {deviceData.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Monitor className="h-4 w-4" />
-                    デバイス
-                  </CardTitle>
+                  <CardTitle className="text-base flex items-center gap-2"><Monitor className="h-4 w-4" />デバイス</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <DonutChart data={deviceDonut} centerLabel="デバイス" height={200} />
-                  <ChartLegend
-                    data={deviceDonut.map((d) => ({
-                      name: d.name,
-                      value: d.value,
-                      color: d.color,
-                      display: `${(d.value * 100).toFixed(1)}%`,
-                    }))}
-                  />
+                  <ChartLegend data={deviceDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
                 </CardContent>
               </Card>
             )}
           </div>
-
-          {/* Age pie chart */}
-          {ageData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  年齢層
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={220} />
-                <ChartLegend
-                  data={ageData.map((d, i) => ({
-                    name: d.name,
-                    value: d.value,
-                    color: DONUT_COLORS[i % DONUT_COLORS.length],
-                    display: `${(d.value * 100).toFixed(1)}%`,
-                  }))}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Region list */}
-          {regionData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  上位の地域
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {regionData.sort((a, b) => b.value - a.value).map((r, i) => {
-                    const maxVal = regionData[0]?.value || 1;
-                    return (
-                      <div key={r.name} className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
-                        <div className="flex-1">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="font-medium">{r.name}</span>
-                            <span className="text-muted-foreground">{(r.value * 100).toFixed(1)}%</span>
-                          </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${(r.value / maxVal) * 100}%`,
-                                backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
-                              }}
-                            />
+          {/* Row 2: Age + Region */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {ageData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" />年齢層</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={200} />
+                  <ChartLegend data={ageData.map((d, i) => ({ name: d.name, value: d.value, color: DONUT_COLORS[i % DONUT_COLORS.length], display: `${(d.value * 100).toFixed(1)}%` }))} />
+                </CardContent>
+              </Card>
+            )}
+            {regionData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" />上位の地域</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {regionData.sort((a, b) => b.value - a.value).map((r, i) => {
+                      const maxVal = regionData[0]?.value || 1;
+                      return (
+                        <div key={r.name} className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground w-5 text-right">{i + 1}</span>
+                          <div className="flex-1">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="font-medium">{r.name}</span>
+                              <span className="text-muted-foreground">{(r.value * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{ width: `${(r.value / maxVal) * 100}%`, backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         {/* === SEARCH TERMS TAB (commented out) ===

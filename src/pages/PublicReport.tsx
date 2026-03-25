@@ -99,8 +99,8 @@ function RetentionChart({ retentionRate }: { retentionRate: number | null }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-            <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-            <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={40} />
+            <XAxis dataKey="time" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} label={{ value: "動画の長さ", position: "insideBottom", offset: -5, fontSize: 12, fill: "#9ca3af" }} />
+            <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={50} label={{ value: "視聴者", angle: -90, position: "insideLeft", offset: 10, fontSize: 12, fill: "#9ca3af" }} />
             <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb" }} />
             <Area type="monotone" dataKey="retention" stroke={YT_BLUE} strokeWidth={2.5} fill="url(#retGrad)" dot={false} />
           </AreaChart>
@@ -214,18 +214,7 @@ export default function PublicReport() {
           {/* Engagement */}
           <TabsContent value="engagement" className="space-y-6">
             <RetentionChart retentionRate={report.retention_rate} />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_BLUE}15` }}>
-                    <ThumbsUp className="h-6 w-6" style={{ color: YT_BLUE }} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">高評価数</p>
-                    <p className="text-2xl font-bold">{fmt(report.likes)}</p>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_GREEN}15` }}>
