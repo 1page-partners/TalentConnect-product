@@ -181,84 +181,143 @@ export default function PublicReport() {
 
         <Separator />
 
-        {/* Retention */}
-        <RetentionChart retentionRate={report.retention_rate} />
+        {/* Tabs */}
+        <Tabs defaultValue="reach" className="space-y-4">
+          <TabsList className="bg-gray-100">
+            <TabsTrigger value="reach">リーチ</TabsTrigger>
+            <TabsTrigger value="engagement">エンゲージメント</TabsTrigger>
+            <TabsTrigger value="audience">視聴者</TabsTrigger>
+            <TabsTrigger value="comments">コメント</TabsTrigger>
+          </TabsList>
 
-        {/* Traffic Sources */}
-        {trafficData.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" />トラフィックソース</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <DonutChart data={trafficDonut} centerLabel="流入" />
-                <ChartLegend data={trafficDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: d.value <= 1 ? `${(d.value * 100).toFixed(1)}%` : d.value.toLocaleString() }))} />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Audience */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {genderData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" />性別</CardTitle></CardHeader>
-              <CardContent>
-                <DonutChart data={genderDonut} centerLabel="性別" height={200} />
-                <ChartLegend data={genderDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
-              </CardContent>
-            </Card>
-          )}
-          {deviceData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Monitor className="h-4 w-4" />デバイス</CardTitle></CardHeader>
-              <CardContent>
-                <DonutChart data={deviceDonut} centerLabel="デバイス" height={200} />
-                <ChartLegend data={deviceDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {ageData.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" />年齢層</CardTitle></CardHeader>
-            <CardContent>
-              <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={220} />
-              <ChartLegend data={ageData.map((d, i) => ({ name: d.name, value: d.value, color: DONUT_COLORS[i % DONUT_COLORS.length], display: `${(d.value * 100).toFixed(1)}%` }))} />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Comments */}
-        {report.comment_texts && report.comment_texts.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" />コメント</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {report.comment_texts.map((comment: { body: string }, i: number) => (
-                  <div key={i} className="p-3 rounded-lg border bg-gray-50 text-sm leading-relaxed">
-                    {comment.body}
+          {/* Reach */}
+          <TabsContent value="reach" className="space-y-6">
+            {trafficData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" />トラフィックソース</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <DonutChart data={trafficDonut} centerLabel="流入" />
+                    <ChartLegend data={trafficDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: d.value <= 1 ? `${(d.value * 100).toFixed(1)}%` : d.value.toLocaleString() }))} />
                   </div>
-                ))}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Engagement */}
+          <TabsContent value="engagement" className="space-y-6">
+            <RetentionChart retentionRate={report.retention_rate} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_BLUE}15` }}>
+                    <ThumbsUp className="h-6 w-6" style={{ color: YT_BLUE }} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">高評価数</p>
+                    <p className="text-2xl font-bold">{fmt(report.likes)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_GREEN}15` }}>
+                    <TrendingUp className="h-6 w-6" style={{ color: YT_GREEN }} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">高評価率</p>
+                    <p className="text-2xl font-bold">{pct(report.like_rate)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="p-3 rounded-full" style={{ backgroundColor: `${YT_ORANGE}15` }}>
+                    <Clock className="h-6 w-6" style={{ color: YT_ORANGE }} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">総再生時間</p>
+                    <p className="text-2xl font-bold">{report.total_watch_time || "-"}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Audience */}
+          <TabsContent value="audience" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {genderData.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" />性別</CardTitle></CardHeader>
+                  <CardContent>
+                    <DonutChart data={genderDonut} centerLabel="性別" height={200} />
+                    <ChartLegend data={genderDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
+                  </CardContent>
+                </Card>
+              )}
+              {deviceData.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Monitor className="h-4 w-4" />デバイス</CardTitle></CardHeader>
+                  <CardContent>
+                    <DonutChart data={deviceDonut} centerLabel="デバイス" height={200} />
+                    <ChartLegend data={deviceDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            {ageData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" />年齢層</CardTitle></CardHeader>
+                <CardContent>
+                  <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={220} />
+                  <ChartLegend data={ageData.map((d, i) => ({ name: d.name, value: d.value, color: DONUT_COLORS[i % DONUT_COLORS.length], display: `${(d.value * 100).toFixed(1)}%` }))} />
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Comments */}
+          <TabsContent value="comments" className="space-y-6">
+            {report.comment_texts && report.comment_texts.length > 0 ? (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" />コメント</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {report.comment_texts.map((comment: { body: string }, i: number) => (
+                      <div key={i} className="p-3 rounded-lg border bg-gray-50 text-sm leading-relaxed">
+                        {comment.body}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
+                コメントなし
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Manager comment */}
         {report.manager_comment && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">担当者コメント</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{report.manager_comment}</p>
-            </CardContent>
-          </Card>
+          <>
+            <Separator />
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">担当者コメント</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{report.manager_comment}</p>
+              </CardContent>
+            </Card>
+          </>
         )}
 
         <div className="text-center text-xs text-gray-400 py-4">
