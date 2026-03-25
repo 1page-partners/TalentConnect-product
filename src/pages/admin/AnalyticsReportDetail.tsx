@@ -388,6 +388,69 @@ export default function AnalyticsReportDetail() {
         <KpiTile label="画像数" value={`${report.source_images?.length || 0} 枚`} />
       </div>
 
+      {/* Age & Gender - always visible */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Gender donut */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              性別
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {genderData.length > 0 ? (
+              <>
+                <DonutChart data={genderDonut} centerLabel="性別" height={200} />
+                <ChartLegend
+                  data={genderDonut.map((d) => ({
+                    name: d.name,
+                    value: d.value,
+                    color: d.color,
+                    display: `${(d.value * 100).toFixed(1)}%`,
+                  }))}
+                />
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                データなし
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Age bar chart */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              年齢層
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ageData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={ageData} barCategoryGap="20%">
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={40} />
+                  <Tooltip formatter={(v: number) => `${(v * 100).toFixed(1)}%`} contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    {ageData.map((_, i) => (
+                      <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
+                データなし
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Separator />
 
       {/* ===== TABS: YouTube Studio style ===== */}
