@@ -472,7 +472,17 @@ export default function AnalyticsReportDetail() {
   const isAllDataEmpty = trafficData.length === 0 && ageData.length === 0 && genderData.length === 0 && deviceData.length === 0;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto relative">
+      {/* Re-analysis overlay */}
+      {reanalyzing && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <div className="text-center space-y-1">
+            <p className="text-lg font-semibold">再解析中...</p>
+            <p className="text-sm text-muted-foreground">画像を解析しています。しばらくお待ちください。</p>
+          </div>
+        </div>
+      )}
       {/* Export overlay to hide tab switching */}
       {exporting && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm">
