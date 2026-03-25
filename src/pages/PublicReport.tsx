@@ -288,25 +288,41 @@ export default function PublicReport() {
           <TabsContent value="comments" className="space-y-6">
             {(() => {
               const visibleComments = (report.comment_texts || []).filter((c: any) => !c.hidden);
-              return visibleComments.length > 0 ? (
+              if (visibleComments.length === 0) {
+                return (
+                  <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
+                    コメントなし
+                  </div>
+                );
+              }
+              const totalPages = Math.ceil(visibleComments.length / COMMENTS_PER_PAGE);
+              const pageComments = visibleComments.slice(commentPage * COMMENTS_PER_PAGE, (commentPage + 1) * COMMENTS_PER_PAGE);
+              return (
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" />コメント</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {visibleComments.map((comment: { body: string }, i: number) => (
+                      {pageComments.map((comment: { body: string }, i: number) => (
                         <div key={i} className="p-3 rounded-lg border bg-gray-50 text-sm leading-relaxed">
                           {comment.body}
                         </div>
                       ))}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                          <Button variant="outline" size="sm" disabled={commentPage === 0} onClick={() => setCommentPage(p => p - 1)}>
+                            前へ
+                          </Button>
+                          <span className="text-sm text-gray-500">{commentPage + 1} / {totalPages}</span>
+                          <Button variant="outline" size="sm" disabled={commentPage >= totalPages - 1} onClick={() => setCommentPage(p => p + 1)}>
+                            次へ
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
-                  コメントなし
-                </div>
               );
             })()}
           </TabsContent>
