@@ -412,7 +412,7 @@ async function analyzeCategory(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
+      model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: prompt.system },
         {
@@ -508,19 +508,26 @@ serve(async (req) => {
       const categories = Object.entries(analyzeCategories)
         .filter(([_, urls]) => urls && urls.length > 0);
 
-      for (const [category, urls] of categories) {
-        try {
+      // Process categories in parallel to avoid CPU timeout
+      const results = await Promise.allSettled(
+        categories.map(async ([category, urls]) => {
           const categoryResult = await analyzeCategory(LOVABLE_API_KEY, urls as string[], category);
-          extracted = { ...extracted, ...categoryResult };
-        } catch (e) {
-          const errorMsg = e instanceof Error ? e.message : "Unknown error";
+          return { category, result: categoryResult };
+        })
+      );
+
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          extracted = { ...extracted, ...r.value.result };
+        } else {
+          const errorMsg = r.reason instanceof Error ? r.reason.message : "Unknown error";
           if (errorMsg.includes("Rate limit") || errorMsg.includes("Credits")) {
             return new Response(JSON.stringify({ error: errorMsg }), {
               status: errorMsg.includes("Rate limit") ? 429 : 402,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          console.error(`Category ${category} analysis failed:`, e);
+          console.error(`Category analysis failed:`, r.reason);
         }
       }
     } else if (allImageUrls.length > 0) {
@@ -536,7 +543,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
+          model: "google/gemini-2.5-flash",
           messages: [
             {
               role: "system",
