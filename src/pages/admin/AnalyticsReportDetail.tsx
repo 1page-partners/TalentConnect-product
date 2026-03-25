@@ -368,6 +368,7 @@ export default function AnalyticsReportDetail() {
       const zip = new JSZip();
 
       // 1. KPI Overview
+      setExportProgress("概要をキャプチャ中...");
       if (kpiSectionRef.current) {
         await waitForRender(400);
         zip.file("01_概要.png", await captureElement(kpiSectionRef.current));
