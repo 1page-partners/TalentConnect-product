@@ -16,7 +16,7 @@ import { ArrowLeft, Loader2, BarChart3 } from "lucide-react";
 export default function AnalyticsReportNew() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { uploadFiles, isUploading } = useFileUpload();
+  const { uploadFiles, isUploading } = useFileUpload({ folder: "analytics" });
 
   const [title, setTitle] = useState("");
   const [campaignId, setCampaignId] = useState<string>("");
@@ -30,7 +30,7 @@ export default function AnalyticsReportNew() {
 
   const handleFilesSelected = async (files: FileList) => {
     try {
-      const urls = await uploadFiles(files, "attachments", "analytics");
+      const urls = await uploadFiles(files);
       setImageUrls((prev) => [...prev, ...urls]);
     } catch {
       toast({ title: "アップロードエラー", variant: "destructive" });
