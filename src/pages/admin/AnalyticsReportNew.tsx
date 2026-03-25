@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,57 @@ import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { campaignApi } from "@/lib/api";
 import { analyticsApi } from "@/lib/analytics-api";
-import { ArrowLeft, Loader2, BarChart3 } from "lucide-react";
+import {
+  ArrowLeft, Loader2, BarChart3, Eye, MousePointerClick,
+  Users, Globe, Monitor, ThumbsUp,
+} from "lucide-react";
+
+const IMAGE_CATEGORIES = [
+  {
+    key: "overview",
+    label: "概要（リーチ）",
+    description: "インプレッション・再生回数・CTR・平均視聴時間",
+    icon: Eye,
+    color: "#1a73e8",
+  },
+  {
+    key: "engagement",
+    label: "エンゲージメント",
+    description: "高評価数・高評価率・視聴維持率・総再生時間",
+    icon: ThumbsUp,
+    color: "#34a853",
+  },
+  {
+    key: "traffic",
+    label: "トラフィックソース",
+    description: "ブラウジング・関連動画・直接流入・検索など",
+    icon: Globe,
+    color: "#fa7b17",
+  },
+  {
+    key: "audience",
+    label: "視聴者属性（年齢・性別）",
+    description: "年齢分布・性別比率",
+    icon: Users,
+    color: "#a142f4",
+  },
+  {
+    key: "geography",
+    label: "地域",
+    description: "視聴者の上位の国・地域",
+    icon: Globe,
+    color: "#24c1e0",
+  },
+  {
+    key: "devices",
+    label: "デバイス",
+    description: "モバイル・パソコン・タブレット・テレビなど",
+    icon: Monitor,
+    color: "#ea4335",
+  },
+] as const;
+
+type CategoryKey = (typeof IMAGE_CATEGORIES)[number]["key"];
 
 export default function AnalyticsReportNew() {
   const navigate = useNavigate();
@@ -20,7 +70,14 @@ export default function AnalyticsReportNew() {
 
   const [title, setTitle] = useState("");
   const [campaignId, setCampaignId] = useState<string>("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [categoryImages, setCategoryImages] = useState<Record<CategoryKey, string[]>>({
+    overview: [],
+    engagement: [],
+    traffic: [],
+    audience: [],
+    geography: [],
+    devices: [],
+  });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const { data: campaigns = [] } = useQuery({
@@ -28,30 +85,38 @@ export default function AnalyticsReportNew() {
     queryFn: campaignApi.getAll,
   });
 
-  const handleFilesSelected = async (files: FileList) => {
+  const handleFilesSelected = async (category: CategoryKey, files: FileList) => {
     try {
       const urls = await uploadFiles(files);
-      setImageUrls((prev) => [...prev, ...urls]);
+      setCategoryImages((prev) => ({
+        ...prev,
+        [category]: [...prev[category], ...urls],
+      }));
     } catch {
       toast({ title: "アップロードエラー", variant: "destructive" });
     }
   };
 
-  const handleRemoveFile = (index: number) => {
-    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveFile = (category: CategoryKey, index: number) => {
+    setCategoryImages((prev) => ({
+      ...prev,
+      [category]: prev[category].filter((_, i) => i !== index),
+    }));
   };
 
+  const totalImages = Object.values(categoryImages).reduce((s, arr) => s + arr.length, 0);
+
   const handleAnalyze = async () => {
-    if (imageUrls.length === 0) {
-      toast({ title: "画像を選択してください", variant: "destructive" });
+    if (totalImages === 0) {
+      toast({ title: "少なくとも1枚の画像をアップロードしてください", variant: "destructive" });
       return;
     }
 
     setIsAnalyzing(true);
     try {
       const result = await analyticsApi.analyzeImages({
-        imageUrls,
-        campaignId: campaignId || undefined,
+        categoryImages,
+        campaignId: campaignId && campaignId !== "none" ? campaignId : undefined,
         title: title || "レポート",
       });
 
@@ -70,7 +135,7 @@ export default function AnalyticsReportNew() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin/analytics")}>
           <ArrowLeft className="h-4 w-4" />
@@ -78,11 +143,12 @@ export default function AnalyticsReportNew() {
         <div>
           <h1 className="text-2xl font-bold">レポート作成</h1>
           <p className="text-muted-foreground text-sm">
-            YouTubeアナリティクスのスクリーンショットをアップロードして解析
+            カテゴリごとにスクリーンショットをアップロードして精度の高い解析を実現
           </p>
         </div>
       </div>
 
+      {/* Basic info */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">基本情報</CardTitle>
@@ -96,7 +162,6 @@ export default function AnalyticsReportNew() {
               placeholder="例: 〇〇案件 YouTube投稿レポート"
             />
           </div>
-
           <div className="space-y-2">
             <Label>紐付け案件（任意）</Label>
             <Select value={campaignId} onValueChange={setCampaignId}>
@@ -106,9 +171,7 @@ export default function AnalyticsReportNew() {
               <SelectContent>
                 <SelectItem value="none">なし</SelectItem>
                 {campaigns.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.title}
-                  </SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -116,45 +179,84 @@ export default function AnalyticsReportNew() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">アナリティクス画像</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FileUpload
-            onFilesSelected={handleFilesSelected}
-            onRemove={handleRemoveFile}
-            files={imageUrls}
-            accept="image/*"
-            multiple
-            isUploading={isUploading}
-            maxFiles={10}
-            label="YouTubeアナリティクスのスクリーンショットをドラッグ＆ドロップ"
-            hint="複数画像対応（概要、リーチ、エンゲージメント、視聴者属性など）"
-          />
-        </CardContent>
-      </Card>
+      {/* Category image uploads */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">カテゴリ別画像アップロード</h2>
+        <p className="text-sm text-muted-foreground">
+          各KPIに対応するスクリーンショットを個別にアップロードすることで解析精度が向上します。
+          すべてのカテゴリが必須ではありません。
+        </p>
 
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={() => navigate("/admin/analytics")}>
-          キャンセル
-        </Button>
-        <Button
-          onClick={handleAnalyze}
-          disabled={isAnalyzing || imageUrls.length === 0}
-        >
-          {isAnalyzing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              解析中...
-            </>
-          ) : (
-            <>
-              <BarChart3 className="h-4 w-4 mr-2" />
-              画像を解析してレポート生成
-            </>
-          )}
-        </Button>
+        <div className="grid gap-4">
+          {IMAGE_CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const images = categoryImages[cat.key];
+            return (
+              <Card key={cat.key} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="p-2 rounded-lg"
+                      style={{ backgroundColor: `${cat.color}15` }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: cat.color }} />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-sm font-semibold">{cat.label}</CardTitle>
+                      <CardDescription className="text-xs">{cat.description}</CardDescription>
+                    </div>
+                    {images.length > 0 && (
+                      <span
+                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
+                      >
+                        {images.length}枚
+                      </span>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <FileUpload
+                    onFilesSelected={(files) => handleFilesSelected(cat.key, files)}
+                    onRemove={(index) => handleRemoveFile(cat.key, index)}
+                    files={images}
+                    accept="image/*"
+                    multiple
+                    isUploading={isUploading}
+                    maxFiles={5}
+                    label={`${cat.label}のスクリーンショットをアップロード`}
+                    className="[&>div:first-child]:py-3"
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Submit */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          合計 <span className="font-semibold text-foreground">{totalImages}</span> 枚の画像
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate("/admin/analytics")}>
+            キャンセル
+          </Button>
+          <Button onClick={handleAnalyze} disabled={isAnalyzing || totalImages === 0}>
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                解析中...
+              </>
+            ) : (
+              <>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                画像を解析してレポート生成
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
