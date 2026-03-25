@@ -848,8 +848,17 @@ serve(async (req) => {
       console.log("Merge statuses:", JSON.stringify(mergeStatuses));
     }
 
-    // ─── Comments: protect previous if new is empty ───
-    if (previousCommentTexts.length > 0 && commentTexts.length === 0) {
+    // ─── Comments: protect previous if not processed or new is empty ───
+    if (!processedCategories.has("comments") && previousCommentTexts.length > 0) {
+      commentTexts = previousCommentTexts;
+      mergeStatuses.push({
+        category: "comments",
+        status: "skipped",
+        usedPrevious: true,
+        improved: false,
+      });
+      console.log("Comments: skipped (not processed), keeping previous data");
+    } else if (previousCommentTexts.length > 0 && commentTexts.length === 0) {
       commentTexts = previousCommentTexts;
       mergeStatuses.push({
         category: "comments",
