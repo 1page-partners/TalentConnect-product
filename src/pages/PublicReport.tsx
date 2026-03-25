@@ -178,7 +178,7 @@ export default function PublicReport() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <KpiTile label="高評価" value={fmt(report.likes)} sub={report.like_rate != null ? `高評価率 ${pct(report.like_rate)}` : undefined} />
+          <KpiTile label="高評価率" value={pct(report.like_rate)} />
           <KpiTile label="視聴維持率" value={pct(report.retention_rate)} />
           <KpiTile label="総再生時間" value={report.total_watch_time ? `${report.total_watch_time}時間` : "-"} />
         </div>
