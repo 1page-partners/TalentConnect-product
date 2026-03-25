@@ -11,9 +11,11 @@ interface CategoryImages {
   overview?: string[];
   engagement?: string[];
   traffic?: string[];
+  search_terms?: string[];
   audience?: string[];
   geography?: string[];
   devices?: string[];
+  comments?: string[];
 }
 
 const CATEGORY_PROMPTS: Record<string, { system: string; user: string; fields: string[] }> = {
@@ -30,13 +32,14 @@ Rules:
   },
   engagement: {
     system: `You extract YouTube Analytics ENGAGEMENT metrics from screenshots.
-Focus ONLY on: likes, like rate, retention rate, comments.
+Focus ONLY on: like rate, retention rate, complete view rate.
 Rules:
 - Convert Japanese numbers: 1.2万 → 12000
 - Percentages to decimals: 45.3% → 0.453
+- complete_view_rate is the percentage of viewers who watched the entire video
 - If not found, use null`,
-    user: "この画像から高評価数・高評価率・視聴維持率を抽出してください。",
-    fields: ["likes", "like_rate", "retention_rate"],
+    user: "この画像から高評価率・視聴維持率・完全視聴率を抽出してください。",
+    fields: ["like_rate", "retention_rate", "complete_view_rate"],
   },
   traffic: {
     system: `You extract YouTube Analytics TRAFFIC SOURCE data from screenshots.
@@ -45,6 +48,15 @@ Return as object with source name keys and decimal percentage values (e.g. 0.45 
 All values should sum to approximately 1.0.`,
     user: "この画像からトラフィックソース（流入経路）の内訳を抽出してください。",
     fields: ["traffic_sources"],
+  },
+  search_terms: {
+    system: `You extract YouTube Analytics SEARCH TERMS data from screenshots.
+Extract the search keywords/terms that viewers used to find this video.
+Return search_terms as an object with search term string keys and numeric values representing impressions or clicks.
+Example: {"キーワードA": 1500, "キーワードB": 800}
+If percentages are shown, convert to decimals.`,
+    user: "この画像からYouTube検索語句（検索キーワード）とその数値を抽出してください。",
+    fields: ["search_terms"],
   },
   audience: {
     system: `You extract YouTube Analytics AUDIENCE DEMOGRAPHICS from screenshots.
@@ -85,9 +97,10 @@ const TOOL_SCHEMA = {
         avg_watch_time: { type: "string" },
         total_watch_time: { type: "string" },
         retention_rate: { type: "number" },
-        likes: { type: "number" },
+        complete_view_rate: { type: "number" },
         like_rate: { type: "number" },
         traffic_sources: { type: "object", additionalProperties: { type: "number" } },
+        search_terms: { type: "object", additionalProperties: { type: "number" } },
         audience_age: { type: "object", additionalProperties: { type: "number" } },
         audience_gender: { type: "object", additionalProperties: { type: "number" } },
         audience_region: { type: "object", additionalProperties: { type: "number" } },
@@ -199,21 +212,26 @@ serve(async (req) => {
 
     let extracted: Record<string, unknown> = {};
     let allImageUrls: string[] = imageUrls || [];
+    let commentImages: string[] = [];
 
     if (categoryImages && typeof categoryImages === "object") {
-      // Category-based analysis: analyze each category separately for better accuracy
-      allImageUrls = Object.values(categoryImages as CategoryImages)
+      // Separate comment images (not analyzed, just stored)
+      commentImages = (categoryImages as CategoryImages).comments || [];
+
+      // Collect all non-comment images for source_images
+      const analyzeCategories = { ...categoryImages } as Record<string, string[]>;
+      delete analyzeCategories.comments;
+
+      allImageUrls = Object.values(analyzeCategories)
         .flat()
         .filter(Boolean) as string[];
 
-      const categories = Object.entries(categoryImages as CategoryImages)
+      const categories = Object.entries(analyzeCategories)
         .filter(([_, urls]) => urls && urls.length > 0);
 
-      // Process categories sequentially to avoid rate limits
       for (const [category, urls] of categories) {
         try {
           const categoryResult = await analyzeCategory(LOVABLE_API_KEY, urls as string[], category);
-          // Merge results, category-specific fields take priority
           extracted = { ...extracted, ...categoryResult };
         } catch (e) {
           const errorMsg = e instanceof Error ? e.message : "Unknown error";
@@ -227,7 +245,6 @@ serve(async (req) => {
         }
       }
     } else if (allImageUrls.length > 0) {
-      // Legacy: single batch analysis
       const imageContent = allImageUrls.map((url: string) => ({
         type: "image_url",
         image_url: { url },
@@ -308,15 +325,17 @@ Use null for missing values. Distribution objects should have string keys and de
       avg_watch_time: (extracted.avg_watch_time as string) ?? null,
       total_watch_time: (extracted.total_watch_time as string) ?? null,
       retention_rate: extracted.retention_rate ?? null,
-      likes: extracted.likes ?? null,
+      complete_view_rate: extracted.complete_view_rate ?? null,
       like_rate: extracted.like_rate ?? null,
       traffic_sources: extracted.traffic_sources ?? {},
+      search_terms: extracted.search_terms ?? {},
       audience_age: extracted.audience_age ?? {},
       audience_gender: extracted.audience_gender ?? {},
       audience_region: extracted.audience_region ?? {},
       devices: extracted.devices ?? {},
       raw_text: (extracted.raw_text as string) ?? null,
       source_images: allImageUrls,
+      comment_images: commentImages,
       updated_at: new Date().toISOString(),
     };
 
@@ -324,7 +343,6 @@ Use null for missing values. Distribution objects should have string keys and de
     let dbError;
 
     if (reportId) {
-      // Update existing report
       const { data, error } = await serviceClient
         .from("analytics_reports")
         .update(reportData)
@@ -334,7 +352,6 @@ Use null for missing values. Distribution objects should have string keys and de
       report = data;
       dbError = error;
     } else {
-      // Insert new report
       const { data, error } = await serviceClient
         .from("analytics_reports")
         .insert({ ...reportData, created_by: userId })
