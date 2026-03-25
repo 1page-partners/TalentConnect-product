@@ -147,6 +147,36 @@ export default function SourceImageManager({
     }
   };
 
+  // Add images to a category (append, not replace)
+  const handleAddFiles = async (category: string, files: FileList) => {
+    setAddingToCategory(category);
+    try {
+      const urls = await uploadFiles(files);
+      if (urls.length === 0) return;
+
+      const existingUrls = categoryImages[category] || [];
+      const updatedCategoryImages = { ...categoryImages, [category]: [...existingUrls, ...urls] };
+      const allSourceImages = Object.entries(updatedCategoryImages)
+        .filter(([k]) => k !== "comments")
+        .flatMap(([, v]) => v || []);
+      const commentImgs = updatedCategoryImages.comments || report.comment_images || [];
+
+      await analyticsApi.update(report.id, {
+        category_images: updatedCategoryImages,
+        source_images: allSourceImages,
+        comment_images: commentImgs,
+      } as any);
+
+      toast({ title: `${CATEGORY_META[category]?.label || category}に${urls.length}枚追加しました` });
+      setShowAddDialog(false);
+      onUpdate();
+    } catch {
+      toast({ title: "画像の追加に失敗しました", variant: "destructive" });
+    } finally {
+      setAddingToCategory(null);
+    }
+  };
+
   const triggerFileInput = (onFiles: (files: FileList) => void) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -167,6 +197,18 @@ export default function SourceImageManager({
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files.length > 0) handleReplaceFiles(category, files);
+    };
+    input.click();
+  };
+
+  const triggerAddFileInput = (category: string) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) handleAddFiles(category, files);
     };
     input.click();
   };
