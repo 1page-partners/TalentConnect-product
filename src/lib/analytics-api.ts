@@ -30,6 +30,7 @@ export interface AnalyticsReport {
   manager_comment: string | null;
   share_token: string | null;
   folder: string | null;
+  category_images: Record<string, string[]>;
 }
 
 export interface CategoryImages {

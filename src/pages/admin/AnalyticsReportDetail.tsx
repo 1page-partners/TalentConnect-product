@@ -24,6 +24,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import SourceImageManager from "@/components/analytics/SourceImageManager";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, AreaChart, Area,
@@ -931,31 +932,13 @@ export default function AnalyticsReportDetail() {
       <Separator />
 
       {/* Source images - outside exportable area */}
-      {report.source_images?.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              解析元の画像
-            </CardTitle>
-            <CardDescription>{report.source_images.length}枚のスクリーンショットから解析</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {report.source_images.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
-                >
-                  <img src={url} alt={`Source ${i + 1}`} className="w-full h-auto" />
-                </a>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {(report.source_images?.length > 0 || (report as any).category_images) && (
+        <SourceImageManager
+          report={report}
+          onReanalyze={handleReanalyze}
+          reanalyzing={reanalyzing}
+          onUpdate={() => queryClient.invalidateQueries({ queryKey: ["analytics-report", id] })}
+        />
       )}
     </div>
   );
