@@ -535,10 +535,26 @@ export default function AnalyticsReportDetail() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button variant="outline" size="sm" onClick={handleReanalyze} disabled={reanalyzing}>
-            {reanalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            <span className="ml-1 hidden sm:inline">再解析</span>
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={reanalyzing}>
+                {reanalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                <span className="ml-1 hidden sm:inline">再解析</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>レポートを再解析しますか？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  解析元の画像から再度データを抽出します。既存データは安全にマージされ、解析に失敗したカテゴリのデータは保持されます。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                <AlertDialogAction onClick={handleReanalyze}>再解析を実行</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           {editing ? (
             <>
               <Button size="sm" onClick={saveEdit}>
