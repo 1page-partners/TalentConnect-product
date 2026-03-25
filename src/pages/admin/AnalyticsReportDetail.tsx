@@ -354,10 +354,15 @@ export default function AnalyticsReportDetail() {
     }
   };
 
+  const [exportProgress, setExportProgress] = useState("");
+
   const exportAsImage = async () => {
     setExporting(true);
+    setExportProgress("エクスポートを準備中...");
     const originalTab = activeTab;
     const originalCommentPage = commentPage;
+    // Small delay to let overlay render before starting
+    await waitForRender(300);
     try {
       const zip = new JSZip();
 
