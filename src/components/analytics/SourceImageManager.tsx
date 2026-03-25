@@ -273,19 +273,30 @@ export default function SourceImageManager({
                 {hasCategoryMapping && " · カテゴリ別に管理"}
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReanalyze}
-              disabled={reanalyzing}
-            >
-              {reanalyzing ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-1" />
-              )}
-              再解析
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddDialog(true)}
+                disabled={isUploading}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                画像を追加
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onReanalyze}
+                disabled={reanalyzing}
+              >
+                {reanalyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                )}
+                再解析
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
