@@ -214,6 +214,7 @@ export default function AnalyticsReportDetail() {
   const [managerComment, setManagerComment] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState("");
   const [commentPage, setCommentPage] = useState(0);
   const [activeTab, setActiveTab] = useState("reach");
   const COMMENTS_PER_PAGE = 5;
