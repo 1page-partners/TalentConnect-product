@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import { formatDate } from "@/lib/api";
 import html2canvas from "html2canvas";
+import JSZip from "jszip";
 import {
   ArrowLeft, Edit2, Save, X, RefreshCw, Loader2, Trash2,
   Eye, MousePointerClick, Clock, ThumbsUp, TrendingUp,
@@ -211,6 +212,11 @@ export default function AnalyticsReportDetail() {
   const [editData, setEditData] = useState<Partial<AnalyticsReport>>({});
   const [reanalyzing, setReanalyzing] = useState(false);
   const [managerComment, setManagerComment] = useState<string | null>(null);
+  const [savingComment, setSavingComment] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [commentPage, setCommentPage] = useState(0);
+  const COMMENTS_PER_PAGE = 5;
+  const reportContentRef = useRef<HTMLDivElement>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [exporting, setExporting] = useState(false);
   const reportContentRef = useRef<HTMLDivElement>(null);
@@ -575,11 +581,10 @@ export default function AnalyticsReportDetail() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiTile label="高評価" value={fmt(report.likes)} sub={report.like_rate != null ? `高評価率 ${pct(report.like_rate)}` : undefined} />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <KpiTile label="高評価率" value={pct(report.like_rate)} color={YT_BLUE} />
         <KpiTile label="視聴維持率" value={pct(report.retention_rate)} />
         <KpiTile label="総再生時間" value={report.total_watch_time || "-"} />
-        
       </div>
 
 
