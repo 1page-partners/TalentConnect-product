@@ -827,9 +827,58 @@ export default function AnalyticsReportDetail() {
         </TabsContent>
       </Tabs>
 
+      {/* Manager comment - inside exportable area */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Pencil className="h-4 w-4" />
+            担当者コメント
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {managerComment !== null ? (
+            <div className="space-y-3">
+              <Textarea
+                value={managerComment}
+                onChange={(e) => setManagerComment(e.target.value)}
+                placeholder="クライアント提出用のコメントを入力..."
+                rows={4}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={saveManagerComment} disabled={savingComment}>
+                  {savingComment ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                  保存
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setManagerComment(null)}>
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {(report as any).manager_comment ? (
+                <div className="space-y-2">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{(report as any).manager_comment}</p>
+                  <Button variant="ghost" size="sm" onClick={() => setManagerComment((report as any).manager_comment || "")}>
+                    <Edit2 className="h-3 w-3 mr-1" />編集
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setManagerComment("")}>
+                  <Pencil className="h-3 w-3 mr-1" />コメントを追加
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      </div>
+      {/* === Exportable content end === */}
+
       <Separator />
 
-      {/* Source images */}
+      {/* Source images - outside exportable area */}
       {report.source_images?.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
