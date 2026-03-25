@@ -11,10 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import { formatDate } from "@/lib/api";
 import {
-  ArrowLeft, Edit2, Save, X, RefreshCw, Loader2,
+  ArrowLeft, Edit2, Save, X, RefreshCw, Loader2, Trash2,
   Eye, MousePointerClick, Clock, ThumbsUp, TrendingUp,
   Users, Globe, Monitor, Image as ImageIcon, Search, MessageSquare,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, AreaChart, Area,
