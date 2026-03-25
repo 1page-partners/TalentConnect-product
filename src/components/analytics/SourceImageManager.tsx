@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileUpload } from "@/components/ui/file-upload";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import {
-  Image as ImageIcon, RefreshCw, Loader2,
+  Image as ImageIcon, RefreshCw, Loader2, X,
   Eye, ThumbsUp, Globe, Users, Monitor, BarChart3, MousePointerClick,
+  Upload,
 } from "lucide-react";
 
 const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: string }> = {
@@ -29,6 +30,12 @@ interface SourceImageManagerProps {
   onUpdate: () => void;
 }
 
+interface SelectedImage {
+  url: string;
+  index: number;
+  category: string | null;
+}
+
 export default function SourceImageManager({
   report,
   onReanalyze,
@@ -38,14 +45,15 @@ export default function SourceImageManager({
   const { toast } = useToast();
   const { uploadFiles, isUploading } = useFileUpload({ folder: "analytics" });
   const [replacingCategory, setReplacingCategory] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  const [replacingInModal, setReplacingInModal] = useState(false);
 
-  // Get category_images from report (may be stored as JSONB)
   const categoryImages: Record<string, string[]> = (report as any).category_images || {};
   const hasCategoryMapping = Object.keys(categoryImages).some(
     (k) => categoryImages[k]?.length > 0
   );
 
-  // Build a reverse lookup: url → category
+  // Build reverse lookup: url → category
   const urlToCategory: Record<string, string> = {};
   if (hasCategoryMapping) {
     for (const [cat, urls] of Object.entries(categoryImages)) {
@@ -62,7 +70,6 @@ export default function SourceImageManager({
       if (urls.length === 0) return;
 
       const updatedCategoryImages = { ...categoryImages, [category]: urls };
-      // Also update flat source_images
       const allSourceImages = Object.entries(updatedCategoryImages)
         .filter(([k]) => k !== "comments")
         .flatMap(([, v]) => v || []);
@@ -83,7 +90,84 @@ export default function SourceImageManager({
     }
   };
 
-  // Group images by category or show flat list
+  // Replace a single image within its category (or in source_images if uncategorized)
+  const handleReplaceSingleImage = async (files: FileList) => {
+    if (!selectedImage) return;
+    setReplacingInModal(true);
+    try {
+      const urls = await uploadFiles(files);
+      if (urls.length === 0) return;
+      const newUrl = urls[0];
+      const category = selectedImage.category;
+
+      if (category && categoryImages[category]) {
+        const updatedCatUrls = [...categoryImages[category]];
+        const idx = updatedCatUrls.indexOf(selectedImage.url);
+        if (idx !== -1) {
+          updatedCatUrls[idx] = newUrl;
+        } else {
+          updatedCatUrls.push(newUrl);
+        }
+        const updatedCategoryImages = { ...categoryImages, [category]: updatedCatUrls };
+        const allSourceImages = Object.entries(updatedCategoryImages)
+          .filter(([k]) => k !== "comments")
+          .flatMap(([, v]) => v || []);
+        const commentImages = updatedCategoryImages.comments || report.comment_images || [];
+
+        await analyticsApi.update(report.id, {
+          category_images: updatedCategoryImages,
+          source_images: allSourceImages,
+          comment_images: commentImages,
+        } as any);
+      } else {
+        // Uncategorized — replace in source_images
+        const updatedSourceImages = [...(report.source_images || [])];
+        const idx = updatedSourceImages.indexOf(selectedImage.url);
+        if (idx !== -1) {
+          updatedSourceImages[idx] = newUrl;
+        } else {
+          updatedSourceImages.push(newUrl);
+        }
+        await analyticsApi.update(report.id, {
+          source_images: updatedSourceImages,
+        } as any);
+      }
+
+      toast({ title: "画像を差し替えました" });
+      setSelectedImage(null);
+      onUpdate();
+    } catch {
+      toast({ title: "画像の差し替えに失敗しました", variant: "destructive" });
+    } finally {
+      setReplacingInModal(false);
+    }
+  };
+
+  const triggerFileInput = (onFiles: (files: FileList) => void) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = false;
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) onFiles(files);
+    };
+    input.click();
+  };
+
+  const triggerMultiFileInput = (category: string) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) handleReplaceFiles(category, files);
+    };
+    input.click();
+  };
+
+  // Grouped images
   const groupedImages: { category: string; urls: string[] }[] = [];
   if (hasCategoryMapping) {
     for (const [cat, urls] of Object.entries(categoryImages)) {
@@ -93,153 +177,217 @@ export default function SourceImageManager({
     }
   }
 
-  // Ungrouped images (in source_images but not in any category)
   const mappedUrls = new Set(Object.values(categoryImages).flat());
   const ungroupedImages = (report.source_images || []).filter((url) => !mappedUrls.has(url));
 
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              解析元の画像
-            </CardTitle>
-            <CardDescription>
-              {report.source_images?.length || 0}枚のスクリーンショットから解析
-              {hasCategoryMapping && " · カテゴリ別に管理"}
-            </CardDescription>
+  const ImageThumbnail = ({ url, index, category }: { url: string; index: number; category: string | null }) => {
+    const meta = category ? CATEGORY_META[category] : null;
+    return (
+      <button
+        onClick={() => setSelectedImage({ url, index, category })}
+        className="relative block rounded-lg overflow-hidden border border-border hover:border-primary/50 hover:shadow-md transition-all group cursor-pointer text-left"
+      >
+        <img
+          src={url}
+          alt={`${meta?.label || "画像"} ${index + 1}`}
+          className="w-full h-auto"
+          loading="lazy"
+        />
+        {/* Category label overlay */}
+        {meta && (
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
+            <Badge
+              variant="secondary"
+              className="text-[10px] px-1.5 py-0 bg-white/90 text-foreground"
+            >
+              {meta.label}
+            </Badge>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onReanalyze}
-            disabled={reanalyzing}
-          >
-            {reanalyzing ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-1" />
-            )}
-            再解析
-          </Button>
+        )}
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+          <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-80 transition-opacity drop-shadow" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {hasCategoryMapping ? (
-          // Categorized view
-          groupedImages.map(({ category, urls }) => {
-            const meta = CATEGORY_META[category];
-            const Icon = meta?.icon || ImageIcon;
-            return (
-              <div key={category} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="p-1.5 rounded"
-                      style={{ backgroundColor: `${meta?.color || "#666"}15` }}
-                    >
-                      <Icon
-                        className="h-3.5 w-3.5"
-                        style={{ color: meta?.color || "#666" }}
-                      />
+      </button>
+    );
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                解析元の画像
+              </CardTitle>
+              <CardDescription>
+                {report.source_images?.length || 0}枚のスクリーンショットから解析
+                {hasCategoryMapping && " · カテゴリ別に管理"}
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onReanalyze}
+              disabled={reanalyzing}
+            >
+              {reanalyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1" />
+              )}
+              再解析
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {hasCategoryMapping ? (
+            groupedImages.map(({ category, urls }) => {
+              const meta = CATEGORY_META[category];
+              const Icon = meta?.icon || ImageIcon;
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="p-1.5 rounded"
+                        style={{ backgroundColor: `${meta?.color || "#666"}15` }}
+                      >
+                        <Icon
+                          className="h-3.5 w-3.5"
+                          style={{ color: meta?.color || "#666" }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">
+                        {meta?.label || category}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {urls.length}枚
+                      </Badge>
                     </div>
-                    <span className="text-sm font-medium">
-                      {meta?.label || category}
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {urls.length}枚
-                    </Badge>
-                  </div>
-                  <div className="relative">
                     <Button
                       variant="ghost"
                       size="sm"
                       className="text-xs"
                       disabled={replacingCategory === category || isUploading}
-                      onClick={() => {
-                        const input = document.createElement("input");
-                        input.type = "file";
-                        input.accept = "image/*";
-                        input.multiple = true;
-                        input.onchange = (e) => {
-                          const files = (e.target as HTMLInputElement).files;
-                          if (files && files.length > 0) {
-                            handleReplaceFiles(category, files);
-                          }
-                        };
-                        input.click();
-                      }}
+                      onClick={() => triggerMultiFileInput(category)}
                     >
                       {replacingCategory === category ? (
                         <Loader2 className="h-3 w-3 animate-spin mr-1" />
                       ) : (
                         <RefreshCw className="h-3 w-3 mr-1" />
                       )}
-                      差し替え
+                      一括差し替え
                     </Button>
                   </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {urls.map((url, i) => (
+                      <ImageThumbnail key={i} url={url} index={i} category={category} />
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {urls.map((url, i) => (
-                    <a
-                      key={i}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
-                    >
-                      <img
-                        src={url}
-                        alt={`${meta?.label || category} ${i + 1}`}
-                        className="w-full h-auto"
-                      />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          // Flat view (legacy reports without category mapping)
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {(report.source_images || []).map((url, i) => (
-              <a
-                key={i}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
-              >
-                <img src={url} alt={`Source ${i + 1}`} className="w-full h-auto" />
-              </a>
-            ))}
-          </div>
-        )}
-
-        {/* Ungrouped images */}
-        {ungroupedImages.length > 0 && hasCategoryMapping && (
-          <div className="space-y-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              未分類の画像
-            </span>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {ungroupedImages.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg overflow-hidden border hover:shadow-md transition-shadow"
-                >
-                  <img src={url} alt={`Ungrouped ${i + 1}`} className="w-full h-auto" />
-                </a>
+              );
+            })
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {(report.source_images || []).map((url, i) => (
+                <ImageThumbnail key={i} url={url} index={i} category={null} />
               ))}
             </div>
+          )}
+
+          {ungroupedImages.length > 0 && hasCategoryMapping && (
+            <div className="space-y-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                未分類の画像
+              </span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {ungroupedImages.map((url, i) => (
+                  <ImageThumbnail key={i} url={url} index={i} category={null} />
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Image Detail Modal */}
+      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="p-4 pb-2">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-base">
+                {selectedImage?.category && CATEGORY_META[selectedImage.category] ? (
+                  <>
+                    {(() => {
+                      const meta = CATEGORY_META[selectedImage.category!];
+                      const Icon = meta.icon;
+                      return (
+                        <>
+                          <div
+                            className="p-1.5 rounded"
+                            style={{ backgroundColor: `${meta.color}15` }}
+                          >
+                            <Icon className="h-4 w-4" style={{ color: meta.color }} />
+                          </div>
+                          <Badge
+                            style={{ backgroundColor: `${meta.color}20`, color: meta.color, borderColor: `${meta.color}40` }}
+                            variant="outline"
+                          >
+                            {meta.label}
+                          </Badge>
+                        </>
+                      );
+                    })()}
+                    <span className="text-muted-foreground text-sm">
+                      画像 {(selectedImage?.index ?? 0) + 1}
+                    </span>
+                  </>
+                ) : (
+                  <span>画像 {(selectedImage?.index ?? 0) + 1}（未分類）</span>
+                )}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          {/* Full-size image */}
+          <div className="px-4 pb-2">
+            <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
+              {selectedImage && (
+                <img
+                  src={selectedImage.url}
+                  alt="解析元画像"
+                  className="w-full h-auto"
+                />
+              )}
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Actions */}
+          <div className="p-4 pt-2 border-t border-border flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+              {selectedImage?.category && CATEGORY_META[selectedImage.category]
+                ? `この画像は「${CATEGORY_META[selectedImage.category].label}」カテゴリの解析に使用されています`
+                : "この画像はカテゴリに紐付いていません"}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={replacingInModal || isUploading}
+              onClick={() => triggerFileInput(handleReplaceSingleImage)}
+            >
+              {replacingInModal ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <Upload className="h-4 w-4 mr-1" />
+              )}
+              この画像を差し替え
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
