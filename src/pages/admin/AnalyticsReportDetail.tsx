@@ -386,6 +386,7 @@ export default function AnalyticsReportDetail() {
       }
 
       // 3. Engagement tab
+      setExportProgress("エンゲージメントをキャプチャ中...");
       setActiveTab("engagement");
       await waitForRender();
       if (tabContentAreaRef.current) {
