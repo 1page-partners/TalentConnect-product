@@ -1,17 +1,36 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
+import { analyticsApi } from "@/lib/analytics-api";
 import { formatDate } from "@/lib/api";
-import { PlusCircle, BarChart3, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { PlusCircle, BarChart3, Loader2, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AnalyticsReportList() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["analytics-reports"],
     queryFn: analyticsApi.getAll,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => analyticsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["analytics-reports"] });
+      toast({ title: "レポートを削除しました" });
+    },
+    onError: () => {
+      toast({ title: "削除に失敗しました", variant: "destructive" });
+    },
   });
 
   const formatNumber = (n: number | null) => {
@@ -57,7 +76,7 @@ export default function AnalyticsReportList() {
           {reports.map((report) => (
             <Card
               key={report.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="cursor-pointer hover:shadow-md transition-shadow relative group"
               onClick={() => navigate(`/admin/analytics/${report.id}`)}
             >
               <CardHeader className="pb-2">
@@ -65,9 +84,40 @@ export default function AnalyticsReportList() {
                   <CardTitle className="text-base line-clamp-1">
                     {report.title || "無題のレポート"}
                   </CardTitle>
-                  <Badge variant="secondary" className="text-xs shrink-0">
-                    {report.source_images?.length || 0}枚
-                  </Badge>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Badge variant="secondary" className="text-xs">
+                      {report.source_images?.length || 0}枚
+                    </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>レポートを削除しますか？</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            「{report.title || "無題のレポート"}」を削除します。この操作は取り消せません。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteMutation.mutate(report.id)}
+                          >
+                            削除
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {formatDate(report.created_at)}
