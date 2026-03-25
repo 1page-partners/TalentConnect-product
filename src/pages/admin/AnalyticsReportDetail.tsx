@@ -395,6 +395,7 @@ export default function AnalyticsReportDetail() {
       }
 
       // 4. Audience tab
+      setExportProgress("視聴者データをキャプチャ中...");
       setActiveTab("audience");
       await waitForRender();
       if (tabContentAreaRef.current) {
