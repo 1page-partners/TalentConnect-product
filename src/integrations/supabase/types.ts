@@ -45,6 +45,8 @@ export type Database = {
           audience_region: Json | null
           avg_watch_time: string | null
           campaign_id: string | null
+          comment_images: string[] | null
+          complete_view_rate: number | null
           created_at: string
           created_by: string | null
           ctr: number | null
@@ -55,6 +57,7 @@ export type Database = {
           likes: number | null
           raw_text: string | null
           retention_rate: number | null
+          search_terms: Json | null
           source_images: string[] | null
           submission_id: string | null
           title: string
@@ -69,6 +72,8 @@ export type Database = {
           audience_region?: Json | null
           avg_watch_time?: string | null
           campaign_id?: string | null
+          comment_images?: string[] | null
+          complete_view_rate?: number | null
           created_at?: string
           created_by?: string | null
           ctr?: number | null
@@ -79,6 +84,7 @@ export type Database = {
           likes?: number | null
           raw_text?: string | null
           retention_rate?: number | null
+          search_terms?: Json | null
           source_images?: string[] | null
           submission_id?: string | null
           title?: string
@@ -93,6 +99,8 @@ export type Database = {
           audience_region?: Json | null
           avg_watch_time?: string | null
           campaign_id?: string | null
+          comment_images?: string[] | null
+          complete_view_rate?: number | null
           created_at?: string
           created_by?: string | null
           ctr?: number | null
@@ -103,6 +111,7 @@ export type Database = {
           likes?: number | null
           raw_text?: string | null
           retention_rate?: number | null
+          search_terms?: Json | null
           source_images?: string[] | null
           submission_id?: string | null
           title?: string

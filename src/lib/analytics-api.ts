@@ -11,6 +11,7 @@ export interface AnalyticsReport {
   avg_watch_time: string | null;
   total_watch_time: string | null;
   retention_rate: number | null;
+  complete_view_rate: number | null;
   likes: number | null;
   like_rate: number | null;
   traffic_sources: Record<string, number>;
@@ -18,8 +19,10 @@ export interface AnalyticsReport {
   audience_gender: Record<string, number>;
   audience_region: Record<string, number>;
   devices: Record<string, number>;
+  search_terms: Record<string, number>;
   raw_text: string | null;
   source_images: string[];
+  comment_images: string[];
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -32,6 +35,8 @@ export interface CategoryImages {
   audience: string[];
   geography: string[];
   devices: string[];
+  search_terms: string[];
+  comments: string[];
 }
 
 export const analyticsApi = {
