@@ -375,6 +375,7 @@ export default function AnalyticsReportDetail() {
       }
 
       // 2. Reach tab
+      setExportProgress("リーチをキャプチャ中...");
       if (trafficData.length > 0) {
         setActiveTab("reach");
         await waitForRender();
