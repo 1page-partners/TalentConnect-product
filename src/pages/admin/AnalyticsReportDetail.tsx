@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,13 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import { formatDate } from "@/lib/api";
+import html2canvas from "html2canvas";
 import {
   ArrowLeft, Edit2, Save, X, RefreshCw, Loader2, Trash2,
   Eye, MousePointerClick, Clock, ThumbsUp, TrendingUp,
   Users, Globe, Monitor, Image as ImageIcon, Search, MessageSquare,
+  Share2, Download, Link2, Pencil,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -207,6 +210,10 @@ export default function AnalyticsReportDetail() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<AnalyticsReport>>({});
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [managerComment, setManagerComment] = useState<string | null>(null);
+  const [savingComment, setSavingComment] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   const { data: report, isLoading } = useQuery({
     queryKey: ["analytics-report", id],
@@ -277,6 +284,74 @@ export default function AnalyticsReportDetail() {
     }
   };
 
+  const saveManagerComment = async () => {
+    setSavingComment(true);
+    try {
+      await analyticsApi.update(report.id, { manager_comment: managerComment ?? "" } as any);
+      queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
+      setManagerComment(null);
+      toast({ title: "コメントを保存しました" });
+    } catch {
+      toast({ title: "保存に失敗しました", variant: "destructive" });
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
+  const copyShareLink = async () => {
+    const token = (report as any).share_token;
+    if (!token) {
+      toast({ title: "共有トークンがありません", variant: "destructive" });
+      return;
+    }
+    const url = `${window.location.origin}/report/${token}`;
+    await navigator.clipboard.writeText(url);
+    toast({ title: "共有リンクをコピーしました" });
+  };
+
+  const exportAsImage = async () => {
+    if (!reportContentRef.current) return;
+    setExporting(true);
+    try {
+      // Wait for charts to render
+      await new Promise((r) => setTimeout(r, 500));
+      const canvas = await html2canvas(reportContentRef.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+        width: 1920,
+        height: 1080,
+        windowWidth: 1920,
+        windowHeight: 1080,
+      });
+      // Crop/resize to 16:9
+      const targetW = 1920;
+      const targetH = 1080;
+      const outCanvas = document.createElement("canvas");
+      outCanvas.width = targetW;
+      outCanvas.height = targetH;
+      const ctx = outCanvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, targetW, targetH);
+      // Scale source to fit width, then center vertically
+      const scale = targetW / canvas.width;
+      const scaledH = canvas.height * scale;
+      const yOffset = scaledH > targetH ? 0 : (targetH - scaledH) / 2;
+      ctx.drawImage(canvas, 0, yOffset, targetW, Math.min(scaledH, targetH));
+
+      const link = document.createElement("a");
+      link.download = `${report.title || "report"}_16x9.png`;
+      link.href = outCanvas.toDataURL("image/png");
+      link.click();
+      toast({ title: "画像をダウンロードしました" });
+    } catch {
+      toast({ title: "画像の書き出しに失敗しました", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const toChartData = (obj: Record<string, number> | null | undefined) =>
     obj ? Object.entries(obj).map(([name, value]) => ({ name, value: Number(value) })) : [];
 
@@ -287,7 +362,6 @@ export default function AnalyticsReportDetail() {
   const deviceData = toChartData(report.devices);
   const searchTermsData = toChartData(report.search_terms);
 
-  // Prepare donut data with colors
   const genderDonut = genderData.map((d, i) => ({
     ...d,
     color: GENDER_COLORS[d.name.toLowerCase()] || GENDER_COLORS[d.name] || DONUT_COLORS[i],
@@ -369,6 +443,14 @@ export default function AnalyticsReportDetail() {
               <span className="hidden sm:inline">手動編集</span>
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={copyShareLink}>
+            <Link2 className="h-4 w-4" />
+            <span className="ml-1 hidden sm:inline">共有リンク</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportAsImage} disabled={exporting}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span className="ml-1 hidden sm:inline">画像出力</span>
+          </Button>
         </div>
       </div>
 
@@ -407,6 +489,8 @@ export default function AnalyticsReportDetail() {
         </Card>
       )}
 
+      {/* === Exportable content start === */}
+      <div ref={reportContentRef} className="space-y-6">
       {/* ===== OVERVIEW: YouTube Studio style KPI row ===== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
@@ -743,9 +827,58 @@ export default function AnalyticsReportDetail() {
         </TabsContent>
       </Tabs>
 
+      {/* Manager comment - inside exportable area */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Pencil className="h-4 w-4" />
+            担当者コメント
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {managerComment !== null ? (
+            <div className="space-y-3">
+              <Textarea
+                value={managerComment}
+                onChange={(e) => setManagerComment(e.target.value)}
+                placeholder="クライアント提出用のコメントを入力..."
+                rows={4}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={saveManagerComment} disabled={savingComment}>
+                  {savingComment ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                  保存
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setManagerComment(null)}>
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {(report as any).manager_comment ? (
+                <div className="space-y-2">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{(report as any).manager_comment}</p>
+                  <Button variant="ghost" size="sm" onClick={() => setManagerComment((report as any).manager_comment || "")}>
+                    <Edit2 className="h-3 w-3 mr-1" />編集
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setManagerComment("")}>
+                  <Pencil className="h-3 w-3 mr-1" />コメントを追加
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      </div>
+      {/* === Exportable content end === */}
+
       <Separator />
 
-      {/* Source images */}
+      {/* Source images - outside exportable area */}
       {report.source_images?.length > 0 && (
         <Card>
           <CardHeader className="pb-2">

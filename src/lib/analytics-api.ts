@@ -27,6 +27,8 @@ export interface AnalyticsReport {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  manager_comment: string | null;
+  share_token: string | null;
 }
 
 export interface CategoryImages {
