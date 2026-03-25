@@ -11,10 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import { formatDate } from "@/lib/api";
 import {
-  ArrowLeft, Edit2, Save, X, RefreshCw, Loader2,
+  ArrowLeft, Edit2, Save, X, RefreshCw, Loader2, Trash2,
   Eye, MousePointerClick, Clock, ThumbsUp, TrendingUp,
   Users, Globe, Monitor, Image as ImageIcon, Search, MessageSquare,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, AreaChart, Area,
@@ -312,6 +317,39 @@ export default function AnalyticsReportDetail() {
           </div>
         </div>
         <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">削除</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>レポートを削除しますか？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  「{report.title || "無題のレポート"}」を削除します。この操作は取り消せません。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    try {
+                      await analyticsApi.delete(report.id);
+                      toast({ title: "レポートを削除しました" });
+                      navigate("/admin/analytics");
+                    } catch {
+                      toast({ title: "削除に失敗しました", variant: "destructive" });
+                    }
+                  }}
+                >
+                  削除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button variant="outline" size="sm" onClick={handleReanalyze} disabled={reanalyzing}>
             {reanalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             <span className="ml-1 hidden sm:inline">再解析</span>
