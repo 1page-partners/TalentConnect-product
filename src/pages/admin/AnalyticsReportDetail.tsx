@@ -661,7 +661,7 @@ export default function AnalyticsReportDetail() {
 
         {/* === AUDIENCE TAB === */}
         <TabsContent value="audience" className="space-y-6">
-          {/* Row 1: Gender + Device */}
+          {/* Row 1: Gender + Age */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {genderData.length > 0 && (
               <Card>
@@ -674,20 +674,6 @@ export default function AnalyticsReportDetail() {
                 </CardContent>
               </Card>
             )}
-            {deviceData.length > 0 && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2"><Monitor className="h-4 w-4" />デバイス</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DonutChart data={deviceDonut} centerLabel="デバイス" height={200} />
-                  <ChartLegend data={deviceDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
-                </CardContent>
-              </Card>
-            )}
-          </div>
-          {/* Row 2: Age + Region */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {ageData.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
@@ -696,6 +682,20 @@ export default function AnalyticsReportDetail() {
                 <CardContent>
                   <DonutChart data={ageData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }))} centerLabel="年齢" height={200} />
                   <ChartLegend data={ageData.map((d, i) => ({ name: d.name, value: d.value, color: DONUT_COLORS[i % DONUT_COLORS.length], display: `${(d.value * 100).toFixed(1)}%` }))} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          {/* Row 2: Device + Region */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {deviceData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2"><Monitor className="h-4 w-4" />デバイス</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DonutChart data={deviceDonut} centerLabel="デバイス" height={200} />
+                  <ChartLegend data={deviceDonut.map((d) => ({ name: d.name, value: d.value, color: d.color, display: `${(d.value * 100).toFixed(1)}%` }))} />
                 </CardContent>
               </Card>
             )}
