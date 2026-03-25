@@ -9,8 +9,9 @@ import { formatDate } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import {
   PlusCircle, BarChart3, Loader2, Trash2, FolderPlus, Folder, FolderOpen,
-  ArrowLeft, MoreVertical, FolderInput,
+  ArrowLeft, MoreVertical, FolderInput, HelpCircle,
 } from "lucide-react";
+import SampleImagesHelpModal from "@/components/analytics/SampleImagesHelpModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -118,6 +119,7 @@ export default function AnalyticsReportList() {
           </div>
         </div>
         <div className="flex gap-2">
+          <SampleImagesHelpModal />
           <Button variant="outline" onClick={() => setNewFolderDialogOpen(true)}>
             <FolderPlus className="h-4 w-4 mr-2" />
             フォルダ作成
