@@ -32,6 +32,11 @@ export default function AnalyticsReportList() {
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [manualFolders, setManualFolders] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("analytics-folders") || "[]");
+    } catch { return []; }
+  });
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["analytics-reports"],
@@ -59,12 +64,20 @@ export default function AnalyticsReportList() {
     }
   };
 
+  const saveManualFolders = (updated: string[]) => {
+    setManualFolders(updated);
+    localStorage.setItem("analytics-folders", JSON.stringify(updated));
+  };
+
   const createFolder = () => {
     if (!newFolderName.trim()) return;
-    setCurrentFolder(newFolderName.trim());
+    const name = newFolderName.trim();
+    if (!manualFolders.includes(name)) {
+      saveManualFolders([...manualFolders, name]);
+    }
     setNewFolderDialogOpen(false);
     setNewFolderName("");
-    toast({ title: `フォルダ「${newFolderName.trim()}」を作成しました` });
+    toast({ title: `フォルダ「${name}」を作成しました` });
   };
 
   const formatNumber = (n: number | null) => {
@@ -72,8 +85,9 @@ export default function AnalyticsReportList() {
     return n.toLocaleString("ja-JP");
   };
 
-  // Get unique folder names
-  const folders = Array.from(new Set(reports.map((r) => r.folder).filter(Boolean))) as string[];
+  // Merge folders from reports and manually created ones
+  const reportFolders = Array.from(new Set(reports.map((r) => r.folder).filter(Boolean))) as string[];
+  const folders = Array.from(new Set([...manualFolders, ...reportFolders]));
 
   // Filter reports by current folder
   const filteredReports = currentFolder
