@@ -406,6 +406,7 @@ export default function AnalyticsReportDetail() {
       // 5. Comments - each page
       const visibleComments: { body: string; hidden?: boolean }[] = ((report as any).comment_texts || []).filter((c: any) => !c.hidden);
       if (visibleComments.length > 0) {
+        setExportProgress("コメントをキャプチャ中...");
         setActiveTab("comments");
         const totalPages = Math.ceil(visibleComments.length / COMMENTS_PER_PAGE);
         for (let p = 0; p < totalPages; p++) {
