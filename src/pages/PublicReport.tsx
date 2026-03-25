@@ -233,7 +233,7 @@ export default function PublicReport() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">総再生時間</p>
-                    <p className="text-2xl font-bold">{report.total_watch_time || "-"}</p>
+                    <p className="text-2xl font-bold">{report.total_watch_time ? `${report.total_watch_time}時間` : "-"}</p>
                   </div>
                 </CardContent>
               </Card>
