@@ -145,6 +145,12 @@ CRITICAL EXTRACTION RULES:
 
 重要: バーの長さではなく、右側に表示されている数値（パーセンテージ）を正確に読み取ってください。
 
+返却形式を厳守してください:
+- audience_age は {"13-17":0, "18-24":0, "25-34":0.013, ... } のように年齢キーのみ
+- audience_gender は {"女性":0.134, "男性":0.866, "その他":0} のように性別キーのみ
+- 年齢キーに性別を混ぜないでください
+- 画面上で 0% と見える項目は 0 を返してください
+
 - audience_age: 各年齢層の右側に表示されている割合を小数で返す（例: 47.7% → 0.477）
 - audience_gender: 男性・女性の横に表示されている割合を小数で返す（例: 86.6% → 0.866）`,
     fields: ["audience_age", "audience_gender"],
@@ -187,7 +193,10 @@ CRITICAL EXTRACTION RULES:
 重要: 各デバイスの右側に表示されているパーセンテージを正確に読み取り、小数に変換してください。
 例: テレビ 35.3% → 0.353
 
-キー名はスクリーンショットに表示されている日本語ラベルをそのまま使ってください。`,
+返却形式を厳守してください:
+- devices は {"テレビ":0.353, "パソコン":0.267, "携帯電話":0.258, "タブレット":0.118} のように日本語ラベルのみ
+- モバイル/スマホ系は「携帯電話」に正規化してください
+- 0% の項目が見える場合は 0 を返してください`,
     fields: ["devices"],
   },
 };
@@ -221,6 +230,167 @@ const TOOL_SCHEMA = {
     },
   },
 };
+
+type NumericRecord = Record<string, number>;
+
+const AGE_KEY_MAP: Record<string, string> = {
+  "13-17歳": "13-17",
+  "13-17": "13-17",
+  "13〜17歳": "13-17",
+  "13～17歳": "13-17",
+  "18-24歳": "18-24",
+  "18-24": "18-24",
+  "18〜24歳": "18-24",
+  "18～24歳": "18-24",
+  "25-34歳": "25-34",
+  "25-34": "25-34",
+  "25〜34歳": "25-34",
+  "25～34歳": "25-34",
+  "35-44歳": "35-44",
+  "35-44": "35-44",
+  "35〜44歳": "35-44",
+  "35～44歳": "35-44",
+  "45-54歳": "45-54",
+  "45-54": "45-54",
+  "45〜54歳": "45-54",
+  "45～54歳": "45-54",
+  "55-64歳": "55-64",
+  "55-64": "55-64",
+  "55〜64歳": "55-64",
+  "55～64歳": "55-64",
+  "65歳以上": "65+",
+  "65才以上": "65+",
+  "65以上": "65+",
+  "65+": "65+",
+};
+
+const GENDER_KEY_MAP: Record<string, string> = {
+  "男性": "男性",
+  "男": "男性",
+  "male": "男性",
+  "女性": "女性",
+  "女": "女性",
+  "female": "女性",
+  "ユーザーによる設定": "その他",
+  "その他": "その他",
+  "other": "その他",
+  "不明": "その他",
+};
+
+const DEVICE_KEY_MAP: Record<string, string> = {
+  "テレビ": "テレビ",
+  "tv": "テレビ",
+  "パソコン": "パソコン",
+  "pc": "パソコン",
+  "desktop": "パソコン",
+  "computer": "パソコン",
+  "携帯電話": "携帯電話",
+  "スマートフォン": "携帯電話",
+  "モバイル": "携帯電話",
+  "mobile": "携帯電話",
+  "タブレット": "タブレット",
+  "tablet": "タブレット",
+  "ゲーム機": "ゲーム機",
+  "gameconsole": "ゲーム機",
+  "不明": "不明",
+};
+
+const TRAFFIC_KEY_MAP: Record<string, string> = {
+  "ブラウジング機能": "ブラウジング機能",
+  "関連動画": "関連動画",
+  "youtube検索": "YouTube検索",
+  "you tube検索": "YouTube検索",
+  "外部": "外部",
+  "直接入力または不明": "直接入力または不明",
+  "直接または不明": "直接入力または不明",
+  "チャンネルページ": "チャンネルページ",
+  "その他のyoutube機能": "その他のYouTube機能",
+  "その他のyou tube機能": "その他のYouTube機能",
+  "通知": "通知",
+  "その他": "その他",
+};
+
+function normalizeLabelKey(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[％]/g, "%")
+    .replace(/[〜～–—−]/g, "-")
+    .replace(/[：:]/g, "")
+    .toLowerCase();
+}
+
+function toDecimalNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.replace(/,/g, "").replace(/[％]/g, "%").trim();
+    const match = normalized.match(/-?\d+(?:\.\d+)?/);
+    if (!match) return null;
+
+    let parsed = Number(match[0]);
+    if (!Number.isFinite(parsed)) return null;
+    if (normalized.includes("%")) parsed = parsed / 100;
+    return parsed;
+  }
+
+  return null;
+}
+
+function normalizeDistribution(
+  input: unknown,
+  keyMap: Record<string, string>,
+  options: { forceUnitInterval?: boolean } = {},
+): NumericRecord {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return {};
+  }
+
+  const normalized: NumericRecord = {};
+
+  for (const [rawKey, rawValue] of Object.entries(input as Record<string, unknown>)) {
+    const canonicalKey = keyMap[normalizeLabelKey(rawKey)] ?? rawKey.trim();
+    const parsedValue = toDecimalNumber(rawValue);
+
+    if (parsedValue === null || parsedValue < 0) continue;
+    normalized[canonicalKey] = (normalized[canonicalKey] ?? 0) + parsedValue;
+  }
+
+  let entries = Object.entries(normalized).filter(([, value]) => Number.isFinite(value));
+  let sum = entries.reduce((total, [, value]) => total + value, 0);
+
+  if (sum > 1.5 && sum <= 100.5) {
+    entries = entries.map(([key, value]) => [key, value / 100]);
+    sum = entries.reduce((total, [, value]) => total + value, 0);
+  }
+
+  if (options.forceUnitInterval && sum >= 0.95 && sum <= 1.05) {
+    entries = entries.map(([key, value]) => [key, value / sum]);
+  }
+
+  return Object.fromEntries(entries.map(([key, value]) => [key, Number(value.toFixed(6))]));
+}
+
+function normalizeExtractedData(data: Record<string, unknown>, category?: string) {
+  const normalized = { ...data };
+
+  if (!category || category === "audience") {
+    normalized.audience_age = normalizeDistribution(data.audience_age, AGE_KEY_MAP, { forceUnitInterval: true });
+    normalized.audience_gender = normalizeDistribution(data.audience_gender, GENDER_KEY_MAP, { forceUnitInterval: true });
+  }
+
+  if (!category || category === "devices") {
+    normalized.devices = normalizeDistribution(data.devices, DEVICE_KEY_MAP, { forceUnitInterval: true });
+  }
+
+  if (!category || category === "traffic") {
+    normalized.traffic_sources = normalizeDistribution(data.traffic_sources, TRAFFIC_KEY_MAP, { forceUnitInterval: true });
+  }
+
+  return normalized;
+}
 
 async function analyzeCategory(
   apiKey: string,
@@ -411,7 +581,7 @@ CRITICAL RULES:
         try {
           const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
           if (toolCall?.function?.arguments) {
-            extracted = JSON.parse(toolCall.function.arguments);
+            extracted = normalizeExtractedData(JSON.parse(toolCall.function.arguments));
           }
         } catch (e) {
           console.error("Failed to parse AI response:", e);
@@ -423,6 +593,8 @@ CRITICAL RULES:
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    extracted = normalizeExtractedData(extracted);
 
     // Save to DB
     const serviceClient = createClient(
