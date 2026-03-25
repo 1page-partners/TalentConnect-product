@@ -284,6 +284,74 @@ export default function AnalyticsReportDetail() {
     }
   };
 
+  const saveManagerComment = async () => {
+    setSavingComment(true);
+    try {
+      await analyticsApi.update(report.id, { manager_comment: managerComment ?? "" } as any);
+      queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
+      setManagerComment(null);
+      toast({ title: "コメントを保存しました" });
+    } catch {
+      toast({ title: "保存に失敗しました", variant: "destructive" });
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
+  const copyShareLink = async () => {
+    const token = (report as any).share_token;
+    if (!token) {
+      toast({ title: "共有トークンがありません", variant: "destructive" });
+      return;
+    }
+    const url = `${window.location.origin}/report/${token}`;
+    await navigator.clipboard.writeText(url);
+    toast({ title: "共有リンクをコピーしました" });
+  };
+
+  const exportAsImage = async () => {
+    if (!reportContentRef.current) return;
+    setExporting(true);
+    try {
+      // Wait for charts to render
+      await new Promise((r) => setTimeout(r, 500));
+      const canvas = await html2canvas(reportContentRef.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+        width: 1920,
+        height: 1080,
+        windowWidth: 1920,
+        windowHeight: 1080,
+      });
+      // Crop/resize to 16:9
+      const targetW = 1920;
+      const targetH = 1080;
+      const outCanvas = document.createElement("canvas");
+      outCanvas.width = targetW;
+      outCanvas.height = targetH;
+      const ctx = outCanvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, targetW, targetH);
+      // Scale source to fit width, then center vertically
+      const scale = targetW / canvas.width;
+      const scaledH = canvas.height * scale;
+      const yOffset = scaledH > targetH ? 0 : (targetH - scaledH) / 2;
+      ctx.drawImage(canvas, 0, yOffset, targetW, Math.min(scaledH, targetH));
+
+      const link = document.createElement("a");
+      link.download = `${report.title || "report"}_16x9.png`;
+      link.href = outCanvas.toDataURL("image/png");
+      link.click();
+      toast({ title: "画像をダウンロードしました" });
+    } catch {
+      toast({ title: "画像の書き出しに失敗しました", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const toChartData = (obj: Record<string, number> | null | undefined) =>
     obj ? Object.entries(obj).map(([name, value]) => ({ name, value: Number(value) })) : [];
 
@@ -294,7 +362,6 @@ export default function AnalyticsReportDetail() {
   const deviceData = toChartData(report.devices);
   const searchTermsData = toChartData(report.search_terms);
 
-  // Prepare donut data with colors
   const genderDonut = genderData.map((d, i) => ({
     ...d,
     color: GENDER_COLORS[d.name.toLowerCase()] || GENDER_COLORS[d.name] || DONUT_COLORS[i],
