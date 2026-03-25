@@ -830,6 +830,7 @@ export default function AnalyticsReportDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+        </div>
       </Tabs>
 
       {/* Manager comment - inside exportable area */}
