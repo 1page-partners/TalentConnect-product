@@ -20,6 +20,9 @@ import MemberManagement from "./pages/admin/MemberManagement";
 import CreatorListPage from "./pages/admin/CreatorList";
 import CreatorDetail from "./pages/admin/CreatorDetail";
 import CreatorEdit from "./pages/admin/CreatorEdit";
+import AnalyticsReportList from "./pages/admin/AnalyticsReportList";
+import AnalyticsReportNew from "./pages/admin/AnalyticsReportNew";
+import AnalyticsReportDetail from "./pages/admin/AnalyticsReportDetail";
 import AdminLayout from "./components/admin/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -48,6 +51,9 @@ const App = () => (
             <Route path="/admin/creator/:id" element={<AdminLayout><CreatorDetail /></AdminLayout>} />
             <Route path="/admin/creator/:id/edit" element={<AdminLayout><CreatorEdit /></AdminLayout>} />
             <Route path="/admin/members" element={<AdminLayout requireAdmin><MemberManagement /></AdminLayout>} />
+            <Route path="/admin/analytics" element={<AdminLayout><AnalyticsReportList /></AdminLayout>} />
+            <Route path="/admin/analytics/new" element={<AdminLayout><AnalyticsReportNew /></AdminLayout>} />
+            <Route path="/admin/analytics/:id" element={<AdminLayout><AnalyticsReportDetail /></AdminLayout>} />
             <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

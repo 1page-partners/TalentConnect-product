@@ -2,3 +2,6 @@ project_id = "durcilecgrrsudnyaynq"
 
 [functions.get-public-campaign]
 verify_jwt = false
+
+[functions.analyze-report-image]
+verify_jwt = false
