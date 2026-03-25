@@ -813,9 +813,26 @@ export default function AnalyticsReportDetail() {
                   {(report as any).comment_texts.map((comment: { body: string }, i: number) => (
                     <div
                       key={i}
-                      className="p-3 rounded-lg border bg-muted/30 text-sm leading-relaxed"
+                      className="group flex items-start gap-2 p-3 rounded-lg border bg-muted/30 text-sm leading-relaxed"
                     >
-                      {comment.body}
+                      <span className="flex-1">{comment.body}</span>
+                      <button
+                        type="button"
+                        title="このコメントを削除"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                        onClick={async () => {
+                          const updated = (report as any).comment_texts.filter((_: any, idx: number) => idx !== i);
+                          try {
+                            await analyticsApi.update(report.id, { comment_texts: updated } as any);
+                            queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
+                            toast({ title: "コメントを削除しました" });
+                          } catch {
+                            toast({ title: "削除に失敗しました", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
