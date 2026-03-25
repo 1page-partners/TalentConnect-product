@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import {
-  Image as ImageIcon, RefreshCw, Loader2, X,
+  Image as ImageIcon, RefreshCw, Loader2,
   Eye, ThumbsUp, Globe, Users, Monitor, BarChart3, MousePointerClick,
-  Upload,
+  Upload, Plus,
 } from "lucide-react";
 
 const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: string }> = {
@@ -47,6 +48,9 @@ export default function SourceImageManager({
   const [replacingCategory, setReplacingCategory] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
   const [replacingInModal, setReplacingInModal] = useState(false);
+  const [addingToCategory, setAddingToCategory] = useState<string | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addTargetCategory, setAddTargetCategory] = useState<string>("overview");
 
   const categoryImages: Record<string, string[]> = (report as any).category_images || {};
   const hasCategoryMapping = Object.keys(categoryImages).some(
@@ -143,6 +147,36 @@ export default function SourceImageManager({
     }
   };
 
+  // Add images to a category (append, not replace)
+  const handleAddFiles = async (category: string, files: FileList) => {
+    setAddingToCategory(category);
+    try {
+      const urls = await uploadFiles(files);
+      if (urls.length === 0) return;
+
+      const existingUrls = categoryImages[category] || [];
+      const updatedCategoryImages = { ...categoryImages, [category]: [...existingUrls, ...urls] };
+      const allSourceImages = Object.entries(updatedCategoryImages)
+        .filter(([k]) => k !== "comments")
+        .flatMap(([, v]) => v || []);
+      const commentImgs = updatedCategoryImages.comments || report.comment_images || [];
+
+      await analyticsApi.update(report.id, {
+        category_images: updatedCategoryImages,
+        source_images: allSourceImages,
+        comment_images: commentImgs,
+      } as any);
+
+      toast({ title: `${CATEGORY_META[category]?.label || category}に${urls.length}枚追加しました` });
+      setShowAddDialog(false);
+      onUpdate();
+    } catch {
+      toast({ title: "画像の追加に失敗しました", variant: "destructive" });
+    } finally {
+      setAddingToCategory(null);
+    }
+  };
+
   const triggerFileInput = (onFiles: (files: FileList) => void) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -163,6 +197,18 @@ export default function SourceImageManager({
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files.length > 0) handleReplaceFiles(category, files);
+    };
+    input.click();
+  };
+
+  const triggerAddFileInput = (category: string) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) handleAddFiles(category, files);
     };
     input.click();
   };
@@ -227,19 +273,30 @@ export default function SourceImageManager({
                 {hasCategoryMapping && " · カテゴリ別に管理"}
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReanalyze}
-              disabled={reanalyzing}
-            >
-              {reanalyzing ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-1" />
-              )}
-              再解析
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddDialog(true)}
+                disabled={isUploading}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                画像を追加
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onReanalyze}
+                disabled={reanalyzing}
+              >
+                {reanalyzing ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                )}
+                再解析
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -267,20 +324,36 @@ export default function SourceImageManager({
                         {urls.length}枚
                       </Badge>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs"
-                      disabled={replacingCategory === category || isUploading}
-                      onClick={() => triggerMultiFileInput(category)}
-                    >
-                      {replacingCategory === category ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                      )}
-                      一括差し替え
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        disabled={addingToCategory === category || isUploading}
+                        onClick={() => triggerAddFileInput(category)}
+                      >
+                        {addingToCategory === category ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <Plus className="h-3 w-3 mr-1" />
+                        )}
+                        追加
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        disabled={replacingCategory === category || isUploading}
+                        onClick={() => triggerMultiFileInput(category)}
+                      >
+                        {replacingCategory === category ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                        )}
+                        一括差し替え
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {urls.map((url, i) => (
@@ -385,6 +458,56 @@ export default function SourceImageManager({
               )}
               この画像を差し替え
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Image Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Plus className="h-4 w-4" />
+              画像を追加
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">追加先カテゴリ</label>
+              <Select value={addTargetCategory} onValueChange={setAddTargetCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_META).map(([key, meta]) => {
+                    const Icon = meta.icon;
+                    return (
+                      <SelectItem key={key} value={key}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
+                          {meta.label}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              disabled={addingToCategory === addTargetCategory || isUploading}
+              onClick={() => triggerAddFileInput(addTargetCategory)}
+            >
+              {addingToCategory === addTargetCategory ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              画像を選択してアップロード
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              既存の画像はそのまま保持され、選択した画像が追加されます。
+            </p>
           </div>
         </DialogContent>
       </Dialog>
