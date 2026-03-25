@@ -55,6 +55,7 @@ const App = () => (
             <Route path="/admin/analytics" element={<AdminLayout><AnalyticsReportList /></AdminLayout>} />
             <Route path="/admin/analytics/new" element={<AdminLayout><AnalyticsReportNew /></AdminLayout>} />
             <Route path="/admin/analytics/:id" element={<AdminLayout><AnalyticsReportDetail /></AdminLayout>} />
+            <Route path="/report/:token" element={<PublicReport />} />
             <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
