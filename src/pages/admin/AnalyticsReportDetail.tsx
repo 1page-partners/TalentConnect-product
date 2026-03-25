@@ -489,6 +489,8 @@ export default function AnalyticsReportDetail() {
         </Card>
       )}
 
+      {/* === Exportable content start === */}
+      <div ref={reportContentRef} className="space-y-6">
       {/* ===== OVERVIEW: YouTube Studio style KPI row ===== */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
