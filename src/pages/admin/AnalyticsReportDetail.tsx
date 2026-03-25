@@ -542,22 +542,22 @@ export default function AnalyticsReportDetail() {
       <div ref={reportContentRef} className="space-y-6">
       {/* ===== OVERVIEW: YouTube Studio style KPI row ===== */}
       <div ref={kpiSectionRef} className="space-y-3">
-        <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
-        <KpiTile label="インプレッション" value={fmt(report.impressions)} color={YT_GREEN} />
-        <KpiTile
-          label="クリック率 (CTR)"
-          value={pct(report.ctr)}
-          sub={report.impressions != null && report.views != null ? `${fmt(report.views)} / ${fmt(report.impressions)}` : undefined}
-          color={YT_PURPLE}
-        />
-        <KpiTile label="平均視聴時間" value={report.avg_watch_time || "-"} color={YT_ORANGE} />
-      </div>
-
-      {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <KpiTile label="高評価率" value={pct(report.like_rate)} color={YT_BLUE} />
-        <KpiTile label="視聴維持率" value={pct(report.retention_rate)} />
-        <KpiTile label="総再生時間" value={report.total_watch_time ? `${report.total_watch_time}時間` : "-"} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
+          <KpiTile label="インプレッション" value={fmt(report.impressions)} color={YT_GREEN} />
+          <KpiTile
+            label="クリック率 (CTR)"
+            value={pct(report.ctr)}
+            sub={report.impressions != null && report.views != null ? `${fmt(report.views)} / ${fmt(report.impressions)}` : undefined}
+            color={YT_PURPLE}
+          />
+          <KpiTile label="平均視聴時間" value={report.avg_watch_time || "-"} color={YT_ORANGE} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <KpiTile label="高評価率" value={pct(report.like_rate)} color={YT_BLUE} />
+          <KpiTile label="視聴維持率" value={pct(report.retention_rate)} />
+          <KpiTile label="総再生時間" value={report.total_watch_time ? `${report.total_watch_time}時間` : "-"} />
+        </div>
       </div>
 
 
