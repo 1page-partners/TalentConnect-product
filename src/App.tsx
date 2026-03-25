@@ -23,6 +23,7 @@ import CreatorEdit from "./pages/admin/CreatorEdit";
 import AnalyticsReportList from "./pages/admin/AnalyticsReportList";
 import AnalyticsReportNew from "./pages/admin/AnalyticsReportNew";
 import AnalyticsReportDetail from "./pages/admin/AnalyticsReportDetail";
+import PublicReport from "./pages/PublicReport";
 import AdminLayout from "./components/admin/AdminLayout";
 
 const queryClient = new QueryClient();

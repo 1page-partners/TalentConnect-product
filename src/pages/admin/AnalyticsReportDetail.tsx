@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,13 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import { formatDate } from "@/lib/api";
+import html2canvas from "html2canvas";
 import {
   ArrowLeft, Edit2, Save, X, RefreshCw, Loader2, Trash2,
   Eye, MousePointerClick, Clock, ThumbsUp, TrendingUp,
   Users, Globe, Monitor, Image as ImageIcon, Search, MessageSquare,
+  Share2, Download, Link2, Pencil,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
