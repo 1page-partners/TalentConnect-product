@@ -20,65 +20,144 @@ interface CategoryImages {
 
 const CATEGORY_PROMPTS: Record<string, { system: string; user: string; fields: string[] }> = {
   overview: {
-    system: `You extract YouTube Analytics REACH/OVERVIEW metrics from screenshots.
-Focus ONLY on: impressions, views, CTR, average watch time, total watch time.
-Rules:
-- Convert Japanese numbers: 74.1万 → 741000, 1.2万 → 12000
-- Convert percentages to decimals: 3.4% → 0.034
-- Time durations as strings: "4:32"
-- If not found, use null`,
-    user: "この画像からインプレッション数・再生回数・CTR・平均視聴時間・総再生時間を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract REACH/OVERVIEW metrics with high precision.
+
+CRITICAL EXTRACTION RULES:
+1. Japanese number conversion:
+   - 万 = ×10,000: "74.1万" → 741000, "1.2万" → 12000, "3万" → 30000
+   - 億 = ×100,000,000: "1.2億" → 120000000
+   - Plain numbers: "1,234" → 1234, "567" → 567
+2. Percentage → decimal: "3.4%" → 0.034, "45.3%" → 0.453
+3. Time durations stay as strings: "4:32", "1:05:30"
+4. Look for these EXACT labels in the screenshot:
+   - インプレッション数 / Impressions → impressions
+   - 視聴回数 / Views → views  
+   - インプレッションのクリック率 / CTR → ctr (as decimal)
+   - 平均視聴時間 / Average view duration → avg_watch_time (string)
+   - 総再生時間 / Watch time → total_watch_time (string, e.g. "123.4時間" or "5,678分")
+5. Numbers next to these labels are the values. Read them carefully.
+6. If a value is not visible, return null.`,
+    user: `この YouTube アナリティクスのスクリーンショットから以下の指標を正確に読み取って抽出してください：
+- インプレッション数（impressions）
+- 視聴回数（views）
+- インプレッションのクリック率 CTR（ctr）→ 小数で返す
+- 平均視聴時間（avg_watch_time）→ 文字列で返す
+- 総再生時間（total_watch_time）→ 文字列で返す
+
+数値は正確に読み取り、万・億などの単位を適切に変換してください。`,
     fields: ["impressions", "views", "ctr", "avg_watch_time", "total_watch_time"],
   },
   engagement: {
-    system: `You extract YouTube Analytics ENGAGEMENT metrics from screenshots.
-Focus ONLY on: like rate, retention rate, complete view rate.
-Rules:
-- Convert Japanese numbers: 1.2万 → 12000
-- Percentages to decimals: 45.3% → 0.453
-- complete_view_rate is the percentage of viewers who watched the entire video
-- If not found, use null`,
-    user: "この画像から高評価率・視聴維持率・完全視聴率を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract ENGAGEMENT metrics with high precision.
+
+CRITICAL EXTRACTION RULES:
+1. Japanese number conversion:
+   - 万 = ×10,000: "1.2万" → 12000
+   - Plain numbers with commas: "1,234" → 1234
+2. Percentage → decimal: "45.3%" → 0.453, "3.4%" → 0.034
+3. Look for these labels:
+   - 高評価率 / Like rate → like_rate (decimal, e.g. 0.034)
+   - 視聴者維持率 / Audience retention → retention_rate (decimal, e.g. 0.453)
+   - If you see a retention percentage graph, extract the average value shown
+   - 完全視聴率 / Complete view rate → complete_view_rate (decimal)
+4. Do NOT extract raw like count; only extract the RATE.
+5. If a value is not visible, return null.`,
+    user: `この YouTube アナリティクスのスクリーンショットから以下の指標を正確に読み取ってください：
+- 高評価率（like_rate）→ 小数で返す
+- 視聴者維持率（retention_rate）→ 小数で返す（グラフに表示されている平均値）
+- 完全視聴率（complete_view_rate）→ 小数で返す
+
+パーセンテージは全て小数に変換してください（例: 45.3% → 0.453）。`,
     fields: ["like_rate", "retention_rate", "complete_view_rate"],
   },
   traffic: {
-    system: `You extract YouTube Analytics TRAFFIC SOURCE data from screenshots.
-Focus ONLY on traffic sources breakdown (e.g. ブラウジング機能, 関連動画, YouTube検索, 外部, 直接, その他).
-Return as object with source name keys and decimal percentage values (e.g. 0.45 for 45%).
-All values should sum to approximately 1.0.`,
-    user: "この画像からトラフィックソース（流入経路）の内訳を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract TRAFFIC SOURCE breakdown data.
+
+CRITICAL EXTRACTION RULES:
+1. Look for traffic source categories such as:
+   - ブラウジング機能 / Browse features
+   - 関連動画 / Suggested videos
+   - YouTube検索 / YouTube search
+   - 外部 / External
+   - 直接または不明 / Direct or unknown
+   - チャンネルページ / Channel pages
+   - 通知 / Notifications
+   - その他 / Other
+2. Each source has a percentage. Convert to decimal: "45.3%" → 0.453
+3. If raw view counts are shown instead of percentages, calculate percentages from them.
+4. All values should sum to approximately 1.0.
+5. Use the JAPANESE label as the key name.`,
+    user: `この YouTube アナリティクスのスクリーンショットからトラフィックソース（流入経路）の内訳を抽出してください。
+各ソースの割合を小数で返してください（例: 45.3% → 0.453）。
+キー名は日本語のラベルをそのまま使ってください。`,
     fields: ["traffic_sources"],
   },
   search_terms: {
-    system: `You extract YouTube Analytics SEARCH TERMS data from screenshots.
-Extract the search keywords/terms that viewers used to find this video.
-Return search_terms as an object with search term string keys and numeric values representing impressions or clicks.
-Example: {"キーワードA": 1500, "キーワードB": 800}
-If percentages are shown, convert to decimals.`,
-    user: "この画像からYouTube検索語句（検索キーワード）とその数値を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract SEARCH TERMS / KEYWORDS data.
+
+CRITICAL EXTRACTION RULES:
+1. Extract each search term/keyword shown in the screenshot.
+2. For each term, extract the associated number (impressions, views, or clicks).
+3. Japanese number conversion: "1.2万" → 12000, "567" → 567
+4. Return as object: {"keyword1": number1, "keyword2": number2, ...}
+5. Include ALL visible search terms, not just the top ones.`,
+    user: `この YouTube アナリティクスのスクリーンショットから YouTube 検索語句（検索キーワード）とその数値を全て抽出してください。`,
     fields: ["search_terms"],
   },
   audience: {
-    system: `You extract YouTube Analytics AUDIENCE DEMOGRAPHICS from screenshots.
-Focus on age distribution and gender distribution.
-- audience_age: object with age range keys (e.g. "13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+") and decimal values
-- audience_gender: object with keys like "男性"/"女性" (or "male"/"female") and decimal values
-All values in each category should sum to approximately 1.0.`,
-    user: "この画像から視聴者の年齢分布と性別比率を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract AUDIENCE DEMOGRAPHICS (age + gender).
+
+CRITICAL EXTRACTION RULES:
+1. Age distribution - look for bars/data with age ranges:
+   - "13-17歳", "18-24歳", "25-34歳", "35-44歳", "45-54歳", "55-64歳", "65歳以上"
+   - Use simplified keys: "13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"
+   - Values as decimals summing to ~1.0
+2. Gender distribution - look for:
+   - 男性 / Male, 女性 / Female
+   - Use keys: "男性", "女性"
+   - Values as decimals summing to ~1.0
+3. Read the EXACT percentages from the chart bars or labels.
+4. YouTube often shows age+gender combined (stacked bars). Sum male+female per age group for audience_age.`,
+    user: `この YouTube アナリティクスのスクリーンショットから視聴者の年齢分布と性別比率を正確に読み取ってください。
+- audience_age: 年齢層ごとの割合（小数）
+- audience_gender: 性別ごとの割合（小数）`,
     fields: ["audience_age", "audience_gender"],
   },
   geography: {
-    system: `You extract YouTube Analytics GEOGRAPHY/REGION data from screenshots.
-Return audience_region as object with country/region name keys and decimal percentage values.
-Values should sum to approximately 1.0.`,
-    user: "この画像から視聴者の地域分布を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract GEOGRAPHIC distribution of viewers.
+
+CRITICAL EXTRACTION RULES:
+1. Extract country/region names and their percentage values.
+2. Convert percentages to decimals: "85.3%" → 0.853
+3. Use the exact region name shown (Japanese or English).
+4. Common regions: 日本, アメリカ合衆国, 韓国, 台湾, etc.
+5. Values should sum to approximately 1.0 (or close, if only top regions shown).`,
+    user: `この YouTube アナリティクスのスクリーンショットから視聴者の地域分布を抽出してください。
+国/地域名をキー、割合を小数で返してください。`,
     fields: ["audience_region"],
   },
   devices: {
-    system: `You extract YouTube Analytics DEVICE data from screenshots.
-Return devices as object with device type keys (e.g. "モバイル", "パソコン", "タブレット", "テレビ") and decimal percentage values.
-Values should sum to approximately 1.0.`,
-    user: "この画像からデバイス別の視聴割合を抽出してください。",
+    system: `You are an expert data extractor specializing in YouTube Studio Analytics screenshots.
+Your task: extract DEVICE TYPE distribution.
+
+CRITICAL EXTRACTION RULES:
+1. Look for device types:
+   - モバイル / Mobile
+   - パソコン / Computer/Desktop
+   - タブレット / Tablet  
+   - テレビ / TV
+   - ゲーム機 / Game console
+2. Convert percentages to decimals: "65.2%" → 0.652
+3. Use the JAPANESE label as key name.
+4. Values should sum to approximately 1.0.`,
+    user: `この YouTube アナリティクスのスクリーンショットからデバイス別の視聴割合を抽出してください。
+デバイス名をキー、割合を小数で返してください。`,
     fields: ["devices"],
   },
 };
@@ -133,7 +212,7 @@ async function analyzeCategory(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages: [
         { role: "system", content: prompt.system },
         {
@@ -257,18 +336,24 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-2.5-pro",
           messages: [
             {
               role: "system",
-              content: `You are a YouTube Analytics screenshot data extractor. Extract all metrics from the screenshots.
-Convert Japanese numbers (74.1万→741000), percentages to decimals (3.4%→0.034), keep time as strings.
-Use null for missing values. Distribution objects should have string keys and decimal values summing to ~1.0.`,
+              content: `You are an expert data extractor for YouTube Studio Analytics screenshots.
+
+CRITICAL RULES:
+- Japanese numbers: 万 = ×10,000 (74.1万→741000), 億 = ×100,000,000
+- Percentages → decimals: 3.4% → 0.034, 45.3% → 0.453
+- Time durations as strings: "4:32", "1:05:30"
+- Distribution objects: keys are Japanese labels, values are decimals summing to ~1.0
+- If a value is not visible, use null
+- Read numbers very carefully from the screenshot`,
             },
             {
               role: "user",
               content: [
-                { type: "text", text: "以下のYouTubeアナリティクスのスクリーンショットから、すべての指標を抽出してください。" },
+                { type: "text", text: "以下のYouTubeアナリティクスのスクリーンショットから、すべての指標を正確に読み取って抽出してください。数値の単位（万、億）に注意して正しく変換してください。" },
                 ...imageContent,
               ],
             },
