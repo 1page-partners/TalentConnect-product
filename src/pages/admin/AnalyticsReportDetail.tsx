@@ -215,8 +215,11 @@ export default function AnalyticsReportDetail() {
   const [savingComment, setSavingComment] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [commentPage, setCommentPage] = useState(0);
+  const [activeTab, setActiveTab] = useState("reach");
   const COMMENTS_PER_PAGE = 5;
   const reportContentRef = useRef<HTMLDivElement>(null);
+  const kpiSectionRef = useRef<HTMLDivElement>(null);
+  const tabContentAreaRef = useRef<HTMLDivElement>(null);
 
   const { data: report, isLoading } = useQuery({
     queryKey: ["analytics-report", id],
@@ -312,104 +315,75 @@ export default function AnalyticsReportDetail() {
     toast({ title: "共有リンクをコピーしました" });
   };
 
-  const renderSlide = async (html: string): Promise<Blob> => {
-    const container = document.createElement("div");
-    container.style.cssText = "position:fixed;left:-9999px;top:0;width:1920px;min-height:1080px;padding:60px 80px;background:#fff;font-family:system-ui,sans-serif;color:#1a1a1a;display:flex;flex-direction:column;justify-content:center;";
-    container.innerHTML = html;
-    document.body.appendChild(container);
-    await new Promise((r) => setTimeout(r, 200));
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-    document.body.removeChild(container);
-    const targetW = 1920, targetH = 1080;
-    const outCanvas = document.createElement("canvas");
-    outCanvas.width = targetW;
-    outCanvas.height = targetH;
-    const ctx = outCanvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, targetW, targetH);
-    const s = Math.min(targetW / canvas.width, targetH / canvas.height);
-    ctx.drawImage(canvas, (targetW - canvas.width * s) / 2, (targetH - canvas.height * s) / 2, canvas.width * s, canvas.height * s);
-    return new Promise((resolve) => outCanvas.toBlob((b) => resolve(b!), "image/png"));
+  const captureElement = async (el: HTMLElement): Promise<Blob> => {
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+    });
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), "image/png"));
   };
+
+  const waitForRender = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 
   const exportAsImage = async () => {
     setExporting(true);
+    const originalTab = activeTab;
+    const originalCommentPage = commentPage;
     try {
       const zip = new JSZip();
-      const kpi = (label: string, value: string, color: string) =>
-        `<div style="flex:1;padding:24px;border-radius:12px;border:1px solid #e5e7eb;text-align:center;">
-          <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:6px;">${label}</div>
-          <div style="font-size:32px;font-weight:800;color:${color};">${value}</div>
-        </div>`;
-      const legendRow = (name: string, display: string, color: string) =>
-        `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:15px;">
-          <div style="display:flex;align-items:center;gap:10px;"><div style="width:14px;height:14px;border-radius:50%;background:${color};"></div><span style="color:#555;">${name}</span></div>
-          <span style="font-weight:600;">${display}</span>
-        </div>`;
-      const slideTitle = (t: string) => `<div style="text-align:center;margin-bottom:40px;"><div style="font-size:28px;font-weight:800;">${report.title || "レポート"}</div><div style="font-size:14px;color:#999;margin-top:4px;">${t}</div></div>`;
 
-      // 1. Overview slide
-      const overviewHtml = `${slideTitle("概要")}
-        <div style="display:flex;gap:16px;margin-bottom:24px;">
-          ${kpi("視聴回数", fmt(report.views), YT_BLUE)}
-          ${kpi("インプレッション", fmt(report.impressions), YT_GREEN)}
-          ${kpi("CTR", pct(report.ctr), YT_PURPLE)}
-        </div>
-        <div style="display:flex;gap:16px;">
-          ${kpi("平均視聴時間", report.avg_watch_time || "-", YT_ORANGE)}
-          ${kpi("高評価率", pct(report.like_rate), YT_BLUE)}
-          ${kpi("視聴維持率", pct(report.retention_rate), YT_GREEN)}
-          ${kpi("総再生時間", report.total_watch_time || "-", YT_RED)}
-        </div>`;
-      zip.file("01_概要.png", await renderSlide(overviewHtml));
+      // 1. KPI Overview
+      if (kpiSectionRef.current) {
+        await waitForRender(200);
+        zip.file("01_概要.png", await captureElement(kpiSectionRef.current));
+      }
 
-      // 2. Reach slide (Traffic Sources)
+      // 2. Reach tab
       if (trafficData.length > 0) {
-        const reachHtml = `${slideTitle("リーチ - トラフィックソース")}
-          <div style="max-width:600px;margin:0 auto;">
-            ${trafficDonut.map(d => legendRow(d.name, d.value <= 1 ? `${(d.value * 100).toFixed(1)}%` : d.value.toLocaleString(), d.color)).join("")}
-          </div>`;
-        zip.file("02_リーチ.png", await renderSlide(reachHtml));
-      }
-
-      // 3. Engagement slide
-      const engHtml = `${slideTitle("エンゲージメント")}
-        <div style="display:flex;gap:24px;justify-content:center;">
-          ${kpi("高評価率", pct(report.like_rate), YT_BLUE)}
-          ${kpi("視聴維持率", pct(report.retention_rate), YT_GREEN)}
-          ${kpi("総再生時間", report.total_watch_time || "-", YT_ORANGE)}
-        </div>`;
-      zip.file("03_エンゲージメント.png", await renderSlide(engHtml));
-
-      // 4. Audience slide
-      let audHtml = slideTitle("視聴者");
-      if (genderData.length > 0 || deviceData.length > 0) {
-        const gH = genderData.length > 0 ? `<div style="flex:1;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;">性別</div>${genderDonut.map(d => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, d.color)).join("")}</div>` : "";
-        const dH = deviceData.length > 0 ? `<div style="flex:1;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;">デバイス</div>${deviceDonut.map(d => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, d.color)).join("")}</div>` : "";
-        audHtml += `<div style="display:flex;gap:60px;margin-bottom:32px;">${gH}${dH}</div>`;
-      }
-      if (ageData.length > 0) {
-        audHtml += `<div style="max-width:500px;margin:0 auto;"><div style="font-size:18px;font-weight:700;margin-bottom:12px;">年齢層</div>${ageData.map((d, i) => legendRow(d.name, `${(d.value * 100).toFixed(1)}%`, DONUT_COLORS[i % DONUT_COLORS.length])).join("")}</div>`;
-      }
-      zip.file("04_視聴者.png", await renderSlide(audHtml));
-
-      // 5. Comment slides (5 per page)
-      const comments: { body: string; hidden?: boolean }[] = ((report as any).comment_texts || []).filter((c: any) => !c.hidden);
-      if (comments.length > 0) {
-        const commentPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
-        for (let p = 0; p < commentPages; p++) {
-          const pageComments = comments.slice(p * COMMENTS_PER_PAGE, (p + 1) * COMMENTS_PER_PAGE);
-          const suffix = commentPages > 1 ? ` (${p + 1}/${commentPages})` : "";
-          const comHtml = `${slideTitle(`コメント${suffix}`)}
-            <div style="max-width:800px;margin:0 auto;">
-              ${pageComments.map(c => `<div style="padding:14px 18px;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;font-size:15px;margin-bottom:12px;line-height:1.7;">${c.body}</div>`).join("")}
-            </div>`;
-          const num = String(5 + p).padStart(2, "0");
-          zip.file(`${num}_コメント${commentPages > 1 ? `_${p + 1}` : ""}.png`, await renderSlide(comHtml));
+        setActiveTab("reach");
+        await waitForRender();
+        if (tabContentAreaRef.current) {
+          zip.file("02_リーチ.png", await captureElement(tabContentAreaRef.current));
         }
       }
 
-      // Generate ZIP
+      // 3. Engagement tab
+      setActiveTab("engagement");
+      await waitForRender();
+      if (tabContentAreaRef.current) {
+        zip.file("03_エンゲージメント.png", await captureElement(tabContentAreaRef.current));
+      }
+
+      // 4. Audience tab
+      setActiveTab("audience");
+      await waitForRender();
+      if (tabContentAreaRef.current) {
+        zip.file("04_視聴者.png", await captureElement(tabContentAreaRef.current));
+      }
+
+      // 5. Comments - each page
+      const visibleComments: { body: string; hidden?: boolean }[] = ((report as any).comment_texts || []).filter((c: any) => !c.hidden);
+      if (visibleComments.length > 0) {
+        setActiveTab("comments");
+        const totalPages = Math.ceil(visibleComments.length / COMMENTS_PER_PAGE);
+        for (let p = 0; p < totalPages; p++) {
+          setCommentPage(p);
+          await waitForRender(400);
+          if (tabContentAreaRef.current) {
+            const suffix = totalPages > 1 ? `_${p + 1}` : "";
+            const num = String(5 + p).padStart(2, "0");
+            zip.file(`${num}_コメント${suffix}.png`, await captureElement(tabContentAreaRef.current));
+          }
+        }
+      }
+
+      // Restore state
+      setActiveTab(originalTab);
+      setCommentPage(originalCommentPage);
+
+      // Download
       const blob = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
       link.download = `${report.title || "report"}_slides.zip`;
@@ -421,6 +395,8 @@ export default function AnalyticsReportDetail() {
       console.error(e);
       toast({ title: "画像の書き出しに失敗しました", variant: "destructive" });
     } finally {
+      setActiveTab(originalTab);
+      setCommentPage(originalCommentPage);
       setExporting(false);
     }
   };
@@ -565,30 +541,30 @@ export default function AnalyticsReportDetail() {
       {/* === Exportable content start === */}
       <div ref={reportContentRef} className="space-y-6">
       {/* ===== OVERVIEW: YouTube Studio style KPI row ===== */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
-        <KpiTile label="インプレッション" value={fmt(report.impressions)} color={YT_GREEN} />
-        <KpiTile
-          label="クリック率 (CTR)"
-          value={pct(report.ctr)}
-          sub={report.impressions != null && report.views != null ? `${fmt(report.views)} / ${fmt(report.impressions)}` : undefined}
-          color={YT_PURPLE}
-        />
-        <KpiTile label="平均視聴時間" value={report.avg_watch_time || "-"} color={YT_ORANGE} />
-      </div>
-
-      {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <KpiTile label="高評価率" value={pct(report.like_rate)} color={YT_BLUE} />
-        <KpiTile label="視聴維持率" value={pct(report.retention_rate)} />
-        <KpiTile label="総再生時間" value={report.total_watch_time || "-"} />
+      <div ref={kpiSectionRef} className="space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KpiTile label="視聴回数" value={fmt(report.views)} color={YT_BLUE} />
+          <KpiTile label="インプレッション" value={fmt(report.impressions)} color={YT_GREEN} />
+          <KpiTile
+            label="クリック率 (CTR)"
+            value={pct(report.ctr)}
+            sub={report.impressions != null && report.views != null ? `${fmt(report.views)} / ${fmt(report.impressions)}` : undefined}
+            color={YT_PURPLE}
+          />
+          <KpiTile label="平均視聴時間" value={report.avg_watch_time || "-"} color={YT_ORANGE} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <KpiTile label="高評価率" value={pct(report.like_rate)} color={YT_BLUE} />
+          <KpiTile label="視聴維持率" value={pct(report.retention_rate)} />
+          <KpiTile label="総再生時間" value={report.total_watch_time ? `${report.total_watch_time}時間` : "-"} />
+        </div>
       </div>
 
 
       <Separator />
 
       {/* ===== TABS: YouTube Studio style ===== */}
-      <Tabs defaultValue="reach" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="reach">リーチ</TabsTrigger>
           <TabsTrigger value="engagement">エンゲージメント</TabsTrigger>
@@ -597,6 +573,7 @@ export default function AnalyticsReportDetail() {
           <TabsTrigger value="comments">コメント</TabsTrigger>
         </TabsList>
 
+        <div ref={tabContentAreaRef}>
         {/* === REACH TAB === */}
         <TabsContent value="reach" className="space-y-6">
 
@@ -652,7 +629,7 @@ export default function AnalyticsReportDetail() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">総再生時間</p>
-                  <p className="text-2xl font-bold">{report.total_watch_time || "-"}</p>
+                  <p className="text-2xl font-bold">{report.total_watch_time ? `${report.total_watch_time}時間` : "-"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -853,6 +830,7 @@ export default function AnalyticsReportDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+        </div>
       </Tabs>
 
       {/* Manager comment - inside exportable area */}
