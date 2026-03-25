@@ -214,6 +214,7 @@ export default function AnalyticsReportDetail() {
   const [managerComment, setManagerComment] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState("");
   const [commentPage, setCommentPage] = useState(0);
   const [activeTab, setActiveTab] = useState("reach");
   const COMMENTS_PER_PAGE = 5;
@@ -354,20 +355,27 @@ export default function AnalyticsReportDetail() {
     }
   };
 
+
+
   const exportAsImage = async () => {
     setExporting(true);
+    setExportProgress("エクスポートを準備中...");
     const originalTab = activeTab;
     const originalCommentPage = commentPage;
+    // Small delay to let overlay render before starting
+    await waitForRender(300);
     try {
       const zip = new JSZip();
 
       // 1. KPI Overview
+      setExportProgress("概要をキャプチャ中...");
       if (kpiSectionRef.current) {
         await waitForRender(400);
         zip.file("01_概要.png", await captureElement(kpiSectionRef.current));
       }
 
       // 2. Reach tab
+      setExportProgress("リーチをキャプチャ中...");
       if (trafficData.length > 0) {
         setActiveTab("reach");
         await waitForRender();
@@ -378,6 +386,7 @@ export default function AnalyticsReportDetail() {
       }
 
       // 3. Engagement tab
+      setExportProgress("エンゲージメントをキャプチャ中...");
       setActiveTab("engagement");
       await waitForRender();
       if (tabContentAreaRef.current) {
@@ -386,6 +395,7 @@ export default function AnalyticsReportDetail() {
       }
 
       // 4. Audience tab
+      setExportProgress("視聴者データをキャプチャ中...");
       setActiveTab("audience");
       await waitForRender();
       if (tabContentAreaRef.current) {
@@ -396,6 +406,7 @@ export default function AnalyticsReportDetail() {
       // 5. Comments - each page
       const visibleComments: { body: string; hidden?: boolean }[] = ((report as any).comment_texts || []).filter((c: any) => !c.hidden);
       if (visibleComments.length > 0) {
+        setExportProgress("コメントをキャプチャ中...");
         setActiveTab("comments");
         const totalPages = Math.ceil(visibleComments.length / COMMENTS_PER_PAGE);
         for (let p = 0; p < totalPages; p++) {
@@ -456,7 +467,14 @@ export default function AnalyticsReportDetail() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
+      {/* Export overlay to hide tab switching */}
+      {exporting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <p className="text-lg font-medium">{exportProgress}</p>
+          <p className="text-sm text-muted-foreground mt-1">画像を生成しています...</p>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/analytics")}>
