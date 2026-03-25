@@ -394,7 +394,7 @@ export default function AnalyticsReportDetail() {
       zip.file("04_視聴者.png", await renderSlide(audHtml));
 
       // 5. Comment slides (5 per page)
-      const comments: { body: string }[] = (report as any).comment_texts || [];
+      const comments: { body: string; hidden?: boolean }[] = ((report as any).comment_texts || []).filter((c: any) => !c.hidden);
       if (comments.length > 0) {
         const commentPages = Math.ceil(comments.length / COMMENTS_PER_PAGE);
         for (let p = 0; p < commentPages; p++) {
