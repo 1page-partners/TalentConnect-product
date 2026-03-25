@@ -538,7 +538,7 @@ function isScalarValid(value: unknown): boolean {
 
 interface MergeStatus {
   category: string;
-  status: "success" | "used_previous" | "no_data";
+  status: "success" | "used_previous" | "skipped" | "no_data";
   usedPrevious: boolean;
   improved: boolean;
 }
@@ -546,17 +546,29 @@ interface MergeStatus {
 function mergeWithPreviousData(
   previous: Record<string, unknown>,
   next: Record<string, unknown>,
+  processedCategories: Set<string>,
 ): { merged: Record<string, unknown>; mergeStatuses: MergeStatus[] } {
   const merged: Record<string, unknown> = {};
   const mergeStatuses: MergeStatus[] = [];
 
-  // Scalar KPI fields
-  const scalarFields = [
-    "impressions", "views", "ctr", "avg_watch_time", "total_watch_time",
-    "retention_rate", "complete_view_rate", "like_rate",
-  ];
-  for (const field of scalarFields) {
-    if (isScalarValid(next[field])) {
+  // Category-to-scalar mapping
+  const overviewFields = ["impressions", "views", "ctr", "avg_watch_time", "total_watch_time"];
+  const engagementFields = ["retention_rate", "complete_view_rate", "like_rate"];
+
+  // Scalar KPI fields — only merge if their category was processed
+  for (const field of overviewFields) {
+    if (!processedCategories.has("overview")) {
+      merged[field] = previous[field] ?? null;
+    } else if (isScalarValid(next[field])) {
+      merged[field] = next[field];
+    } else {
+      merged[field] = previous[field] ?? null;
+    }
+  }
+  for (const field of engagementFields) {
+    if (!processedCategories.has("engagement")) {
+      merged[field] = previous[field] ?? null;
+    } else if (isScalarValid(next[field])) {
       merged[field] = next[field];
     } else {
       merged[field] = previous[field] ?? null;
@@ -577,7 +589,6 @@ function mergeWithPreviousData(
     { key: "search_terms", category: "search_terms", validator: isDistributionValid },
   ];
 
-  // Group by category for status reporting
   const categoryFieldMap: Record<string, string[]> = {};
   for (const df of distFields) {
     if (!categoryFieldMap[df.category]) categoryFieldMap[df.category] = [];
@@ -585,6 +596,12 @@ function mergeWithPreviousData(
   }
 
   for (const df of distFields) {
+    // If this category was NOT processed, unconditionally keep previous data
+    if (!processedCategories.has(df.category)) {
+      merged[df.key] = previous[df.key] ?? {};
+      continue;
+    }
+
     const newVal = next[df.key];
     const prevVal = previous[df.key];
     const newValid = df.validator(newVal);
@@ -600,7 +617,47 @@ function mergeWithPreviousData(
   }
 
   // Build category-level statuses
-  for (const [category, fields] of Object.entries(categoryFieldMap)) {
+  const allCategories = new Set([
+    ...Object.keys(categoryFieldMap),
+    "overview", "engagement",
+  ]);
+
+  for (const category of allCategories) {
+    if (!processedCategories.has(category)) {
+      mergeStatuses.push({
+        category,
+        status: "skipped",
+        usedPrevious: true,
+        improved: false,
+      });
+      continue;
+    }
+
+    if (category === "overview") {
+      const anyNew = overviewFields.some(f => isScalarValid(next[f]));
+      const anyPrev = overviewFields.some(f => !isScalarValid(next[f]) && isScalarValid(previous[f]));
+      mergeStatuses.push({
+        category,
+        status: anyNew ? "success" : (anyPrev ? "used_previous" : "no_data"),
+        usedPrevious: anyPrev,
+        improved: anyNew,
+      });
+      continue;
+    }
+
+    if (category === "engagement") {
+      const anyNew = engagementFields.some(f => isScalarValid(next[f]));
+      const anyPrev = engagementFields.some(f => !isScalarValid(next[f]) && isScalarValid(previous[f]));
+      mergeStatuses.push({
+        category,
+        status: anyNew ? "success" : (anyPrev ? "used_previous" : "no_data"),
+        usedPrevious: anyPrev,
+        improved: anyNew,
+      });
+      continue;
+    }
+
+    const fields = categoryFieldMap[category] || [];
     const anyNewValid = fields.some(f => {
       const df = distFields.find(d => d.key === f)!;
       return df.validator(next[f]);
@@ -617,28 +674,6 @@ function mergeWithPreviousData(
       improved: anyNewValid,
     });
   }
-
-  // Overview scalars status
-  const overviewFields = ["impressions", "views", "ctr", "avg_watch_time", "total_watch_time"];
-  const overviewNewValid = overviewFields.some(f => isScalarValid(next[f]));
-  const overviewUsedPrev = overviewFields.some(f => !isScalarValid(next[f]) && isScalarValid(previous[f]));
-  mergeStatuses.push({
-    category: "overview",
-    status: overviewNewValid ? "success" : (overviewUsedPrev ? "used_previous" : "no_data"),
-    usedPrevious: overviewUsedPrev,
-    improved: overviewNewValid,
-  });
-
-  // Engagement scalars status
-  const engagementFields = ["retention_rate", "complete_view_rate", "like_rate"];
-  const engNewValid = engagementFields.some(f => isScalarValid(next[f]));
-  const engUsedPrev = engagementFields.some(f => !isScalarValid(next[f]) && isScalarValid(previous[f]));
-  mergeStatuses.push({
-    category: "engagement",
-    status: engNewValid ? "success" : (engUsedPrev ? "used_previous" : "no_data"),
-    usedPrevious: engUsedPrev,
-    improved: engNewValid,
-  });
 
   return { merged, mergeStatuses };
 }
