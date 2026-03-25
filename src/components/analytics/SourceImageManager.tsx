@@ -48,6 +48,9 @@ export default function SourceImageManager({
   const [replacingCategory, setReplacingCategory] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
   const [replacingInModal, setReplacingInModal] = useState(false);
+  const [addingToCategory, setAddingToCategory] = useState<string | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addTargetCategory, setAddTargetCategory] = useState<string>("overview");
 
   const categoryImages: Record<string, string[]> = (report as any).category_images || {};
   const hasCategoryMapping = Object.keys(categoryImages).some(
