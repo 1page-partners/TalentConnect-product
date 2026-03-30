@@ -218,8 +218,9 @@ export default function AnalyticsReportDetail() {
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState("");
   const [commentPage, setCommentPage] = useState(0);
+  const [commentsPerPage, setCommentsPerPage] = useState(10);
   const [activeTab, setActiveTab] = useState("reach");
-  const COMMENTS_PER_PAGE = 5;
+  const COMMENTS_PER_PAGE = commentsPerPage;
   const reportContentRef = useRef<HTMLDivElement>(null);
   const kpiSectionRef = useRef<HTMLDivElement>(null);
   const tabContentAreaRef = useRef<HTMLDivElement>(null);

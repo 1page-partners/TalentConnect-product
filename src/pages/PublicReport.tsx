@@ -113,7 +113,8 @@ function RetentionChart({ retentionRate }: { retentionRate: number | null }) {
 export default function PublicReport() {
   const { token } = useParams<{ token: string }>();
   const [commentPage, setCommentPage] = useState(0);
-  const COMMENTS_PER_PAGE = 5;
+  const [commentsPerPage, setCommentsPerPage] = useState(10);
+  const COMMENTS_PER_PAGE = commentsPerPage;
 
   const { data: report, isLoading, error } = useQuery({
     queryKey: ["public-report", token],
