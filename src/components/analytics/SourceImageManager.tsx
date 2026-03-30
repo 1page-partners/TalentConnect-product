@@ -480,6 +480,28 @@ export default function SourceImageManager({
                     </p>
                   </div>
 
+                  {/* Text input toggle */}
+                  <div className="space-y-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setShowTextInput(prev => ({ ...prev, [category]: !prev[category] }))}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      {showTextInput[category] ? "テキスト入力を閉じる" : "テキストで解析"}
+                    </Button>
+                    {showTextInput[category] && (
+                      <Textarea
+                        placeholder={`「${meta?.label || category}」のデータをテキストで貼り付け（画像の代わりに解析に使用されます）`}
+                        value={categoryTextInputs[category] || ""}
+                        onChange={(e) => setCategoryTextInputs(prev => ({ ...prev, [category]: e.target.value }))}
+                        rows={4}
+                        className="text-xs"
+                      />
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {urls.map((url, i) => (
                       <ImageThumbnail key={i} url={url} index={i} category={category} />
