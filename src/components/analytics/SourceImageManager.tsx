@@ -15,8 +15,12 @@ import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import {
   Image as ImageIcon, RefreshCw, Loader2,
   Eye, ThumbsUp, Globe, Users, Monitor, BarChart3, MousePointerClick,
-  Upload, Plus,
+  Upload, Plus, FileText,
 } from "lucide-react";
+
+const ACCEPTED_TYPES = "image/*,application/pdf";
+const isAcceptedFile = (f: File) => f.type.startsWith("image/") || f.type === "application/pdf";
+const isPdfUrl = (url: string) => url.match(/\.pdf/i) || url.includes("application/pdf");
 
 const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: string }> = {
   overview: { label: "概要", icon: Eye, color: "#1a73e8" },
