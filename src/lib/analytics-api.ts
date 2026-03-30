@@ -47,6 +47,7 @@ export interface CategoryImages {
 export const analyticsApi = {
   async analyzeImages(params: {
     categoryImages?: CategoryImages;
+    categoryTexts?: Record<string, string>;
     imageUrls?: string[];
     campaignId?: string;
     submissionId?: string;
@@ -66,6 +67,10 @@ export const analyticsApi = {
       body.imageUrls = Object.values(params.categoryImages).flat();
     } else if (params.imageUrls) {
       body.imageUrls = params.imageUrls;
+    }
+
+    if (params.categoryTexts) {
+      body.categoryTexts = params.categoryTexts;
     }
 
     const { data, error } = await supabase.functions.invoke("analyze-report-image", {
