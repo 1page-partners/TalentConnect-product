@@ -264,12 +264,19 @@ export default function SourceImageManager({
     input.click();
   };
 
-  // Grouped images
+  // Grouped images - show all known categories (even empty ones for text input)
   const groupedImages: { category: string; urls: string[] }[] = [];
   if (hasCategoryMapping) {
+    // First add categories that have images
     for (const [cat, urls] of Object.entries(categoryImages)) {
       if (urls && urls.length > 0) {
         groupedImages.push({ category: cat, urls });
+      }
+    }
+    // Then add remaining CATEGORY_META categories that are missing (for text-only analysis)
+    for (const cat of Object.keys(CATEGORY_META)) {
+      if (!groupedImages.some(g => g.category === cat)) {
+        groupedImages.push({ category: cat, urls: [] });
       }
     }
   }
