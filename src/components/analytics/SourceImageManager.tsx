@@ -15,8 +15,12 @@ import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
 import {
   Image as ImageIcon, RefreshCw, Loader2,
   Eye, ThumbsUp, Globe, Users, Monitor, BarChart3, MousePointerClick,
-  Upload, Plus,
+  Upload, Plus, FileText,
 } from "lucide-react";
+
+const ACCEPTED_TYPES = "image/*,application/pdf";
+const isAcceptedFile = (f: File) => f.type.startsWith("image/") || f.type === "application/pdf";
+const isPdfUrl = (url: string) => url.match(/\.pdf/i) || url.includes("application/pdf");
 
 const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: string }> = {
   overview: { label: "概要", icon: Eye, color: "#1a73e8" },
@@ -98,16 +102,16 @@ export default function SourceImageManager({
     const files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
 
-    // Filter image files only
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
-    if (imageFiles.length === 0) {
-      toast({ title: "画像ファイルのみアップロード可能です", variant: "destructive" });
+    // Filter image and PDF files
+    const acceptedFiles = Array.from(files).filter(isAcceptedFile);
+    if (acceptedFiles.length === 0) {
+      toast({ title: "画像またはPDFファイルのみアップロード可能です", variant: "destructive" });
       return;
     }
 
     // Create a FileList-like object
     const dt = new DataTransfer();
-    imageFiles.forEach(f => dt.items.add(f));
+    acceptedFiles.forEach(f => dt.items.add(f));
     await handleAddFiles(category, dt.files);
   }, []);
 
@@ -224,7 +228,7 @@ export default function SourceImageManager({
   const triggerFileInput = (onFiles: (files: FileList) => void) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = ACCEPTED_TYPES;
     input.multiple = false;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
@@ -236,7 +240,7 @@ export default function SourceImageManager({
   const triggerMultiFileInput = (category: string) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = ACCEPTED_TYPES;
     input.multiple = true;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
@@ -248,7 +252,7 @@ export default function SourceImageManager({
   const triggerAddFileInput = (category: string) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = ACCEPTED_TYPES;
     input.multiple = true;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
@@ -272,17 +276,25 @@ export default function SourceImageManager({
 
   const ImageThumbnail = ({ url, index, category }: { url: string; index: number; category: string | null }) => {
     const meta = category ? CATEGORY_META[category] : null;
+    const isPdf = isPdfUrl(url);
     return (
       <button
         onClick={() => setSelectedImage({ url, index, category })}
         className="relative block rounded-lg overflow-hidden border border-border hover:border-primary/50 hover:shadow-md transition-all group cursor-pointer text-left"
       >
-        <img
-          src={url}
-          alt={`${meta?.label || "画像"} ${index + 1}`}
-          className="w-full h-auto"
-          loading="lazy"
-        />
+        {isPdf ? (
+          <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center gap-1">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">PDF</span>
+          </div>
+        ) : (
+          <img
+            src={url}
+            alt={`${meta?.label || "画像"} ${index + 1}`}
+            className="w-full h-auto"
+            loading="lazy"
+          />
+        )}
         {/* Category label overlay */}
         {meta && (
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
@@ -353,17 +365,10 @@ export default function SourceImageManager({
               const isDragOver = dragOverCategory === category;
               const isThisCategoryReanalyzing = reanalyzingCategory === category;
 
-              return (
+               return (
                 <div
                   key={category}
-                  className={`space-y-2 rounded-lg p-3 transition-colors ${
-                    isDragOver
-                      ? "bg-primary/10 border-2 border-dashed border-primary"
-                      : "border border-transparent"
-                  }`}
-                  onDragOver={(e) => handleDragOver(e, category)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, category)}
+                  className="space-y-2 rounded-lg p-3 border border-transparent"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -447,16 +452,36 @@ export default function SourceImageManager({
                       </AlertDialog>
                     </div>
                   </div>
+
+                  {/* Drop zone above images */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors ${
+                      isDragOver
+                        ? "border-primary bg-primary/10"
+                        : "border-muted-foreground/20 hover:border-muted-foreground/40"
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, category)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, category)}
+                    onClick={() => triggerAddFileInput(category)}
+                  >
+                    {addingToCategory === category ? (
+                      <Loader2 className="h-5 w-5 mx-auto text-muted-foreground animate-spin" />
+                    ) : (
+                      <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {isDragOver
+                        ? `ここにドロップして「${meta?.label || category}」に追加`
+                        : "画像・PDFをドラッグ＆ドロップまたはクリックして追加"}
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {urls.map((url, i) => (
                       <ImageThumbnail key={i} url={url} index={i} category={category} />
                     ))}
                   </div>
-                  {isDragOver && (
-                    <div className="text-center text-sm text-primary font-medium py-2">
-                      ここにドロップして「{meta?.label || category}」に追加
-                    </div>
-                  )}
                 </div>
               );
             })
@@ -522,15 +547,24 @@ export default function SourceImageManager({
             </div>
           </DialogHeader>
 
-          {/* Full-size image */}
+          {/* Full-size preview */}
           <div className="px-4 pb-2">
             <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
               {selectedImage && (
-                <img
-                  src={selectedImage.url}
-                  alt="解析元画像"
-                  className="w-full h-auto"
-                />
+                isPdfUrl(selectedImage.url) ? (
+                  <iframe
+                    src={`${selectedImage.url}#toolbar=0&navpanes=0`}
+                    className="w-full border-0"
+                    style={{ height: "70vh" }}
+                    title="PDFプレビュー"
+                  />
+                ) : (
+                  <img
+                    src={selectedImage.url}
+                    alt="解析元画像"
+                    className="w-full h-auto"
+                  />
+                )
               )}
             </div>
           </div>
@@ -603,8 +637,8 @@ export default function SourceImageManager({
               画像を選択してアップロード
             </Button>
             <p className="text-xs text-muted-foreground">
-              既存の画像はそのまま保持され、選択した画像が追加されます。
-              カテゴリ欄に画像をドラッグ＆ドロップしても追加できます。
+              既存の画像はそのまま保持され、選択したファイルが追加されます。
+              カテゴリ欄に画像・PDFをドラッグ＆ドロップしても追加できます。
             </p>
           </div>
         </DialogContent>
