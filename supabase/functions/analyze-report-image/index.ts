@@ -879,8 +879,27 @@ serve(async (req) => {
         const msg = e instanceof Error ? e.message : "Unknown";
         categoryResults.comments = { status: "error", error: msg };
       }
+    } else if (Object.keys(catTexts).length > 0) {
+      // Text-only analysis (no images at all)
+      for (const [category, rawText] of Object.entries(catTexts)) {
+        if (!rawText?.trim() || category === "comments") continue;
+        try {
+          console.log(`Processing category (text-only): ${category}`);
+          processedCategories.add(category);
+          const result = await processCategory(LOVABLE_API_KEY, category, [], rawText);
+          categoryResults[category] = result;
+          if (result.ocrText) ocrTexts.push(`--- ${category} ---\n${result.ocrText}`);
+          if (result.status === "success" && result.data) {
+            extracted = { ...extracted, ...result.data };
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Unknown";
+          if (msg === "RATE_LIMIT" || msg === "CREDITS_EXHAUSTED") break;
+          categoryResults[category] = { status: "error", error: msg };
+        }
+      }
     } else {
-      return new Response(JSON.stringify({ error: "No images provided" }), {
+      return new Response(JSON.stringify({ error: "No images or text provided" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
