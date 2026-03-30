@@ -923,6 +923,17 @@ export default function AnalyticsReportDetail() {
                         </Button>
                       </div>
                     )}
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <span className="text-xs text-muted-foreground">表示件数:</span>
+                      {[10, 50, 100].map(n => (
+                        <Button key={n} variant={commentsPerPage === n ? "default" : "outline"} size="sm" className="h-7 px-2 text-xs" onClick={() => { setCommentsPerPage(n); setCommentPage(0); }}>
+                          {n}
+                        </Button>
+                      ))}
+                      <Button variant={commentsPerPage >= 99999 ? "default" : "outline"} size="sm" className="h-7 px-2 text-xs" onClick={() => { setCommentsPerPage(99999); setCommentPage(0); }}>
+                        全件
+                      </Button>
+                    </div>
                   </div>
                 );
               })() : report.comment_images && report.comment_images.length > 0 ? (
