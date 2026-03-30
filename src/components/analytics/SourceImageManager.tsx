@@ -637,8 +637,8 @@ export default function SourceImageManager({
               画像を選択してアップロード
             </Button>
             <p className="text-xs text-muted-foreground">
-              既存の画像はそのまま保持され、選択した画像が追加されます。
-              カテゴリ欄に画像をドラッグ＆ドロップしても追加できます。
+              既存の画像はそのまま保持され、選択したファイルが追加されます。
+              カテゴリ欄に画像・PDFをドラッグ＆ドロップしても追加できます。
             </p>
           </div>
         </DialogContent>
