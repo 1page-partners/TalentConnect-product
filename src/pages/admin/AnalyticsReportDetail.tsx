@@ -1000,7 +1000,9 @@ export default function AnalyticsReportDetail() {
         <SourceImageManager
           report={report}
           onReanalyze={handleReanalyze}
+          onCategoryReanalyze={handleCategoryReanalyze}
           reanalyzing={reanalyzing}
+          reanalyzingCategory={reanalyzingCategory}
           onUpdate={() => queryClient.invalidateQueries({ queryKey: ["analytics-report", id] })}
         />
       )}
