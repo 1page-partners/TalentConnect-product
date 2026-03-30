@@ -212,6 +212,7 @@ export default function AnalyticsReportDetail() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<AnalyticsReport>>({});
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzingCategory, setReanalyzingCategory] = useState<string | null>(null);
   const [managerComment, setManagerComment] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [exporting, setExporting] = useState(false);
