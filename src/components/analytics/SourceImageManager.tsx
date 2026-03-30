@@ -547,15 +547,24 @@ export default function SourceImageManager({
             </div>
           </DialogHeader>
 
-          {/* Full-size image */}
+          {/* Full-size preview */}
           <div className="px-4 pb-2">
             <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
               {selectedImage && (
-                <img
-                  src={selectedImage.url}
-                  alt="解析元画像"
-                  className="w-full h-auto"
-                />
+                isPdfUrl(selectedImage.url) ? (
+                  <iframe
+                    src={`${selectedImage.url}#toolbar=0&navpanes=0`}
+                    className="w-full border-0"
+                    style={{ height: "70vh" }}
+                    title="PDFプレビュー"
+                  />
+                ) : (
+                  <img
+                    src={selectedImage.url}
+                    alt="解析元画像"
+                    className="w-full h-auto"
+                  />
+                )
               )}
             </div>
           </div>
