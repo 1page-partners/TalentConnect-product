@@ -37,7 +37,7 @@ const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: st
 interface SourceImageManagerProps {
   report: AnalyticsReport;
   onReanalyze: () => void;
-  onCategoryReanalyze: (category: string) => Promise<void>;
+  onCategoryReanalyze: (category: string, text?: string) => Promise<void>;
   reanalyzing: boolean;
   reanalyzingCategory: string | null;
   onUpdate: () => void;
