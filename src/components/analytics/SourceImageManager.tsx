@@ -66,6 +66,8 @@ export default function SourceImageManager({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addTargetCategory, setAddTargetCategory] = useState<string>("overview");
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+  const [categoryTextInputs, setCategoryTextInputs] = useState<Record<string, string>>({});
+  const [showTextInput, setShowTextInput] = useState<Record<string, boolean>>({});
 
   const categoryImages: Record<string, string[]> = (report as any).category_images || {};
   const hasCategoryMapping = Object.keys(categoryImages).some(
