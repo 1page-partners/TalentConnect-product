@@ -776,6 +776,9 @@ serve(async (req) => {
     const ocrTexts: string[] = [];
     const processedCategories = new Set<string>();
 
+    // Merge categoryTexts: raw text input per category (optional)
+    const catTexts: Record<string, string> = (categoryTexts && typeof categoryTexts === "object") ? categoryTexts : {};
+
     if (categoryImages && typeof categoryImages === "object") {
       commentImages = (categoryImages as CategoryImages).comments || [];
 
@@ -784,14 +787,22 @@ serve(async (req) => {
 
       allImageUrls = Object.values(analyzeCategories).flat().filter(Boolean) as string[];
 
-      const categoryEntries = Object.entries(analyzeCategories)
-        .filter(([_, urls]) => urls && urls.length > 0);
+      // Collect all categories to process: those with images OR text
+      const categoriesToProcess = new Set<string>();
+      for (const cat of Object.keys(analyzeCategories)) {
+        if ((analyzeCategories[cat] as string[])?.length > 0) categoriesToProcess.add(cat);
+      }
+      for (const cat of Object.keys(catTexts)) {
+        if (cat !== "comments" && catTexts[cat]?.trim()) categoriesToProcess.add(cat);
+      }
 
-      for (const [category, urls] of categoryEntries) {
+      for (const category of categoriesToProcess) {
+        const urls = (analyzeCategories[category] || []) as string[];
+        const rawText = catTexts[category] || undefined;
         try {
-          console.log(`Processing category: ${category} (${(urls as string[]).length} images)`);
+          console.log(`Processing category: ${category} (${urls.length} images${rawText ? `, +text` : ""})`);
           processedCategories.add(category);
-          const result = await processCategory(LOVABLE_API_KEY, category, urls as string[]);
+          const result = await processCategory(LOVABLE_API_KEY, category, urls, rawText);
           categoryResults[category] = result;
 
           if (result.ocrText) ocrTexts.push(`--- ${category} ---\n${result.ocrText}`);
