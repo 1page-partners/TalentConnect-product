@@ -240,7 +240,7 @@ export default function SourceImageManager({
   const triggerMultiFileInput = (category: string) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = ACCEPTED_TYPES;
     input.multiple = true;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
@@ -252,7 +252,7 @@ export default function SourceImageManager({
   const triggerAddFileInput = (category: string) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = ACCEPTED_TYPES;
     input.multiple = true;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
