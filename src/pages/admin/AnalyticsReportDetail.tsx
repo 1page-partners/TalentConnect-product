@@ -298,6 +298,38 @@ export default function AnalyticsReportDetail() {
     }
   };
 
+  const handleCategoryReanalyze = async (category: string) => {
+    const catImages = (report as any).category_images as Record<string, string[]> | undefined;
+    const urls = catImages?.[category];
+    if (!urls?.length && category !== "comments") {
+      toast({ title: "このカテゴリには画像がありません", variant: "destructive" });
+      return;
+    }
+    setReanalyzingCategory(category);
+    try {
+      // Send only this category's images
+      const singleCategoryImages: Record<string, string[]> = {};
+      if (category === "comments") {
+        singleCategoryImages.comments = catImages?.comments || report.comment_images || [];
+      } else {
+        singleCategoryImages[category] = urls!;
+      }
+
+      await analyticsApi.analyzeImages({
+        categoryImages: singleCategoryImages as any,
+        campaignId: report.campaign_id || undefined,
+        title: report.title,
+        reportId: report.id,
+      });
+      queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
+      toast({ title: `「${category}」の再解析が完了しました` });
+    } catch {
+      toast({ title: "再解析エラー", variant: "destructive" });
+    } finally {
+      setReanalyzingCategory(null);
+    }
+  };
+
   const saveManagerComment = async () => {
     setSavingComment(true);
     try {
