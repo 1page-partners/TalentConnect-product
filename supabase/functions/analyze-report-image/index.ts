@@ -361,6 +361,7 @@ async function structureCommentsFromImages(apiKey: string, imageUrls: string[]):
 - 各コメントは個別のオブジェクトにする
 - 返信コメントも本文のみ抽出する
 - 絵文字はそのまま保持する
+- コメントは絶対に翻訳しない。原文の言語のままそのまま出力する（日本語→日本語、英語→英語、韓国語→韓国語など）
 
 出力形式（厳守）：
 {
