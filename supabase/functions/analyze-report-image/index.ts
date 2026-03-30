@@ -726,6 +726,9 @@ serve(async (req) => {
 
     let previousData: Record<string, unknown> | null = null;
     let previousCommentTexts: Array<{ body: string }> = [];
+    let previousCategoryImages: Record<string, string[]> = {};
+    let previousSourceImages: string[] = [];
+    let previousCommentImages: string[] = [];
     if (reportId) {
       const { data: prevReport } = await serviceClient
         .from("analytics_reports")
@@ -752,6 +755,9 @@ serve(async (req) => {
         previousCommentTexts = Array.isArray(prevReport.comment_texts)
           ? prevReport.comment_texts as Array<{ body: string }>
           : [];
+        previousCategoryImages = (prevReport.category_images as Record<string, string[]>) || {};
+        previousSourceImages = Array.isArray(prevReport.source_images) ? prevReport.source_images as string[] : [];
+        previousCommentImages = Array.isArray(prevReport.comment_images) ? prevReport.comment_images as string[] : [];
         console.log("Loaded previous data for merge protection");
       }
     }
@@ -904,6 +910,28 @@ serve(async (req) => {
       });
     }
 
+    // Merge category_images with previous data (preserve unprocessed categories)
+    const mergedCategoryImages: Record<string, string[]> = { ...previousCategoryImages };
+    if (categoryImages && typeof categoryImages === "object") {
+      for (const [cat, urls] of Object.entries(categoryImages as Record<string, string[]>)) {
+        if (urls && urls.length > 0) {
+          mergedCategoryImages[cat] = urls;
+        }
+      }
+    }
+
+    // Rebuild source_images from merged category_images (all non-comment images)
+    const mergedSourceImages = Object.entries(mergedCategoryImages)
+      .filter(([cat]) => cat !== "comments")
+      .flatMap(([_, urls]) => urls)
+      .filter(Boolean);
+    // Use merged source images if we have category mapping, otherwise keep allImageUrls
+    const finalSourceImages = mergedSourceImages.length > 0 ? mergedSourceImages : (allImageUrls.length > 0 ? allImageUrls : previousSourceImages);
+
+    // Preserve comment images if not re-analyzed
+    const finalCommentImages = commentImages.length > 0 ? commentImages : previousCommentImages;
+    const finalCommentTexts = commentTexts.length > 0 ? commentTexts : previousCommentTexts;
+
     // Save to DB
     const reportData = {
       campaign_id: campaignId || null,
@@ -924,10 +952,10 @@ serve(async (req) => {
       audience_region: extracted.audience_region ?? {},
       devices: extracted.devices ?? {},
       raw_text: ocrTexts.join("\n\n") || null,
-      source_images: allImageUrls,
-      comment_images: commentImages,
-      comment_texts: commentTexts,
-      category_images: categoryImages || {},
+      source_images: finalSourceImages,
+      comment_images: finalCommentImages,
+      comment_texts: finalCommentTexts,
+      category_images: mergedCategoryImages,
       updated_at: new Date().toISOString(),
     };
 
