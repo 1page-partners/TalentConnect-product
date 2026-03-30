@@ -498,7 +498,9 @@ export default function AnalyticsReportDetail() {
     ...d,
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));
-  const trafficDonut = trafficData.map((d, i) => ({
+  const trafficDonut = [...trafficData]
+    .sort((a, b) => b.value - a.value)
+    .map((d, i) => ({
     ...d,
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));

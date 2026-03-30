@@ -159,7 +159,7 @@ export default function PublicReport() {
 
   const genderDonut = genderData.map((d, i) => ({ ...d, color: GENDER_COLORS[d.name.toLowerCase()] || GENDER_COLORS[d.name] || DONUT_COLORS[i] }));
   const deviceDonut = deviceData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }));
-  const trafficDonut = trafficData.map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }));
+  const trafficDonut = [...trafficData].sort((a, b) => b.value - a.value).map((d, i) => ({ ...d, color: DONUT_COLORS[i % DONUT_COLORS.length] }));
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
