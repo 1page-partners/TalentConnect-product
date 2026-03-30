@@ -212,6 +212,7 @@ export default function AnalyticsReportDetail() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<AnalyticsReport>>({});
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzingCategory, setReanalyzingCategory] = useState<string | null>(null);
   const [managerComment, setManagerComment] = useState<string | null>(null);
   const [savingComment, setSavingComment] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -294,6 +295,38 @@ export default function AnalyticsReportDetail() {
       toast({ title: "再解析エラー", variant: "destructive" });
     } finally {
       setReanalyzing(false);
+    }
+  };
+
+  const handleCategoryReanalyze = async (category: string) => {
+    const catImages = (report as any).category_images as Record<string, string[]> | undefined;
+    const urls = catImages?.[category];
+    if (!urls?.length && category !== "comments") {
+      toast({ title: "このカテゴリには画像がありません", variant: "destructive" });
+      return;
+    }
+    setReanalyzingCategory(category);
+    try {
+      // Send only this category's images
+      const singleCategoryImages: Record<string, string[]> = {};
+      if (category === "comments") {
+        singleCategoryImages.comments = catImages?.comments || report.comment_images || [];
+      } else {
+        singleCategoryImages[category] = urls!;
+      }
+
+      await analyticsApi.analyzeImages({
+        categoryImages: singleCategoryImages as any,
+        campaignId: report.campaign_id || undefined,
+        title: report.title,
+        reportId: report.id,
+      });
+      queryClient.invalidateQueries({ queryKey: ["analytics-report", id] });
+      toast({ title: `「${category}」の再解析が完了しました` });
+    } catch {
+      toast({ title: "再解析エラー", variant: "destructive" });
+    } finally {
+      setReanalyzingCategory(null);
     }
   };
 
@@ -474,11 +507,13 @@ export default function AnalyticsReportDetail() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto relative">
       {/* Re-analysis overlay */}
-      {reanalyzing && (
+      {(reanalyzing || reanalyzingCategory) && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <div className="text-center space-y-1">
-            <p className="text-lg font-semibold">再解析中...</p>
+            <p className="text-lg font-semibold">
+              {reanalyzingCategory ? `「${reanalyzingCategory}」を再解析中...` : "再解析中..."}
+            </p>
             <p className="text-sm text-muted-foreground">画像を解析しています。しばらくお待ちください。</p>
           </div>
         </div>
@@ -967,7 +1002,9 @@ export default function AnalyticsReportDetail() {
         <SourceImageManager
           report={report}
           onReanalyze={handleReanalyze}
+          onCategoryReanalyze={handleCategoryReanalyze}
           reanalyzing={reanalyzing}
+          reanalyzingCategory={reanalyzingCategory}
           onUpdate={() => queryClient.invalidateQueries({ queryKey: ["analytics-report", id] })}
         />
       )}
