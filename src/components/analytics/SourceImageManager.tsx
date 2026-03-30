@@ -102,16 +102,16 @@ export default function SourceImageManager({
     const files = e.dataTransfer.files;
     if (!files || files.length === 0) return;
 
-    // Filter image files only
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
-    if (imageFiles.length === 0) {
-      toast({ title: "画像ファイルのみアップロード可能です", variant: "destructive" });
+    // Filter image and PDF files
+    const acceptedFiles = Array.from(files).filter(isAcceptedFile);
+    if (acceptedFiles.length === 0) {
+      toast({ title: "画像またはPDFファイルのみアップロード可能です", variant: "destructive" });
       return;
     }
 
     // Create a FileList-like object
     const dt = new DataTransfer();
-    imageFiles.forEach(f => dt.items.add(f));
+    acceptedFiles.forEach(f => dt.items.add(f));
     await handleAddFiles(category, dt.files);
   }, []);
 
