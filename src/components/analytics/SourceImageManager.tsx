@@ -276,17 +276,25 @@ export default function SourceImageManager({
 
   const ImageThumbnail = ({ url, index, category }: { url: string; index: number; category: string | null }) => {
     const meta = category ? CATEGORY_META[category] : null;
+    const isPdf = isPdfUrl(url);
     return (
       <button
         onClick={() => setSelectedImage({ url, index, category })}
         className="relative block rounded-lg overflow-hidden border border-border hover:border-primary/50 hover:shadow-md transition-all group cursor-pointer text-left"
       >
-        <img
-          src={url}
-          alt={`${meta?.label || "画像"} ${index + 1}`}
-          className="w-full h-auto"
-          loading="lazy"
-        />
+        {isPdf ? (
+          <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center gap-1">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">PDF</span>
+          </div>
+        ) : (
+          <img
+            src={url}
+            alt={`${meta?.label || "画像"} ${index + 1}`}
+            className="w-full h-auto"
+            loading="lazy"
+          />
+        )}
         {/* Category label overlay */}
         {meta && (
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
