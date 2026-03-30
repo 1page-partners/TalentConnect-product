@@ -507,11 +507,13 @@ export default function AnalyticsReportDetail() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto relative">
       {/* Re-analysis overlay */}
-      {reanalyzing && (
+      {(reanalyzing || reanalyzingCategory) && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <div className="text-center space-y-1">
-            <p className="text-lg font-semibold">再解析中...</p>
+            <p className="text-lg font-semibold">
+              {reanalyzingCategory ? `「${reanalyzingCategory}」を再解析中...` : "再解析中..."}
+            </p>
             <p className="text-sm text-muted-foreground">画像を解析しています。しばらくお待ちください。</p>
           </div>
         </div>
