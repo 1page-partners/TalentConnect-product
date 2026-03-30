@@ -715,7 +715,7 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { imageUrls, categoryImages, campaignId, submissionId, title, reportId } = await req.json();
+    const { imageUrls, categoryImages, categoryTexts, campaignId, submissionId, title, reportId } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
