@@ -113,7 +113,8 @@ function RetentionChart({ retentionRate }: { retentionRate: number | null }) {
 export default function PublicReport() {
   const { token } = useParams<{ token: string }>();
   const [commentPage, setCommentPage] = useState(0);
-  const COMMENTS_PER_PAGE = 5;
+  const [commentsPerPage, setCommentsPerPage] = useState(10);
+  const COMMENTS_PER_PAGE = commentsPerPage;
 
   const { data: report, isLoading, error } = useQuery({
     queryKey: ["public-report", token],
@@ -309,6 +310,17 @@ export default function PublicReport() {
                           </Button>
                         </div>
                       )}
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <span className="text-xs text-gray-400">表示件数:</span>
+                        {[10, 50, 100].map(n => (
+                          <Button key={n} variant={commentsPerPage === n ? "default" : "outline"} size="sm" className="h-7 px-2 text-xs" onClick={() => { setCommentsPerPage(n); setCommentPage(0); }}>
+                            {n}
+                          </Button>
+                        ))}
+                        <Button variant={commentsPerPage >= 99999 ? "default" : "outline"} size="sm" className="h-7 px-2 text-xs" onClick={() => { setCommentsPerPage(99999); setCommentPage(0); }}>
+                          全件
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
