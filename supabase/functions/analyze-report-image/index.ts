@@ -435,19 +435,25 @@ async function processCategory(
   apiKey: string,
   category: string,
   imageUrls: string[],
+  rawText?: string,
 ): Promise<CategoryResult> {
-  if (!imageUrls || imageUrls.length === 0) {
-    return { status: "error", error: "No images" };
-  }
-
   try {
-    // Phase 1: OCR
-    console.log(`[${category}] Phase 1: OCR extraction...`);
-    const ocrText = await extractOcrText(apiKey, imageUrls, CATEGORY_LABELS[category] ?? category);
+    let ocrText = rawText || "";
+
+    // Phase 1: OCR (skip if raw text is provided)
     if (!ocrText) {
-      return { status: "error", error: "OCR returned empty", ocrText: "" };
+      if (!imageUrls || imageUrls.length === 0) {
+        return { status: "error", error: "No images or text" };
+      }
+      console.log(`[${category}] Phase 1: OCR extraction...`);
+      ocrText = await extractOcrText(apiKey, imageUrls, CATEGORY_LABELS[category] ?? category);
+      if (!ocrText) {
+        return { status: "error", error: "OCR returned empty", ocrText: "" };
+      }
+    } else {
+      console.log(`[${category}] Skipping OCR — raw text provided (${ocrText.length} chars)`);
     }
-    console.log(`[${category}] OCR extracted ${ocrText.length} chars`);
+    console.log(`[${category}] Text length: ${ocrText.length} chars`);
 
     // Phase 2: Structure
     console.log(`[${category}] Phase 2: Structuring...`);
