@@ -726,6 +726,9 @@ serve(async (req) => {
 
     let previousData: Record<string, unknown> | null = null;
     let previousCommentTexts: Array<{ body: string }> = [];
+    let previousCategoryImages: Record<string, string[]> = {};
+    let previousSourceImages: string[] = [];
+    let previousCommentImages: string[] = [];
     if (reportId) {
       const { data: prevReport } = await serviceClient
         .from("analytics_reports")
@@ -752,6 +755,9 @@ serve(async (req) => {
         previousCommentTexts = Array.isArray(prevReport.comment_texts)
           ? prevReport.comment_texts as Array<{ body: string }>
           : [];
+        previousCategoryImages = (prevReport.category_images as Record<string, string[]>) || {};
+        previousSourceImages = Array.isArray(prevReport.source_images) ? prevReport.source_images as string[] : [];
+        previousCommentImages = Array.isArray(prevReport.comment_images) ? prevReport.comment_images as string[] : [];
         console.log("Loaded previous data for merge protection");
       }
     }
