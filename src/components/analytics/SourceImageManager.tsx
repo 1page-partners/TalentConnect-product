@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useCallback, type DragEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { analyticsApi, type AnalyticsReport } from "@/lib/analytics-api";
@@ -27,7 +32,9 @@ const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: st
 interface SourceImageManagerProps {
   report: AnalyticsReport;
   onReanalyze: () => void;
+  onCategoryReanalyze: (category: string) => Promise<void>;
   reanalyzing: boolean;
+  reanalyzingCategory: string | null;
   onUpdate: () => void;
 }
 
@@ -40,7 +47,9 @@ interface SelectedImage {
 export default function SourceImageManager({
   report,
   onReanalyze,
+  onCategoryReanalyze,
   reanalyzing,
+  reanalyzingCategory,
   onUpdate,
 }: SourceImageManagerProps) {
   const { toast } = useToast();
@@ -51,6 +60,7 @@ export default function SourceImageManager({
   const [addingToCategory, setAddingToCategory] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addTargetCategory, setAddTargetCategory] = useState<string>("overview");
+  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
 
   const categoryImages: Record<string, string[]> = (report as any).category_images || {};
   const hasCategoryMapping = Object.keys(categoryImages).some(
@@ -67,6 +77,40 @@ export default function SourceImageManager({
     }
   }
 
+  // --- Drag and drop handlers ---
+  const handleDragOver = useCallback((e: DragEvent, category: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(category);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(null);
+  }, []);
+
+  const handleDrop = useCallback(async (e: DragEvent, category: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverCategory(null);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    // Filter image files only
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      toast({ title: "画像ファイルのみアップロード可能です", variant: "destructive" });
+      return;
+    }
+
+    // Create a FileList-like object
+    const dt = new DataTransfer();
+    imageFiles.forEach(f => dt.items.add(f));
+    await handleAddFiles(category, dt.files);
+  }, []);
+
   const handleReplaceFiles = async (category: string, files: FileList) => {
     setReplacingCategory(category);
     try {
@@ -77,12 +121,12 @@ export default function SourceImageManager({
       const allSourceImages = Object.entries(updatedCategoryImages)
         .filter(([k]) => k !== "comments")
         .flatMap(([, v]) => v || []);
-      const commentImages = updatedCategoryImages.comments || report.comment_images || [];
+      const commentImgs = updatedCategoryImages.comments || report.comment_images || [];
 
       await analyticsApi.update(report.id, {
         category_images: updatedCategoryImages,
         source_images: allSourceImages,
-        comment_images: commentImages,
+        comment_images: commentImgs,
       } as any);
 
       toast({ title: `${CATEGORY_META[category]?.label || category}の画像を差し替えました` });
@@ -116,12 +160,12 @@ export default function SourceImageManager({
         const allSourceImages = Object.entries(updatedCategoryImages)
           .filter(([k]) => k !== "comments")
           .flatMap(([, v]) => v || []);
-        const commentImages = updatedCategoryImages.comments || report.comment_images || [];
+        const commentImgs = updatedCategoryImages.comments || report.comment_images || [];
 
         await analyticsApi.update(report.id, {
           category_images: updatedCategoryImages,
           source_images: allSourceImages,
-          comment_images: commentImages,
+          comment_images: commentImgs,
         } as any);
       } else {
         // Uncategorized — replace in source_images
@@ -258,6 +302,8 @@ export default function SourceImageManager({
     );
   };
 
+  const isBusy = reanalyzing || !!reanalyzingCategory;
+
   return (
     <>
       <Card>
@@ -278,7 +324,7 @@ export default function SourceImageManager({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAddDialog(true)}
-                disabled={isUploading}
+                disabled={isUploading || isBusy}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 画像を追加
@@ -287,14 +333,14 @@ export default function SourceImageManager({
                 variant="outline"
                 size="sm"
                 onClick={onReanalyze}
-                disabled={reanalyzing}
+                disabled={isBusy}
               >
                 {reanalyzing ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-1" />
                 )}
-                再解析
+                全体再解析
               </Button>
             </div>
           </div>
@@ -304,8 +350,21 @@ export default function SourceImageManager({
             groupedImages.map(({ category, urls }) => {
               const meta = CATEGORY_META[category];
               const Icon = meta?.icon || ImageIcon;
+              const isDragOver = dragOverCategory === category;
+              const isThisCategoryReanalyzing = reanalyzingCategory === category;
+
               return (
-                <div key={category} className="space-y-2">
+                <div
+                  key={category}
+                  className={`space-y-2 rounded-lg p-3 transition-colors ${
+                    isDragOver
+                      ? "bg-primary/10 border-2 border-dashed border-primary"
+                      : "border border-transparent"
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, category)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, category)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
@@ -329,7 +388,7 @@ export default function SourceImageManager({
                         variant="ghost"
                         size="sm"
                         className="text-xs"
-                        disabled={addingToCategory === category || isUploading}
+                        disabled={addingToCategory === category || isUploading || isBusy}
                         onClick={() => triggerAddFileInput(category)}
                       >
                         {addingToCategory === category ? (
@@ -343,7 +402,7 @@ export default function SourceImageManager({
                         variant="ghost"
                         size="sm"
                         className="text-xs"
-                        disabled={replacingCategory === category || isUploading}
+                        disabled={replacingCategory === category || isUploading || isBusy}
                         onClick={() => triggerMultiFileInput(category)}
                       >
                         {replacingCategory === category ? (
@@ -353,6 +412,39 @@ export default function SourceImageManager({
                         )}
                         一括差し替え
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            disabled={isBusy || isUploading}
+                          >
+                            {isThisCategoryReanalyzing ? (
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            ) : (
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                            )}
+                            再解析
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              「{meta?.label || category}」を再解析しますか？
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              このカテゴリの画像のみ再解析します。他のカテゴリのデータはそのまま保持されます。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => onCategoryReanalyze(category)}>
+                              再解析を実行
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -360,6 +452,11 @@ export default function SourceImageManager({
                       <ImageThumbnail key={i} url={url} index={i} category={category} />
                     ))}
                   </div>
+                  {isDragOver && (
+                    <div className="text-center text-sm text-primary font-medium py-2">
+                      ここにドロップして「{meta?.label || category}」に追加
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -507,6 +604,7 @@ export default function SourceImageManager({
             </Button>
             <p className="text-xs text-muted-foreground">
               既存の画像はそのまま保持され、選択した画像が追加されます。
+              カテゴリ欄に画像をドラッグ＆ドロップしても追加できます。
             </p>
           </div>
         </DialogContent>
