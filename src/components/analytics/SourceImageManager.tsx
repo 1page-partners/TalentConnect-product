@@ -365,17 +365,10 @@ export default function SourceImageManager({
               const isDragOver = dragOverCategory === category;
               const isThisCategoryReanalyzing = reanalyzingCategory === category;
 
-              return (
+               return (
                 <div
                   key={category}
-                  className={`space-y-2 rounded-lg p-3 transition-colors ${
-                    isDragOver
-                      ? "bg-primary/10 border-2 border-dashed border-primary"
-                      : "border border-transparent"
-                  }`}
-                  onDragOver={(e) => handleDragOver(e, category)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, category)}
+                  className="space-y-2 rounded-lg p-3 border border-transparent"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -459,15 +452,38 @@ export default function SourceImageManager({
                       </AlertDialog>
                     </div>
                   </div>
+
+                  {/* Drop zone above images */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors ${
+                      isDragOver
+                        ? "border-primary bg-primary/10"
+                        : "border-muted-foreground/20 hover:border-muted-foreground/40"
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, category)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, category)}
+                    onClick={() => triggerAddFileInput(category)}
+                  >
+                    {addingToCategory === category ? (
+                      <Loader2 className="h-5 w-5 mx-auto text-muted-foreground animate-spin" />
+                    ) : (
+                      <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {isDragOver
+                        ? `ここにドロップして「${meta?.label || category}」に追加`
+                        : "画像・PDFをドラッグ＆ドロップまたはクリックして追加"}
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {urls.map((url, i) => (
                       <ImageThumbnail key={i} url={url} index={i} category={category} />
                     ))}
                   </div>
-                  {isDragOver && (
-                    <div className="text-center text-sm text-primary font-medium py-2">
-                      ここにドロップして「{meta?.label || category}」に追加
-                    </div>
+                </div>
+              );
                   )}
                 </div>
               );
