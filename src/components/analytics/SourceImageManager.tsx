@@ -228,7 +228,7 @@ export default function SourceImageManager({
   const triggerFileInput = (onFiles: (files: FileList) => void) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = ACCEPTED_TYPES;
     input.multiple = false;
     input.onchange = (e) => {
       const files = (e.target as HTMLInputElement).files;
