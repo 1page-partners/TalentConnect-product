@@ -447,7 +447,7 @@ export default function SourceImageManager({
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onCategoryReanalyze(category)}>
+                            <AlertDialogAction onClick={() => onCategoryReanalyze(category, categoryTextInputs[category]?.trim() || undefined)}>
                               再解析を実行
                             </AlertDialogAction>
                           </AlertDialogFooter>
