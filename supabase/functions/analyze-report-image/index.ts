@@ -435,19 +435,25 @@ async function processCategory(
   apiKey: string,
   category: string,
   imageUrls: string[],
+  rawText?: string,
 ): Promise<CategoryResult> {
-  if (!imageUrls || imageUrls.length === 0) {
-    return { status: "error", error: "No images" };
-  }
-
   try {
-    // Phase 1: OCR
-    console.log(`[${category}] Phase 1: OCR extraction...`);
-    const ocrText = await extractOcrText(apiKey, imageUrls, CATEGORY_LABELS[category] ?? category);
+    let ocrText = rawText || "";
+
+    // Phase 1: OCR (skip if raw text is provided)
     if (!ocrText) {
-      return { status: "error", error: "OCR returned empty", ocrText: "" };
+      if (!imageUrls || imageUrls.length === 0) {
+        return { status: "error", error: "No images or text" };
+      }
+      console.log(`[${category}] Phase 1: OCR extraction...`);
+      ocrText = await extractOcrText(apiKey, imageUrls, CATEGORY_LABELS[category] ?? category);
+      if (!ocrText) {
+        return { status: "error", error: "OCR returned empty", ocrText: "" };
+      }
+    } else {
+      console.log(`[${category}] Skipping OCR — raw text provided (${ocrText.length} chars)`);
     }
-    console.log(`[${category}] OCR extracted ${ocrText.length} chars`);
+    console.log(`[${category}] Text length: ${ocrText.length} chars`);
 
     // Phase 2: Structure
     console.log(`[${category}] Phase 2: Structuring...`);
@@ -709,7 +715,7 @@ serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub;
-    const { imageUrls, categoryImages, campaignId, submissionId, title, reportId } = await req.json();
+    const { imageUrls, categoryImages, categoryTexts, campaignId, submissionId, title, reportId } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -770,6 +776,9 @@ serve(async (req) => {
     const ocrTexts: string[] = [];
     const processedCategories = new Set<string>();
 
+    // Merge categoryTexts: raw text input per category (optional)
+    const catTexts: Record<string, string> = (categoryTexts && typeof categoryTexts === "object") ? categoryTexts : {};
+
     if (categoryImages && typeof categoryImages === "object") {
       commentImages = (categoryImages as CategoryImages).comments || [];
 
@@ -778,14 +787,22 @@ serve(async (req) => {
 
       allImageUrls = Object.values(analyzeCategories).flat().filter(Boolean) as string[];
 
-      const categoryEntries = Object.entries(analyzeCategories)
-        .filter(([_, urls]) => urls && urls.length > 0);
+      // Collect all categories to process: those with images OR text
+      const categoriesToProcess = new Set<string>();
+      for (const cat of Object.keys(analyzeCategories)) {
+        if ((analyzeCategories[cat] as string[])?.length > 0) categoriesToProcess.add(cat);
+      }
+      for (const cat of Object.keys(catTexts)) {
+        if (cat !== "comments" && catTexts[cat]?.trim()) categoriesToProcess.add(cat);
+      }
 
-      for (const [category, urls] of categoryEntries) {
+      for (const category of categoriesToProcess) {
+        const urls = (analyzeCategories[category] || []) as string[];
+        const rawText = catTexts[category] || undefined;
         try {
-          console.log(`Processing category: ${category} (${(urls as string[]).length} images)`);
+          console.log(`Processing category: ${category} (${urls.length} images${rawText ? `, +text` : ""})`);
           processedCategories.add(category);
-          const result = await processCategory(LOVABLE_API_KEY, category, urls as string[]);
+          const result = await processCategory(LOVABLE_API_KEY, category, urls, rawText);
           categoryResults[category] = result;
 
           if (result.ocrText) ocrTexts.push(`--- ${category} ---\n${result.ocrText}`);
@@ -862,8 +879,27 @@ serve(async (req) => {
         const msg = e instanceof Error ? e.message : "Unknown";
         categoryResults.comments = { status: "error", error: msg };
       }
+    } else if (Object.keys(catTexts).length > 0) {
+      // Text-only analysis (no images at all)
+      for (const [category, rawText] of Object.entries(catTexts)) {
+        if (!rawText?.trim() || category === "comments") continue;
+        try {
+          console.log(`Processing category (text-only): ${category}`);
+          processedCategories.add(category);
+          const result = await processCategory(LOVABLE_API_KEY, category, [], rawText);
+          categoryResults[category] = result;
+          if (result.ocrText) ocrTexts.push(`--- ${category} ---\n${result.ocrText}`);
+          if (result.status === "success" && result.data) {
+            extracted = { ...extracted, ...result.data };
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Unknown";
+          if (msg === "RATE_LIMIT" || msg === "CREDITS_EXHAUSTED") break;
+          categoryResults[category] = { status: "error", error: msg };
+        }
+      }
     } else {
-      return new Response(JSON.stringify({ error: "No images provided" }), {
+      return new Response(JSON.stringify({ error: "No images or text provided" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

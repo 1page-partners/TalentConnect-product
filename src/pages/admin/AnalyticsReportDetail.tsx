@@ -299,11 +299,11 @@ export default function AnalyticsReportDetail() {
     }
   };
 
-  const handleCategoryReanalyze = async (category: string) => {
+  const handleCategoryReanalyze = async (category: string, text?: string) => {
     const catImages = (report as any).category_images as Record<string, string[]> | undefined;
     const urls = catImages?.[category];
-    if (!urls?.length && category !== "comments") {
-      toast({ title: "このカテゴリには画像がありません", variant: "destructive" });
+    if (!urls?.length && category !== "comments" && !text) {
+      toast({ title: "このカテゴリには画像またはテキストがありません", variant: "destructive" });
       return;
     }
     setReanalyzingCategory(category);
@@ -313,11 +313,17 @@ export default function AnalyticsReportDetail() {
       if (category === "comments") {
         singleCategoryImages.comments = catImages?.comments || report.comment_images || [];
       } else {
-        singleCategoryImages[category] = urls!;
+        singleCategoryImages[category] = urls || [];
+      }
+
+      const categoryTexts: Record<string, string> = {};
+      if (text) {
+        categoryTexts[category] = text;
       }
 
       await analyticsApi.analyzeImages({
         categoryImages: singleCategoryImages as any,
+        categoryTexts: Object.keys(categoryTexts).length > 0 ? categoryTexts : undefined,
         campaignId: report.campaign_id || undefined,
         title: report.title,
         reportId: report.id,
@@ -498,7 +504,9 @@ export default function AnalyticsReportDetail() {
     ...d,
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));
-  const trafficDonut = trafficData.map((d, i) => ({
+  const trafficDonut = [...trafficData]
+    .sort((a, b) => b.value - a.value)
+    .map((d, i) => ({
     ...d,
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));

@@ -1,6 +1,7 @@
 import { useState, useCallback, type DragEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,7 +37,7 @@ const CATEGORY_META: Record<string, { label: string; icon: typeof Eye; color: st
 interface SourceImageManagerProps {
   report: AnalyticsReport;
   onReanalyze: () => void;
-  onCategoryReanalyze: (category: string) => Promise<void>;
+  onCategoryReanalyze: (category: string, text?: string) => Promise<void>;
   reanalyzing: boolean;
   reanalyzingCategory: string | null;
   onUpdate: () => void;
@@ -65,6 +66,8 @@ export default function SourceImageManager({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addTargetCategory, setAddTargetCategory] = useState<string>("overview");
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+  const [categoryTextInputs, setCategoryTextInputs] = useState<Record<string, string>>({});
+  const [showTextInput, setShowTextInput] = useState<Record<string, boolean>>({});
 
   const categoryImages: Record<string, string[]> = (report as any).category_images || {};
   const hasCategoryMapping = Object.keys(categoryImages).some(
@@ -261,12 +264,19 @@ export default function SourceImageManager({
     input.click();
   };
 
-  // Grouped images
+  // Grouped images - show all known categories (even empty ones for text input)
   const groupedImages: { category: string; urls: string[] }[] = [];
   if (hasCategoryMapping) {
+    // First add categories that have images
     for (const [cat, urls] of Object.entries(categoryImages)) {
       if (urls && urls.length > 0) {
         groupedImages.push({ category: cat, urls });
+      }
+    }
+    // Then add remaining CATEGORY_META categories that are missing (for text-only analysis)
+    for (const cat of Object.keys(CATEGORY_META)) {
+      if (!groupedImages.some(g => g.category === cat)) {
+        groupedImages.push({ category: cat, urls: [] });
       }
     }
   }
@@ -444,7 +454,7 @@ export default function SourceImageManager({
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => onCategoryReanalyze(category)}>
+                            <AlertDialogAction onClick={() => onCategoryReanalyze(category, categoryTextInputs[category]?.trim() || undefined)}>
                               再解析を実行
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -475,6 +485,28 @@ export default function SourceImageManager({
                         ? `ここにドロップして「${meta?.label || category}」に追加`
                         : "画像・PDFをドラッグ＆ドロップまたはクリックして追加"}
                     </p>
+                  </div>
+
+                  {/* Text input toggle */}
+                  <div className="space-y-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setShowTextInput(prev => ({ ...prev, [category]: !prev[category] }))}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      {showTextInput[category] ? "テキスト入力を閉じる" : "テキストで解析"}
+                    </Button>
+                    {showTextInput[category] && (
+                      <Textarea
+                        placeholder={`「${meta?.label || category}」のデータをテキストで貼り付け（画像の代わりに解析に使用されます）`}
+                        value={categoryTextInputs[category] || ""}
+                        onChange={(e) => setCategoryTextInputs(prev => ({ ...prev, [category]: e.target.value }))}
+                        rows={4}
+                        className="text-xs"
+                      />
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
