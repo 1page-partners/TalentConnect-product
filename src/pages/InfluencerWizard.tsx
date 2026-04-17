@@ -153,10 +153,14 @@ const InfluencerWizard = () => {
 
     switch (currentStep) {
       case 1:
+        const clientName = (campaign.clientName || "").toUpperCase();
+        const defaultNdaUrl = clientName.includes("MARKON")
+          ? "/nda/markon-nda.pdf"
+          : "/nda/planc-nda.pdf";
         return (
           <NDASectionEnhanced 
             onNext={handleNext}
-            ndaUrl={campaign.ndaUrl || "/nda/planc-nda.pdf"}
+            ndaUrl={campaign.ndaUrl || defaultNdaUrl}
           />
         );
       case 2:
