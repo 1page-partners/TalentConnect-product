@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getNdaTextByUrl, PLANC_NDA_TEXT } from "@/data/ndaTexts";
+import NDAContent from "./NDAContent";
 
 interface NDASectionEnhancedProps {
   onNext: () => void;
@@ -52,13 +53,13 @@ const NDASectionEnhanced = ({ onNext, ndaUrl }: NDASectionEnhancedProps) => {
             </p>
 
             <Card className="bg-muted/30">
-              <CardContent className="p-4">
+              <CardContent className="p-5">
                 <ScrollArea
                   className="h-96"
                   onScrollCapture={handleScroll}
                 >
-                  <div className="text-sm text-foreground whitespace-pre-wrap pr-4 leading-relaxed">
-                    {ndaText}
+                  <div className="pr-4">
+                    <NDAContent text={ndaText} />
                   </div>
                 </ScrollArea>
                 {!hasScrolledToEnd && (
