@@ -156,7 +156,7 @@ const InfluencerWizard = () => {
         return (
           <NDASectionEnhanced 
             onNext={handleNext}
-            ndaUrl={campaign.ndaUrl}
+            ndaUrl={campaign.ndaUrl || "/nda/planc-nda.pdf"}
           />
         );
       case 2:
