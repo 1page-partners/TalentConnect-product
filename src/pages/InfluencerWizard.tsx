@@ -153,13 +153,10 @@ const InfluencerWizard = () => {
 
     switch (currentStep) {
       case 1:
-        const clientName = (campaign.clientName || "").toUpperCase();
-        // TH案件は常にPlan CのNDAを使用
+        // TH案件にチェックが入っている場合はPlan CのNDA、それ以外はMARKONのNDAを使用
         const defaultNdaUrl = campaign.isTH
           ? "/nda/planc-nda.pdf"
-          : clientName.includes("MARKON")
-            ? "/nda/markon-nda.pdf"
-            : "/nda/planc-nda.pdf";
+          : "/nda/markon-nda.pdf";
         return (
           <NDASectionEnhanced 
             onNext={handleNext}
