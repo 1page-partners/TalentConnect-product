@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getNdaTextByUrl, PLANC_NDA_TEXT } from "@/data/ndaTexts";
+import NDAContent from "./NDAContent";
 
 interface NDASectionEnhancedProps {
   onNext: () => void;
