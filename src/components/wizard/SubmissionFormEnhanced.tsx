@@ -918,6 +918,97 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
             </div>
           </div>
 
+          {/* 追加質問項目 */}
+          <div className="space-y-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="fan-story" className="text-sm font-medium">
+                日頃ファンの方にどんなストーリーが刺さりやすいか
+              </Label>
+              <Textarea
+                id="fan-story"
+                value={fanStoryType}
+                onChange={(e) => setFanStoryType(e.target.value)}
+                placeholder="例: 日常の失敗談、商品レビューの本音トーク など"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="production-days" className="text-sm font-medium">
+                撮影から初稿提出までの所要日数
+              </Label>
+              <Input
+                id="production-days"
+                value={productionDays}
+                onChange={(e) => setProductionDays(e.target.value)}
+                placeholder="例: 7日程度"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="best-posting-time" className="text-sm font-medium">
+                リーチが伸びやすい投稿曜日や時間帯
+              </Label>
+              <Input
+                id="best-posting-time"
+                value={bestPostingTime}
+                onChange={(e) => setBestPostingTime(e.target.value)}
+                placeholder="例: 平日21〜23時、土日の午前中"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                二次利用費用
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                ※HPや広告等での二次利用を検討する場合の費用をご記入ください
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">期間:</span>
+                <Input
+                  type="number"
+                  min="1"
+                  value={secondaryUsageYears}
+                  onChange={(e) => setSecondaryUsageYears(e.target.value)}
+                  placeholder="1"
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground whitespace-nowrap">年</span>
+                <Input
+                  value={secondaryUsageFee}
+                  onChange={(e) => setSecondaryUsageFee(e.target.value)}
+                  onBlur={(e) => setSecondaryUsageFee(formatPaymentAmount(e.target.value))}
+                  placeholder="例: 100000"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                差支えなければインボイス制度のご登録有無をお知らせください
+              </Label>
+              <div className="flex flex-wrap gap-4 pt-1">
+                {['登録済み', '未登録', '登録予定', '回答しない'].map((option) => (
+                  <div key={option} className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id={`invoice-${option}`}
+                      name="invoiceRegistration"
+                      checked={invoiceRegistration === option}
+                      onChange={() => setInvoiceRegistration(option)}
+                      className="h-4 w-4 text-primary"
+                    />
+                    <Label htmlFor={`invoice-${option}`} className="text-sm cursor-pointer">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* 備考 */}
           <div className="space-y-2">
             <Label htmlFor="memo" className="text-sm font-medium">
