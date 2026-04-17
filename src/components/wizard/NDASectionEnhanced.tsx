@@ -53,13 +53,13 @@ const NDASectionEnhanced = ({ onNext, ndaUrl }: NDASectionEnhancedProps) => {
             </p>
 
             <Card className="bg-muted/30">
-              <CardContent className="p-4">
+              <CardContent className="p-5">
                 <ScrollArea
                   className="h-96"
                   onScrollCapture={handleScroll}
                 >
-                  <div className="text-sm text-foreground whitespace-pre-wrap pr-4 leading-relaxed">
-                    {ndaText}
+                  <div className="pr-4">
+                    <NDAContent text={ndaText} />
                   </div>
                 </ScrollArea>
                 {!hasScrolledToEnd && (
