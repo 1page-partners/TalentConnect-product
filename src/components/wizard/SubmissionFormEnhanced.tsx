@@ -322,7 +322,16 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
         portfolio_files: portfolioFiles.length > 0 ? portfolioFiles : [],
         insight_screenshots: insightScreenshot.length > 0 ? insightScreenshot : [],
         desired_fee: desiredPayment ? formatPaymentAmount(desiredPayment) : null,
-        notes: memo.trim() || null,
+        notes: (() => {
+          const additional: string[] = [];
+          if (fanStoryType.trim()) additional.push(`【ファンに刺さりやすいストーリー】\n${fanStoryType.trim()}`);
+          if (productionDays.trim()) additional.push(`【撮影から初稿提出までの所要日数】\n${productionDays.trim()}`);
+          if (bestPostingTime.trim()) additional.push(`【リーチが伸びやすい投稿曜日・時間帯】\n${bestPostingTime.trim()}`);
+          if (secondaryUsageFee.trim()) additional.push(`【二次利用費用（${secondaryUsageYears || 'X'}年）】\n${formatPaymentAmount(secondaryUsageFee)}`);
+          if (invoiceRegistration) additional.push(`【インボイス制度の登録】\n${invoiceRegistration}`);
+          if (memo.trim()) additional.push(`【備考】\n${memo.trim()}`);
+          return additional.length > 0 ? additional.join('\n\n') : null;
+        })(),
         status: 'pending',
       };
 
