@@ -8,9 +8,9 @@ import SubmissionFormEnhanced from "@/components/wizard/SubmissionFormEnhanced";
 import OptInForm from "@/components/wizard/OptInForm";
 import ThanksPane from "@/components/wizard/ThanksPane";
 import CampaignClosedMessage from "@/components/wizard/CampaignClosedMessage";
-import { campaignApi, Campaign } from "@/lib/api";
+import { campaignApi } from "@/lib/api";
+import { getCampaignPublicStatus, isCampaignClosed } from "@/lib/campaign-status";
 import { Loader2, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 // CampaignDetailCard用に変換
 interface CampaignDisplay {
@@ -80,7 +80,7 @@ const InfluencerWizard = () => {
           platforms: foundCampaign.platforms || [],
           deadline: foundCampaign.deadline || '',
           restrictions: foundCampaign.restrictions || undefined,
-          status: (foundCampaign.status as 'open' | 'closed') || 'open',
+          status: getCampaignPublicStatus(foundCampaign),
           createdAt: foundCampaign.created_at,
           clientName: foundCampaign.client_name || undefined,
           isTH: foundCampaign.is_th === true,
@@ -100,7 +100,7 @@ const InfluencerWizard = () => {
           editingOnly: foundCampaign.editing_only === true,
           shootingAndEditing: foundCampaign.shooting_and_editing === true,
           tieupPostProduction: foundCampaign.tieup_post_production === true,
-          isClosed: (foundCampaign as any).is_closed === true,
+          isClosed: isCampaignClosed(foundCampaign),
         };
 
         setCampaign(displayCampaign);

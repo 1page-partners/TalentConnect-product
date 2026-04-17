@@ -8,6 +8,7 @@ import { Loader2, Calendar, AlertCircle, Image, File, FileText, Play, Maximize2,
 import FilePreviewModal from "@/components/ui/file-preview-modal";
 import PdfThumbnail from "@/components/ui/pdf-thumbnail";
 import CampaignClosedMessage from "@/components/wizard/CampaignClosedMessage";
+import { getCampaignPublicStatus, getCampaignPublicStatusLabel } from "@/lib/campaign-status";
 
 // ファイルタイプを判定するヘルパー関数
 const getFileType = (url: string): 'image' | 'video' | 'pdf' | 'other' => {
@@ -89,8 +90,10 @@ const CampaignDetailOnly = () => {
     );
   }
 
+  const publicStatus = getCampaignPublicStatus(campaign);
+
   // 募集終了チェック（プレビューモードでは表示しない）
-  if ((campaign as any).is_closed && !isPreview) {
+  if (publicStatus === 'closed' && !isPreview) {
     return <CampaignClosedMessage />;
   }
 
@@ -124,8 +127,8 @@ const CampaignDetailOnly = () => {
         <Card className="shadow-lg">
           <CardHeader className="space-y-4">
             <div className="flex items-center justify-between">
-              <Badge variant={campaign.status === 'open' ? 'default' : 'secondary'}>
-                {campaign.status === 'open' ? '募集中' : '募集終了'}
+              <Badge variant={publicStatus === 'open' ? 'default' : 'secondary'}>
+                {getCampaignPublicStatusLabel(campaign)}
               </Badge>
             </div>
             <CardTitle className="text-2xl">{campaign.title}</CardTitle>
