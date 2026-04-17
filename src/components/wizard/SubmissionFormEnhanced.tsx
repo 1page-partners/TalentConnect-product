@@ -109,6 +109,12 @@ const SubmissionFormEnhanced = ({ onNext, onBack, campaignId, isPreview = false 
   const [contactEmail, setContactEmail] = useState("");
   const [contactLineId, setContactLineId] = useState("");
   const [desiredPayment, setDesiredPayment] = useState("");
+  const [fanStoryType, setFanStoryType] = useState("");
+  const [productionDays, setProductionDays] = useState("");
+  const [bestPostingTime, setBestPostingTime] = useState("");
+  const [secondaryUsageFee, setSecondaryUsageFee] = useState("");
+  const [secondaryUsageYears, setSecondaryUsageYears] = useState("1");
+  const [invoiceRegistration, setInvoiceRegistration] = useState("");
   const [memo, setMemo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
