@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { SocialIconsList } from "@/components/SocialIcons";
 import { Calendar, FileText, AlertTriangle, Image, File, FileImage, Play, Maximize2 } from "lucide-react";
 import { Campaign } from "@/lib/mock-data";
+import { getCampaignPublicStatus, getCampaignPublicStatusLabel } from "@/lib/campaign-status";
 import FilePreviewModal from "@/components/ui/file-preview-modal";
 import PdfThumbnail from "@/components/ui/pdf-thumbnail";
 
@@ -34,6 +35,7 @@ const getFileName = (url: string): string => {
 
 const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
   const [previewFile, setPreviewFile] = useState<{ url: string; type: 'image' | 'video' | 'pdf' | 'other'; name: string } | null>(null);
+  const publicStatus = getCampaignPublicStatus(campaign);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
@@ -57,8 +59,8 @@ const CampaignDetailCard = ({ campaign }: CampaignDetailCardProps) => {
             <CardTitle className="text-xl font-semibold text-foreground pr-4">
               {campaign.title}
             </CardTitle>
-            <Badge variant={campaign.status === 'open' ? 'default' : 'secondary'}>
-              {campaign.status === 'open' ? '募集中' : '募集終了'}
+            <Badge variant={publicStatus === 'open' ? 'default' : 'secondary'}>
+              {getCampaignPublicStatusLabel(campaign)}
             </Badge>
           </div>
         </CardHeader>
