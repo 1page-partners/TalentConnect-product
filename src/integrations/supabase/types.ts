@@ -220,6 +220,7 @@ export type Database = {
           slug: string
           status: string
           summary: string
+          tentative_title: string | null
           tieup_post_production: boolean | null
           title: string
           video_production_only: boolean | null
@@ -256,6 +257,7 @@ export type Database = {
           slug: string
           status?: string
           summary: string
+          tentative_title?: string | null
           tieup_post_production?: boolean | null
           title: string
           video_production_only?: boolean | null
@@ -292,6 +294,7 @@ export type Database = {
           slug?: string
           status?: string
           summary?: string
+          tentative_title?: string | null
           tieup_post_production?: boolean | null
           title?: string
           video_production_only?: boolean | null

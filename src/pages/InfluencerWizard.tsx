@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/Header";
+import NDACoverPage from "@/components/wizard/NDACoverPage";
 import NDASectionEnhanced from "@/components/wizard/NDASectionEnhanced";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
 import BranchButtons from "@/components/wizard/BranchButtons";
@@ -41,6 +42,7 @@ interface CampaignDisplay {
   shootingAndEditing?: boolean;
   tieupPostProduction?: boolean;
   isClosed?: boolean;
+  tentativeTitle?: string;
 }
 
 const InfluencerWizard = () => {
@@ -101,6 +103,7 @@ const InfluencerWizard = () => {
           shootingAndEditing: foundCampaign.shooting_and_editing === true,
           tieupPostProduction: foundCampaign.tieup_post_production === true,
           isClosed: isCampaignClosed(foundCampaign),
+          tentativeTitle: (foundCampaign as any).tentative_title || undefined,
         };
 
         setCampaign(displayCampaign);
@@ -127,13 +130,13 @@ const InfluencerWizard = () => {
 
   const handleAccept = () => {
     setIsAccepted(true);
-    setCurrentStep(3);
+    setCurrentStep(4);
     window.scrollTo(0, 0);
   };
 
   const handleDecline = () => {
     setIsAccepted(false);
-    setCurrentStep(3);
+    setCurrentStep(4);
     window.scrollTo(0, 0);
   };
 
@@ -153,6 +156,13 @@ const InfluencerWizard = () => {
 
     switch (currentStep) {
       case 1:
+        return (
+          <NDACoverPage
+            tentativeTitle={campaign.tentativeTitle}
+            onNext={handleNext}
+          />
+        );
+      case 2: {
         // TH案件にチェックが入っている場合はPlan CのNDA、それ以外はMARKONのNDAを使用
         const defaultNdaUrl = campaign.isTH
           ? "/nda/planc-nda.pdf"
@@ -163,7 +173,8 @@ const InfluencerWizard = () => {
             ndaUrl={campaign.ndaUrl || defaultNdaUrl}
           />
         );
-      case 2:
+      }
+      case 3:
         return (
           <div className="space-y-6">
             <CampaignDetailCard campaign={campaign as any} />
@@ -174,7 +185,7 @@ const InfluencerWizard = () => {
             />
           </div>
         );
-      case 3:
+      case 4:
         if (isAccepted === true) {
           return (
             <SubmissionFormEnhanced 
@@ -195,7 +206,7 @@ const InfluencerWizard = () => {
           );
         }
         break;
-      case 4:
+      case 5:
         return (
           <ThanksPane 
             isAccepted={isAccepted === true}
@@ -252,7 +263,7 @@ const InfluencerWizard = () => {
         {/* ステッパー表示 */}
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-2">
-            {Array.from({ length: 4 }, (_, i) => i + 1).map((step) => (
+            {Array.from({ length: 5 }, (_, i) => i + 1).map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -263,7 +274,7 @@ const InfluencerWizard = () => {
                 >
                   {step}
                 </div>
-                {step < 4 && (
+                {step < 5 && (
                   <div
                     className={`w-8 h-0.5 ${
                       step < currentStep ? 'bg-primary' : 'bg-muted'
@@ -275,7 +286,7 @@ const InfluencerWizard = () => {
           </div>
           <div className="text-center mt-2">
             <span className="text-sm text-muted-foreground">
-              ステップ {currentStep} / 4
+              ステップ {currentStep} / 5
             </span>
           </div>
         </div>

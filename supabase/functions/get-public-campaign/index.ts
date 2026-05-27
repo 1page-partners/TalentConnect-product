@@ -63,7 +63,8 @@ Deno.serve(async (req) => {
         is_th,
         planned_post_date,
         requirements,
-        is_closed
+        is_closed,
+        tentative_title
       `)
       .eq('slug', slug)
       .maybeSingle()
