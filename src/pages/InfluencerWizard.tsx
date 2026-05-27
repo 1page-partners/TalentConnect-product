@@ -161,6 +161,7 @@ const InfluencerWizard = () => {
         return (
           <NDACoverPage
             tentativeTitle={campaign.tentativeTitle}
+            coverImageUrl={campaign.coverImageUrl}
             onNext={handleNext}
           />
         );
