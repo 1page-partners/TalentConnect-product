@@ -4,10 +4,11 @@ import { FileText, ShieldCheck, ArrowRight } from "lucide-react";
 
 interface NDACoverPageProps {
   tentativeTitle?: string;
+  coverImageUrl?: string;
   onNext: () => void;
 }
 
-const NDACoverPage = ({ tentativeTitle, onNext }: NDACoverPageProps) => {
+const NDACoverPage = ({ tentativeTitle, coverImageUrl, onNext }: NDACoverPageProps) => {
   return (
     <Card className="shadow-card overflow-hidden border-primary/20">
       <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
@@ -28,6 +29,16 @@ const NDACoverPage = ({ tentativeTitle, onNext }: NDACoverPageProps) => {
                 本案件の詳細をご確認いただく前に、機密保持契約へのご同意をお願いいたします。
               </p>
             </div>
+
+            {coverImageUrl && (
+              <div className="w-full max-w-md overflow-hidden rounded-lg border border-border/60 bg-background/50">
+                <img
+                  src={coverImageUrl}
+                  alt="案件表紙"
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+            )}
 
             <div className="w-full max-w-md border-t border-b border-border/60 py-6 space-y-2">
               <div className="text-xs text-muted-foreground">仮案件名</div>
