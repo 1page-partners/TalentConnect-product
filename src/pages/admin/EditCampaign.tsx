@@ -238,6 +238,7 @@ const EditCampaign = () => {
       const campaignData = {
         client_name: clientName.trim(),
         title: title.trim(),
+        tentative_title: tentativeTitle.trim() || null,
         summary: summary.trim(),
         platforms: selectedPlatforms,
         deadline: deadline || null,
