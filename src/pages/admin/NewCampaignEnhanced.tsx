@@ -174,6 +174,7 @@ const NewCampaignEnhanced = () => {
         client_name: clientName.trim(),
         title: title.trim(),
         tentative_title: tentativeTitle.trim() || null,
+        cover_image_url: coverImageUrl || null,
         slug,
         summary: summary.trim(),
         platforms: selectedPlatforms,
