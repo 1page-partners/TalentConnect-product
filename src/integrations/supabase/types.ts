@@ -193,6 +193,7 @@ export type Database = {
           attachments: string[] | null
           client_name: string
           contact_email: string | null
+          cover_image_url: string | null
           created_at: string
           deadline: string
           deliverables: Json | null
@@ -230,6 +231,7 @@ export type Database = {
           attachments?: string[] | null
           client_name: string
           contact_email?: string | null
+          cover_image_url?: string | null
           created_at?: string
           deadline: string
           deliverables?: Json | null
@@ -267,6 +269,7 @@ export type Database = {
           attachments?: string[] | null
           client_name?: string
           contact_email?: string | null
+          cover_image_url?: string | null
           created_at?: string
           deadline?: string
           deliverables?: Json | null
