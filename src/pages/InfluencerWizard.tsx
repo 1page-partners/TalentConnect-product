@@ -105,6 +105,7 @@ const InfluencerWizard = () => {
           tieupPostProduction: foundCampaign.tieup_post_production === true,
           isClosed: isCampaignClosed(foundCampaign),
           tentativeTitle: (foundCampaign as any).tentative_title || undefined,
+          coverImageUrl: (foundCampaign as any).cover_image_url || undefined,
         };
 
         setCampaign(displayCampaign);
