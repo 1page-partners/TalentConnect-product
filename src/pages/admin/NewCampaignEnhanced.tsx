@@ -47,6 +47,7 @@ const NewCampaignEnhanced = () => {
   // Enhanced form state
   const [clientName, setClientName] = useState("");
   const [title, setTitle] = useState("");
+  const [tentativeTitle, setTentativeTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [requirements, setRequirements] = useState("");
   const [isTH, setIsTH] = useState(false);
