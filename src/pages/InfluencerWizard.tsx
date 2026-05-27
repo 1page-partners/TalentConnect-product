@@ -263,7 +263,7 @@ const InfluencerWizard = () => {
         {/* ステッパー表示 */}
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-2">
-            {Array.from({ length: 4 }, (_, i) => i + 1).map((step) => (
+            {Array.from({ length: 5 }, (_, i) => i + 1).map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -274,7 +274,7 @@ const InfluencerWizard = () => {
                 >
                   {step}
                 </div>
-                {step < 4 && (
+                {step < 5 && (
                   <div
                     className={`w-8 h-0.5 ${
                       step < currentStep ? 'bg-primary' : 'bg-muted'
@@ -286,7 +286,7 @@ const InfluencerWizard = () => {
           </div>
           <div className="text-center mt-2">
             <span className="text-sm text-muted-foreground">
-              ステップ {currentStep} / 4
+              ステップ {currentStep} / 5
             </span>
           </div>
         </div>
