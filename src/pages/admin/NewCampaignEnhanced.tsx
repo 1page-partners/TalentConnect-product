@@ -48,6 +48,7 @@ const NewCampaignEnhanced = () => {
   const [clientName, setClientName] = useState("");
   const [title, setTitle] = useState("");
   const [tentativeTitle, setTentativeTitle] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState<string>("");
   const [summary, setSummary] = useState("");
   const [requirements, setRequirements] = useState("");
   const [isTH, setIsTH] = useState(false);
