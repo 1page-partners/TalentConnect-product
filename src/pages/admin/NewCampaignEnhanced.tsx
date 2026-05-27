@@ -463,6 +463,26 @@ const NewCampaignEnhanced = () => {
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">表紙画像</Label>
+                <FileUpload
+                  onFilesSelected={async (files) => {
+                    const urls = await imageUpload.uploadFiles(files);
+                    if (urls[0]) setCoverImageUrl(urls[0]);
+                  }}
+                  onRemove={() => setCoverImageUrl("")}
+                  onPreview={openFilePreview}
+                  files={coverImageUrl ? [coverImageUrl] : []}
+                  accept="image/*"
+                  multiple={false}
+                  maxFiles={1}
+                  isUploading={imageUpload.isUploading}
+                  label="NDA表紙に表示する画像を選択"
+                  hint="PNG, JPG, WebP対応（最大10MB）"
+                />
+              </div>
+
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is-th"
