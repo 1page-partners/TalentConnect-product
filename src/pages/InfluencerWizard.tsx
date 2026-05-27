@@ -130,13 +130,13 @@ const InfluencerWizard = () => {
 
   const handleAccept = () => {
     setIsAccepted(true);
-    setCurrentStep(3);
+    setCurrentStep(4);
     window.scrollTo(0, 0);
   };
 
   const handleDecline = () => {
     setIsAccepted(false);
-    setCurrentStep(3);
+    setCurrentStep(4);
     window.scrollTo(0, 0);
   };
 
