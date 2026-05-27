@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Header from "@/components/Header";
+import NDACoverPage from "@/components/wizard/NDACoverPage";
 import NDASectionEnhanced from "@/components/wizard/NDASectionEnhanced";
 import CampaignDetailCard from "@/components/wizard/CampaignDetailCard";
 import BranchButtons from "@/components/wizard/BranchButtons";
