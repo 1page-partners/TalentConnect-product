@@ -103,6 +103,7 @@ const InfluencerWizard = () => {
           shootingAndEditing: foundCampaign.shooting_and_editing === true,
           tieupPostProduction: foundCampaign.tieup_post_production === true,
           isClosed: isCampaignClosed(foundCampaign),
+          tentativeTitle: (foundCampaign as any).tentative_title || undefined,
         };
 
         setCampaign(displayCampaign);
