@@ -128,6 +128,7 @@ const EditCampaign = () => {
         setClientName(campaign.client_name || "");
         setTitle(campaign.title || "");
         setTentativeTitle((campaign as any).tentative_title || "");
+        setCoverImageUrl((campaign as any).cover_image_url || "");
         setSummary(campaign.summary || "");
         setRequirements("");
         setIsTH(false);
