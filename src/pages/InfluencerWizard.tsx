@@ -43,6 +43,7 @@ interface CampaignDisplay {
   tieupPostProduction?: boolean;
   isClosed?: boolean;
   tentativeTitle?: string;
+  coverImageUrl?: string;
 }
 
 const InfluencerWizard = () => {
