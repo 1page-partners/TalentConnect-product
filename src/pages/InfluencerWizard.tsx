@@ -156,6 +156,13 @@ const InfluencerWizard = () => {
 
     switch (currentStep) {
       case 1:
+        return (
+          <NDACoverPage
+            tentativeTitle={campaign.tentativeTitle}
+            onNext={handleNext}
+          />
+        );
+      case 2: {
         // TH案件にチェックが入っている場合はPlan CのNDA、それ以外はMARKONのNDAを使用
         const defaultNdaUrl = campaign.isTH
           ? "/nda/planc-nda.pdf"
@@ -166,7 +173,8 @@ const InfluencerWizard = () => {
             ndaUrl={campaign.ndaUrl || defaultNdaUrl}
           />
         );
-      case 2:
+      }
+      case 3:
         return (
           <div className="space-y-6">
             <CampaignDetailCard campaign={campaign as any} />
@@ -177,7 +185,7 @@ const InfluencerWizard = () => {
             />
           </div>
         );
-      case 3:
+      case 4:
         if (isAccepted === true) {
           return (
             <SubmissionFormEnhanced 
@@ -198,7 +206,7 @@ const InfluencerWizard = () => {
           );
         }
         break;
-      case 4:
+      case 5:
         return (
           <ThanksPane 
             isAccepted={isAccepted === true}
