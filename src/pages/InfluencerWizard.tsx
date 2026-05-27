@@ -42,6 +42,7 @@ interface CampaignDisplay {
   shootingAndEditing?: boolean;
   tieupPostProduction?: boolean;
   isClosed?: boolean;
+  tentativeTitle?: string;
 }
 
 const InfluencerWizard = () => {
