@@ -126,6 +126,7 @@ const EditCampaign = () => {
         // Populate form fields
         setClientName(campaign.client_name || "");
         setTitle(campaign.title || "");
+        setTentativeTitle((campaign as any).tentative_title || "");
         setSummary(campaign.summary || "");
         setRequirements("");
         setIsTH(false);
