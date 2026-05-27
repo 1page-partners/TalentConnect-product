@@ -487,6 +487,21 @@ const EditCampaign = () => {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="tentative-title" className="text-sm font-medium">
+                  仮案件名
+                </Label>
+                <Input
+                  id="tentative-title"
+                  value={tentativeTitle}
+                  onChange={(e) => setTentativeTitle(e.target.value)}
+                  placeholder="NDA表紙に表示する仮案件名（例: A社春キャンペーン）"
+                />
+                <p className="text-xs text-muted-foreground">
+                  可否確認URLのNDA表紙に表示されます
+                </p>
+              </div>
+
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is-th"
