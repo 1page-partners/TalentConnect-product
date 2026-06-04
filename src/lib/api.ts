@@ -101,15 +101,15 @@ export const submissionApi = {
     return data || [];
   },
 
-  async create(submission: SubmissionInsert): Promise<InfluencerSubmission> {
-    const { data, error } = await supabase
+  async create(submission: SubmissionInsert): Promise<InfluencerSubmission | null> {
+    // 匿名ユーザーからの送信を許可するため、return=representation を使わない
+    // （anon には SELECT 権限がないため RETURNING が RLS で拒否される）
+    const { error } = await supabase
       .from('influencer_submissions')
-      .insert(submission)
-      .select()
-      .single();
-    
+      .insert(submission);
+
     if (error) throw error;
-    return data;
+    return null;
   },
 
   async delete(id: string): Promise<void> {
